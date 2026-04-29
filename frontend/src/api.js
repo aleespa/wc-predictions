@@ -1,23 +1,13 @@
+import { clerk } from './auth.js';
+
 const API_BASE = 'http://127.0.0.1:8000/api';
 
-function getToken() {
-    return localStorage.getItem('token');
-}
-
-export function setToken(token) {
-    localStorage.setItem('token', token);
-}
-
-export function clearToken() {
-    localStorage.removeItem('token');
-}
-
 export function isAuthenticated() {
-    return !!getToken();
+    return !!clerk.user;
 }
 
 export async function fetchAPI(endpoint, options = {}) {
-    const token = getToken();
+    const token = await clerk.session?.getToken();
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -33,7 +23,6 @@ export async function fetchAPI(endpoint, options = {}) {
     });
 
     if (response.status === 401) {
-        clearToken();
         window.location.hash = '#/login';
         throw new Error('Session expired. Please log in again.');
     }

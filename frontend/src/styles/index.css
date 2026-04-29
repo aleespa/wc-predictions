@@ -234,10 +234,19 @@ a:hover {
     transform: translateY(-1px);
 }
 
-.nav-user {
+.nav-user-info {
     display: flex;
     align-items: center;
     gap: var(--space-sm);
+    padding: 0 var(--space-sm);
+}
+
+.nav-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-medium);
+    object-fit: cover;
 }
 
 .nav-user-name {

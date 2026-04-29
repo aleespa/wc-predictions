@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+worldcup.db
+.venv/
+venv/
+venv_clerk/
+.pytest_cache/
+.vscode/

@@ -4,7 +4,6 @@ Seed the database with all 48 World Cup 2026 teams and group-stage matches.
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from .models import Team, Match, User
-from .auth import hash_password
 
 TEAMS = [
     # Group A
@@ -124,8 +123,8 @@ def seed_database(db: Session):
 
     # Create admin user
     admin = User(
+        clerk_id="admin_placeholder_id",
         username="admin",
-        hashed_password=hash_password("admin123"),
         display_name="Administrator",
         is_admin=True,
     )
@@ -181,4 +180,4 @@ def seed_database(db: Session):
 
     db.commit()
     print(f"✅ Seeded {len(TEAMS)} teams and {match_number - 1} group-stage matches")
-    print(f"✅ Admin user created (username: admin, password: admin123)")
+    print(f"✅ Admin user created (ID: admin_placeholder_id)")

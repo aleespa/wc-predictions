@@ -5,25 +5,9 @@ from datetime import datetime
 
 # ── Auth ──────────────────────────────────────────────
 
-class UserRegister(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50)
-    password: str = Field(..., min_length=4, max_length=100)
-    display_name: Optional[str] = None
-
-
-class UserLogin(BaseModel):
-    username: str
-    password: str
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-
-
 class UserOut(BaseModel):
     id: int
-    username: str
+    username: Optional[str]
     display_name: Optional[str]
     is_admin: bool
     created_at: datetime
@@ -134,7 +118,7 @@ class PredictionWithMatch(BaseModel):
 class LeaderboardEntry(BaseModel):
     rank: int
     user_id: int
-    username: str
+    username: Optional[str]
     display_name: Optional[str]
     total_points: int
     predictions_count: int
