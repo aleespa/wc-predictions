@@ -1,6 +1,6 @@
 import './styles/index.css';
-import { initAuth } from './auth.js';
-import { registerRoute, initRouter } from './router.js';
+import { initAuth, clerk } from './auth.js';
+import { registerRoute, initRouter, handleRoute } from './router.js';
 import { renderNavbar } from './components/navbar.js';
 import { homePage } from './pages/home.js';
 import { loginPage, registerPage } from './pages/login.js';
@@ -29,8 +29,7 @@ async function start() {
     // Re-render everything if the user auth state changes (e.g. login/logout)
     clerk.addListener(({ user }) => {
         renderNavbar();
-        // Optionally re-trigger the router to refresh the current page with new auth context
-        initRouter(); 
+        handleRoute(); 
     });
 }
 

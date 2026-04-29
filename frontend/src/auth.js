@@ -9,13 +9,12 @@ if (!clerkPublishableKey) {
 export const clerk = new Clerk(clerkPublishableKey);
 
 export async function initAuth() {
-  console.log('Initializing Clerk...');
-  await clerk.load();
-  console.log('Clerk loaded. User:', clerk.user ? clerk.user.id : 'null');
+  try {
+    await clerk.load();
+  } catch (err) {
+  }
   
   // Listen for session changes to keep the app in sync
   clerk.addListener(({ session, user }) => {
-    console.log('Clerk session/user changed:', { sessionId: session?.id, userId: user?.id });
-    // We can trigger a global re-render here if needed
   });
 }

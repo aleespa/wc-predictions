@@ -18,10 +18,11 @@ export function clearUserCache() {
     cachedUser = null;
 }
 
-export function renderNavbar() {
+export async function renderNavbar() {
     const nav = document.getElementById('navbar');
     const authed = isAuthenticated();
     const clerkUser = clerk.user;
+    const user = authed ? await getCurrentUser() : null;
 
     nav.innerHTML = `
         <div class="nav-inner">
@@ -36,6 +37,7 @@ export function renderNavbar() {
                 <button class="nav-link" data-route="/matches" onclick="location.hash='#/matches'">Matches</button>
                 <button class="nav-link" data-route="/leaderboard" onclick="location.hash='#/leaderboard'">Leaderboard</button>
                 ${authed ? `
+                    ${user?.is_admin ? `<button class="nav-link" data-route="/admin" onclick="location.hash='#/admin'">Admin</button>` : ''}
                     <button class="nav-link" data-route="/profile" onclick="location.hash='#/profile'">My Predictions</button>
                     <div class="nav-user-info">
                         <img src="${clerkUser.imageUrl}" class="nav-user-avatar" alt="User avatar">

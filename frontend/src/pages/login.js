@@ -2,6 +2,10 @@ import { clerk } from '../auth.js';
 import { renderNavbar, clearUserCache } from '../components/navbar.js';
 
 export function loginPage() {
+    if (clerk.user) {
+        setTimeout(() => { window.location.hash = '#/'; }, 0);
+        return { html: '<div class="spinner"></div>' };
+    }
     const html = `
         <div class="auth-container fade-in">
             <div class="card">
@@ -29,29 +33,16 @@ export function loginPage() {
             console.log('Clerk client:', clerk.client);
             console.log('Clerk signIn:', clerk.signIn);
             
-            btn?.addEventListener('click', async () => {
-                console.log('Google login clicked');
+            btn?.addEventListener('click', () => {
+                console.log('Opening Clerk SignIn modal');
                 try {
-                    // Standard Clerk JS SDK redirect flow
-                    // If clerk.signIn is available, use it. Otherwise try to use the client.
-                    const signIn = clerk.signIn || (clerk.client && clerk.client.signIn);
-                    
-                    if (signIn && typeof signIn.authenticateWithRedirect === 'function') {
-                        await signIn.authenticateWithRedirect({
-                            strategy: 'oauth_google',
-                            redirectUrl: window.location.origin + '/#/',
-                            redirectUrlComplete: window.location.origin + '/#/'
-                        });
-                    } else {
-                        console.warn('Custom redirect failed, falling back to openSignIn()');
-                        clerk.openSignIn({
-                            afterSignInUrl: window.location.origin + '/#/',
-                            afterSignUpUrl: window.location.origin + '/#/'
-                        });
-                    }
+                    clerk.openSignIn({
+                        afterSignInUrl: window.location.origin + '/#/',
+                        afterSignUpUrl: window.location.origin + '/#/'
+                    });
                 } catch (err) {
-                    console.error('Login error:', err);
-                    alert('Error starting Google login: ' + err.message);
+                    console.error('Clerk modal error:', err);
+                    alert('Error opening login: ' + err.message);
                 }
             });
         },

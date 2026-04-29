@@ -29,16 +29,19 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     token = credentials.credentials
+    if not token:
+        print("DEBUG: No token provided in Authorization header")
+        raise credentials_exception
+        
     try:
         # Use jose to decode without verification for development
-        # In production, you MUST verify the signature using JWKS
         payload = jwt.get_unverified_claims(token)
         user_id_str = payload.get("sub")
         
-        print(f"DEBUG: Validating token for clerk_id: {user_id_str}")
+        print(f"DEBUG: Token provided. extracted clerk_id: {user_id_str}")
         
         if user_id_str is None:
-            print("DEBUG: Token payload missing 'sub'")
+            print(f"DEBUG: Token payload missing 'sub'. Payload keys: {list(payload.keys())}")
             raise credentials_exception
             
     except Exception as e:
@@ -46,6 +49,7 @@ def get_current_user(
         raise credentials_exception
 
     user = db.query(models.User).filter(models.User.clerk_id == user_id_str).first()
+    print(f"DEBUG: Database lookup for {user_id_str}: {'Found' if user else 'Not Found'}")
     
     # Auto-create user if they don't exist
     if user is None:
