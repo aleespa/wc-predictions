@@ -1,6 +1,7 @@
 import { fetchAPI, isAuthenticated } from '../api.js';
-import { getCurrentUser } from '../components/navbar.js';
+import { getCurrentUser, clearUserCache } from '../components/navbar.js';
 import { getFlagURL } from '../components/flags.js';
+import { showToast } from '../components/toast.js';
 
 export async function profilePage() {
     if (!isAuthenticated()) {
@@ -60,7 +61,7 @@ export async function profilePage() {
         `;
     }).join('');
 
-    return `
+    const html = `
         <div class="fade-in">
             <div class="profile-header">
                 <div class="profile-avatar">${initial}</div>
@@ -68,6 +69,26 @@ export async function profilePage() {
                     <h2>${user.display_name || user.username}</h2>
                     <p>@${user.username} · Joined ${new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
                 </div>
+                <button class="btn btn-secondary btn-sm" id="edit-profile-btn" style="margin-left:auto">Edit Profile</button>
+            </div>
+
+            <div id="edit-profile-form-container" style="display:${user.username.startsWith('user_') ? 'block' : 'none'}; margin-bottom:var(--space-xl); padding:var(--space-lg); background:var(--bg-glass); border-radius:var(--radius-lg); border:1px solid var(--border-light); animation: slideDown 0.3s ease-out">
+                <h3 style="margin-bottom:var(--space-md)">Update Profile</h3>
+                <form id="edit-profile-form" style="display:grid; gap:var(--space-md)">
+                    <div>
+                        <label class="form-label">Display Name</label>
+                        <input type="text" id="edit-display-name" class="form-input" value="${user.display_name || ''}" placeholder="How you want to appear on leaderboard" required>
+                    </div>
+                    <div>
+                        <label class="form-label">Username</label>
+                        <input type="text" id="edit-username" class="form-input" value="${user.username.startsWith('user_') ? '' : user.username}" placeholder="unique_username" required>
+                        <small style="color:var(--text-muted); font-size:0.75rem">Only letters, numbers, and underscores allowed</small>
+                    </div>
+                    <div style="display:flex; gap:var(--space-md); margin-top:var(--space-sm)">
+                        <button type="submit" class="btn btn-primary btn-sm" id="save-profile-btn">Save Changes</button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="cancel-edit-btn" ${user.username.startsWith('user_') ? 'disabled style="display:none"' : ''}>Cancel</button>
+                    </div>
+                </form>
             </div>
 
             <div class="profile-stats">
@@ -102,4 +123,48 @@ export async function profilePage() {
             `}
         </div>
     `;
+
+    return {
+        html,
+        init: () => {
+            const btn = document.getElementById('edit-profile-btn');
+            const container = document.getElementById('edit-profile-form-container');
+            const cancelBtn = document.getElementById('cancel-edit-btn');
+            const form = document.getElementById('edit-profile-form');
+
+            btn?.addEventListener('click', () => {
+                container.style.display = 'block';
+            });
+
+            cancelBtn?.addEventListener('click', () => {
+                container.style.display = 'none';
+            });
+
+            form?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('save-profile-btn');
+                const prevText = btn.textContent;
+                btn.textContent = 'Saving...';
+                btn.disabled = true;
+
+                const displayName = document.getElementById('edit-display-name').value;
+                const username = document.getElementById('edit-username').value;
+
+                try {
+                    await fetchAPI('/me', {
+                        method: 'PUT',
+                        body: JSON.stringify({ display_name: displayName, username: username })
+                    });
+                    showToast('Profile updated successfully', 'success');
+                    clearUserCache();
+                    location.reload();
+                } catch (err) {
+                    showToast(err.message, 'error');
+                } finally {
+                    btn.textContent = prevText;
+                    btn.disabled = false;
+                }
+            });
+        }
+    };
 }

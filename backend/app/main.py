@@ -29,8 +29,7 @@ app.include_router(admin.router)
 
 @app.on_event("startup")
 def on_startup():
-    # Create all tables
-    Base.metadata.create_all(bind=engine)
+    # Tables are created by Alembic migrations in Docker
 
     # Seed data
     from .seed import seed_database

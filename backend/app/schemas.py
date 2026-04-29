@@ -18,6 +18,11 @@ class UserOut(BaseModel):
         from_attributes = True
 
 
+class UserUpdate(BaseModel):
+    username: Optional[str] = Field(None, min_length=3, max_length=30, pattern="^[a-zA-Z0-9_]+$")
+    display_name: Optional[str] = Field(None, min_length=2, max_length=50)
+
+
 # ── Teams ─────────────────────────────────────────────
 
 class TeamOut(BaseModel):

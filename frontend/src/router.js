@@ -1,3 +1,5 @@
+import { isAuthenticated } from './api.js';
+
 const routes = {};
 let currentCleanup = null;
 
@@ -17,6 +19,17 @@ export async function handleRoute() {
     const path = getCurrentPath();
     const container = document.getElementById('page-content');
     if (!container) return;
+
+    if (path !== '/profile' && isAuthenticated()) {
+        const { getCurrentUser } = await import('./components/navbar.js');
+        const user = await getCurrentUser();
+        if (user && user.username && user.username.startsWith('user_')) {
+            const { showToast } = await import('./components/toast.js');
+            showToast('Please update your username to continue', 'warning');
+            navigate('/profile');
+            return;
+        }
+    }
 
     // Run cleanup from previous page
     if (currentCleanup && typeof currentCleanup === 'function') {

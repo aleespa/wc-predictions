@@ -1,26 +1,19 @@
 from typing import Optional
 from fastapi import Depends, HTTPException, status, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from .database import get_db
 from . import models
 import os
-from jose import jwt, JWTError
-
-security = HTTPBearer()
-
-# Assuming CLERK_PEM_PUBLIC_KEY is provided in environment, or we can use clerk_backend_api
-# For simplicity, we will decode the token without verification if we can't fetch JWKS, 
-# BUT IN PRODUCTION WE MUST VERIFY. 
-# We will use the clerk_backend_api to verify if possible, or just require CLERK_PEM_PUBLIC_KEY.
-# Let's require the user to provide CLERK_PEM_PUBLIC_KEY or CLERK_SECRET_KEY.
-
 from clerk_backend_api import Clerk
+from clerk_backend_api.security import authenticate_request
+from clerk_backend_api.security.types import AuthenticateRequestOptions, AuthStatus
 
-clerk_client = Clerk(bearer_auth=os.environ.get("CLERK_SECRET_KEY"))
+secret_key = os.environ.get("CLERK_SECRET_KEY")
+clerk_client = Clerk(bearer_auth=secret_key)
+auth_options = AuthenticateRequestOptions(secret_key=secret_key)
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
     db: Session = Depends(get_db),
 ) -> models.User:
     credentials_exception = HTTPException(
@@ -28,20 +21,15 @@ def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    token = credentials.credentials
-    if not token:
-        print("DEBUG: No token provided in Authorization header")
-        raise credentials_exception
-        
+    
     try:
-        # Use jose to decode without verification for development
-        payload = jwt.get_unverified_claims(token)
-        user_id_str = payload.get("sub")
-        
-        print(f"DEBUG: Token provided. extracted clerk_id: {user_id_str}")
-        
-        if user_id_str is None:
-            print(f"DEBUG: Token payload missing 'sub'. Payload keys: {list(payload.keys())}")
+        request_state = authenticate_request(request, auth_options)
+        if request_state.status != AuthStatus.SIGNED_IN or not request_state.payload:
+            print(f"DEBUG: Token validation failed: status={request_state.status}")
+            raise credentials_exception
+            
+        user_id_str = request_state.payload.get("sub")
+        if not user_id_str:
             raise credentials_exception
             
     except Exception as e:
@@ -49,16 +37,27 @@ def get_current_user(
         raise credentials_exception
 
     user = db.query(models.User).filter(models.User.clerk_id == user_id_str).first()
-    print(f"DEBUG: Database lookup for {user_id_str}: {'Found' if user else 'Not Found'}")
     
     # Auto-create user if they don't exist
     if user is None:
+        is_admin = False
+        try:
+            clerk_user = clerk_client.users.get(user_id=user_id_str)
+            user_emails = [e.email_address.lower() for e in clerk_user.email_addresses]
+            
+            admin_emails_env = os.environ.get("ADMIN_EMAILS", "")
+            admin_emails = [e.strip().lower() for e in admin_emails_env.split(",") if e.strip()]
+            
+            if any(e in admin_emails for e in user_emails):
+                is_admin = True
+        except Exception as e:
+            print(f"DEBUG: Failed to fetch clerk user details: {str(e)}")
+
         user = models.User(
             clerk_id=user_id_str,
-            # We can set a default username or fetch from Clerk API. 
-            # For now, we leave it None or set a random one.
             username=f"user_{user_id_str[-6:]}", 
-            display_name=None
+            display_name=None,
+            is_admin=is_admin
         )
         db.add(user)
         db.commit()
@@ -74,19 +73,20 @@ def get_current_admin(current_user: models.User = Depends(get_current_user)) -> 
 
 
 def get_optional_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False)),
+    request: Request,
     db: Session = Depends(get_db),
 ) -> Optional[models.User]:
     """Returns user if authenticated, None otherwise."""
-    if credentials is None:
-        return None
     try:
-        token = credentials.credentials
-        payload = jwt.get_unverified_claims(token)
-        user_id_str = payload.get("sub")
-        if user_id_str is None:
+        request_state = authenticate_request(request, auth_options)
+        if request_state.status != AuthStatus.SIGNED_IN or not request_state.payload:
             return None
+            
+        user_id_str = request_state.payload.get("sub")
+        if not user_id_str:
+            return None
+            
         user = db.query(models.User).filter(models.User.clerk_id == user_id_str).first()
         return user
-    except (JWTError, ValueError, Exception):
+    except Exception:
         return None
