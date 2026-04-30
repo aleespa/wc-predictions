@@ -1,7 +1,27 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, UniqueConstraint, Table
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from .database import Base
+
+user_community = Table(
+    'user_community',
+    Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id'), primary_key=True),
+    Column('community_id', Integer, ForeignKey('communities.id'), primary_key=True)
+)
+
+
+class Community(Base):
+    __tablename__ = "communities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    invite_code = Column(String(50), unique=True, index=True, nullable=False)
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    creator = relationship("User", foreign_keys=[creator_id])
+    members = relationship("User", secondary=user_community, back_populates="communities")
 
 
 class User(Base):
@@ -16,6 +36,7 @@ class User(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     predictions = relationship("Prediction", back_populates="user")
+    communities = relationship("Community", secondary=user_community, back_populates="members")
 
 
 class Team(Base):

@@ -23,7 +23,30 @@ class UserUpdate(BaseModel):
     display_name: Optional[str] = Field(None, min_length=2, max_length=50)
 
 
+# ── Communities ───────────────────────────────────────
+
+class CommunityCreate(BaseModel):
+    name: str = Field(..., min_length=3, max_length=100)
+
+
+class JoinCommunityRequest(BaseModel):
+    invite_code: str
+
+
+class CommunityOut(BaseModel):
+    id: int
+    name: str
+    invite_code: str
+    creator_id: int
+    created_at: datetime
+    member_count: int = 0
+
+    class Config:
+        from_attributes = True
+
+
 # ── Teams ─────────────────────────────────────────────
+
 
 class TeamOut(BaseModel):
     id: int

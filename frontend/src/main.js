@@ -6,11 +6,10 @@ import { homePage } from './pages/home.js';
 import { loginPage, registerPage } from './pages/login.js';
 import { matchesPage } from './pages/matches.js';
 import { predictPage } from './pages/predict.js';
-import { leaderboardPage } from './pages/leaderboard.js';
 import { profilePage } from './pages/profile.js';
 import { adminPage } from './pages/admin.js';
 import { bracketPage } from './pages/bracket.js';
-import { communityPage } from './pages/community.js';
+import { communityPage, joinCommunityPage } from './pages/community.js';
 
 // Register all routes
 registerRoute('/', homePage);
@@ -18,11 +17,11 @@ registerRoute('/login', loginPage);
 registerRoute('/register', registerPage);
 registerRoute('/matches', matchesPage);
 registerRoute('/predict/:id', predictPage);
-registerRoute('/leaderboard', leaderboardPage);
 registerRoute('/profile', profilePage);
 registerRoute('/admin', adminPage);
 registerRoute('/bracket', bracketPage);
 registerRoute('/community', communityPage);
+registerRoute('/join/:code', joinCommunityPage);
 
 // Initialize
 async function start() {

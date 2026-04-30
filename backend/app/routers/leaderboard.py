@@ -3,11 +3,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, case
 from ..database import get_db
 from .. import models, schemas
+from typing import Optional
 
 router = APIRouter(prefix="/api/leaderboard", tags=["leaderboard"])
 
 
-def _compute_community_points(db: Session) -> dict:
+def _compute_community_points(db: Session, community_id: Optional[int] = None) -> dict:
     """
     Compute the community virtual user's points by rounding average predictions
     and scoring them against actual results for all finished matches.
@@ -21,7 +22,7 @@ def _compute_community_points(db: Session) -> dict:
     )
 
     match_ids = [m.id for m in finished_matches]
-    stats = _compute_match_stats(db, match_ids)
+    stats = _compute_match_stats(db, match_ids, community_id)
 
     total_points = 0
     predictions_count = 0
@@ -52,10 +53,11 @@ def _compute_community_points(db: Session) -> dict:
     }
 
 
+
 @router.get("", response_model=list[schemas.LeaderboardEntry])
-def get_leaderboard(db: Session = Depends(get_db)):
+def get_leaderboard(community_id: Optional[int] = None, db: Session = Depends(get_db)):
     # Aggregate user stats from predictions
-    results = (
+    query = (
         db.query(
             models.User.id,
             models.User.username,
@@ -71,7 +73,14 @@ def get_leaderboard(db: Session = Depends(get_db)):
         )
         .outerjoin(models.Prediction, models.User.id == models.Prediction.user_id)
         .filter(models.User.is_admin == False)  # noqa: E712
-        .group_by(models.User.id, models.User.username, models.User.display_name)
+    )
+
+    if community_id is not None:
+        query = query.join(models.user_community, models.User.id == models.user_community.c.user_id)\
+                     .filter(models.user_community.c.community_id == community_id)
+
+    results = (
+        query.group_by(models.User.id, models.User.username, models.User.display_name)
         .order_by(func.coalesce(func.sum(models.Prediction.points_awarded), 0).desc())
         .all()
     )
@@ -90,7 +99,7 @@ def get_leaderboard(db: Session = Depends(get_db)):
         })
 
     # Add community virtual user
-    community = _compute_community_points(db)
+    community = _compute_community_points(db, community_id)
     if community["predictions_count"] > 0:
         entries.append({
             "user_id": -1,

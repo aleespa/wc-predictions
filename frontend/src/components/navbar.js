@@ -39,7 +39,6 @@ export async function renderNavbar() {
                 <button class="nav-link" data-route="/matches" onclick="location.hash='#/matches'">${t('nav_matches')}</button>
                 <button class="nav-link" data-route="/bracket" onclick="location.hash='#/bracket'">🏆 ${t('nav_bracket')}</button>
                 <button class="nav-link" data-route="/community" onclick="location.hash='#/community'">👥 ${t('nav_community')}</button>
-                <button class="nav-link" data-route="/leaderboard" onclick="location.hash='#/leaderboard'">🏆 ${t('nav_leaderboard')}</button>
                 ${authed ? `
                     ${user?.is_admin ? `<button class="nav-link" data-route="/admin" onclick="location.hash='#/admin'">⚙️ ${t('nav_admin')}</button>` : ''}
                     <button class="nav-link" data-route="/profile" onclick="location.hash='#/profile'">🔮 ${t('nav_my_predictions')}</button>

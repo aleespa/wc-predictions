@@ -305,27 +305,248 @@ function renderBracketRound(title, matches) {
 /**
  * Main community page.
  */
+
+import { getCurrentUser } from '../components/navbar.js';
+import { isAuthenticated } from '../api.js';
+
+let currentCommunityId = null;
+
 export async function communityPage() {
-    let matches = [];
-    let communityPoints = null;
+    let myCommunities = [];
+    let currentUser = null;
     try {
-        [matches, communityPoints] = await Promise.all([
-            fetchAPI('/community/matches'),
-            fetchAPI('/community/points'),
-        ]);
+        if (isAuthenticated()) {
+            currentUser = await getCurrentUser();
+            myCommunities = await fetchAPI('/community/private/mine');
+        }
     } catch (e) {
-        return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${e.message}</div></div>`;
+        console.error("Failed to load private communities", e);
     }
 
-    // Build a map of match_id -> community points for that match
+    const renderSelector = () => {
+        let opts = `<option value="">${t('community_opt_global')}</option>`;
+        for (const c of myCommunities) {
+            opts += `<option value="${c.id}" ${currentCommunityId == c.id ? 'selected' : ''}>${t('community_opt_private', { name: c.name, count: c.member_count })}</option>`;
+        }
+        
+        return `
+            <div class="community-controls card fade-in" style="margin-bottom: var(--space-xl); display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-lg); padding: var(--space-lg); background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+                <div class="community-selector-block" style="display: flex; flex-direction: column; gap: var(--space-sm);">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">${t('community_viewing')}</label>
+                    <div style="display: flex; gap: var(--space-sm); align-items: center;">
+                        <select id="community-select" class="form-input" style="flex: 1; max-width: 350px; cursor: pointer; font-weight: 600; font-size: 1rem; border-radius: 8px;">
+                            ${opts}
+                        </select>
+                        <button id="btn-invite" class="btn btn-secondary" style="display: ${currentCommunityId ? 'inline-flex' : 'none'}; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px;" title="${t('community_invite_btn')}">
+                            ${t('community_invite_btn')}
+                        </button>
+                        <button id="btn-leave" class="btn btn-danger" style="display: ${currentCommunityId ? 'inline-flex' : 'none'}; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px;" title="${t('community_leave_btn')}">
+                            ${t('community_leave_btn')}
+                        </button>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 4px 0 0; opacity: 0.8;">${t('community_switch_desc')}</p>
+                </div>
+                
+                ${isAuthenticated() ? `
+                <div class="community-create-block" style="display: flex; flex-direction: column; gap: var(--space-sm); border-left: 1px solid rgba(255,255,255,0.1); padding-left: var(--space-lg);">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">${t('community_create_new')}</label>
+                    <div style="display: flex; gap: var(--space-sm);">
+                        <input type="text" id="new-community-name" class="form-input" placeholder="${t('community_name_ph')}" style="flex: 1; border-radius: 8px; padding: 10px 14px;">
+                        <button id="btn-create-community" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ${t('community_btn_create')}
+                        </button>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 4px 0 0; opacity: 0.8;">${t('community_create_desc')}</p>
+                </div>
+                ` : `
+                <div class="community-create-block" style="display: flex; flex-direction: column; justify-content: center; border-left: 1px solid rgba(255,255,255,0.1); padding-left: var(--space-lg);">
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin: 0; font-weight: 500; display: flex; align-items: center; gap: 8px;">${t('community_login_req')}</p>
+                </div>
+                `}
+            </div>
+        `;
+    };
+
+    const html = `
+        <div class="fade-in" id="community-page">
+            <h1 class="page-title">
+                <span style="background:linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">
+                    👥 ${t('community_title')}
+                </span>
+            </h1>
+            <p class="page-subtitle">${t('community_subtitle')}</p>
+
+            ${renderSelector()}
+
+            <div id="community-content-area"></div>
+        </div>
+    `;
+
+    return {
+        html,
+        init: () => {
+            const selectEl = document.getElementById('community-select');
+            const createBtn = document.getElementById('btn-create-community');
+            const newNameInput = document.getElementById('new-community-name');
+            const inviteBtn = document.getElementById('btn-invite');
+            const leaveBtn = document.getElementById('btn-leave');
+            const contentArea = document.getElementById('community-content-area');
+
+            const loadContent = async () => {
+                contentArea.innerHTML = '<div class="spinner"></div>';
+                try {
+                    let suffix = currentCommunityId ? `?community_id=${currentCommunityId}` : '';
+                    const [matches, communityPoints, leaderboard] = await Promise.all([
+                        fetchAPI('/community/matches' + suffix),
+                        fetchAPI('/community/points' + suffix),
+                        fetchAPI('/leaderboard' + suffix)
+                    ]);
+                    contentArea.innerHTML = renderCommunityContent(matches, communityPoints, leaderboard, currentUser, suffix);
+                    initCommunityContent(matches, communityPoints, suffix);
+                } catch (e) {
+                    contentArea.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${e.message}</div></div>`;
+                }
+            };
+
+            if (selectEl) {
+                selectEl.addEventListener('change', (e) => {
+                    currentCommunityId = e.target.value ? parseInt(e.target.value) : null;
+                    if (inviteBtn) {
+                        inviteBtn.style.display = currentCommunityId ? 'inline-flex' : 'none';
+                    }
+                    if (leaveBtn) {
+                        leaveBtn.style.display = currentCommunityId ? 'inline-flex' : 'none';
+                    }
+                    loadContent();
+                });
+            }
+
+            if (createBtn && newNameInput) {
+                createBtn.addEventListener('click', async () => {
+                    const name = newNameInput.value.trim();
+                    if (!name) return;
+                    try {
+                        const newComm = await fetchAPI('/community/private', {
+                            method: 'POST',
+                            body: JSON.stringify({ name })
+                        });
+                        myCommunities.push(newComm);
+                        currentCommunityId = newComm.id;
+                        
+                        
+                        // Reliably reload the page to render the new state cleanly
+                        const { handleRoute } = await import('../router.js');
+                        handleRoute();
+                        
+                    } catch (e) {
+                        alert(e.message);
+                    }
+                });
+            }
+
+            if (inviteBtn) {
+                inviteBtn.addEventListener('click', () => {
+                    const c = myCommunities.find(x => x.id === currentCommunityId);
+                    if (c) {
+                        const link = window.location.origin + window.location.pathname + '#/join/' + c.invite_code;
+                        navigator.clipboard.writeText(link);
+                        alert("Invite link copied to clipboard!");
+                    }
+                });
+            }
+
+            if (leaveBtn) {
+                leaveBtn.addEventListener('click', async () => {
+                    if (confirm(t('community_leave_confirm'))) {
+                        try {
+                            await fetchAPI(`/community/private/${currentCommunityId}/leave`, { method: 'DELETE' });
+                            myCommunities = myCommunities.filter(c => c.id !== currentCommunityId);
+                            currentCommunityId = null;
+                            const { handleRoute } = await import('../router.js');
+                            handleRoute();
+                        } catch (e) {
+                            alert(e.message);
+                        }
+                    }
+                });
+            }
+
+            loadContent();
+        }
+    };
+}
+
+function renderLeaderboardTable(leaderboard, currentUser) {
+    const top3 = leaderboard.slice(0, 3);
+    const podiumOrder = top3.length >= 3 ? [top3[1], top3[0], top3[2]] : top3;
+    const podiumHtml = podiumOrder.map((entry) => {
+        const isCommunity = entry.is_community;
+        const initial = isCommunity ? '👥' : (entry.display_name || entry.username || '?').charAt(0).toUpperCase();
+        return `
+            <div class="podium-item ${isCommunity ? 'podium-community' : ''}">
+                <div class="podium-avatar ${isCommunity ? 'podium-avatar-community' : ''}">${initial}</div>
+                <div class="podium-name ${isCommunity ? 'podium-name-community' : ''}">${entry.display_name || entry.username}</div>
+                <div class="podium-points">${entry.total_points} ${t('common_pts')}</div>
+                <div class="podium-bar"></div>
+            </div>
+        `;
+    }).join('');
+
+    const tableRows = leaderboard.map(entry => {
+        const isMe = currentUser && currentUser.id === entry.user_id;
+        const isCommunity = entry.is_community;
+        const rowClass = isCommunity ? 'leaderboard-community-row' : '';
+        const nameDisplay = isCommunity
+            ? `<span class="leaderboard-community-name">${entry.display_name || entry.username}</span>`
+            : `${entry.display_name || entry.username}${isMe ? t('leaderboard_you') : ''}`;
+        return `
+            <tr class="${rowClass}">
+                <td class="leaderboard-rank ${entry.rank <= 3 ? 'top-' + entry.rank : ''}">${entry.rank <= 3 ? ['🥇','🥈','🥉'][entry.rank-1] : entry.rank}</td>
+                <td class="leaderboard-user ${isMe ? 'is-me' : ''}">${nameDisplay}</td>
+                <td class="leaderboard-points ${isCommunity ? 'leaderboard-community-points' : ''}">${entry.total_points}</td>
+                <td class="leaderboard-stat">${entry.exact_scores}</td>
+                <td class="leaderboard-stat">${entry.correct_outcomes}</td>
+                <td class="leaderboard-stat">${entry.predictions_count}</td>
+            </tr>
+        `;
+    }).join('');
+
+    return `
+        <div style="margin-bottom: var(--space-2xl);">
+            ${top3.length >= 3 ? `<div class="podium">${podiumHtml}</div>` : ''}
+            ${leaderboard.length === 0 ? `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🏜️</div>
+                    <div class="empty-state-text">${t('leaderboard_no_preds')}</div>
+                </div>
+            ` : `
+                <div class="card" style="overflow-x:auto">
+                    <table class="leaderboard-table" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>${t('leaderboard_th_rank')}</th>
+                                <th>${t('leaderboard_th_player')}</th>
+                                <th>${t('leaderboard_th_points')}</th>
+                                <th>${t('leaderboard_th_exact')}</th>
+                                <th>${t('leaderboard_th_correct')}</th>
+                                <th>${t('leaderboard_th_preds')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                </div>
+            `}
+        </div>
+    `;
+}
+
+function renderCommunityContent(matches, communityPoints, leaderboard, currentUser, suffix) {
     const matchPointsMap = {};
     if (communityPoints && communityPoints.match_details) {
         for (const detail of communityPoints.match_details) {
             matchPointsMap[detail.match_id] = detail;
         }
     }
-
-    // Compute summary stats
     const groupMatches = matches.filter(m => m.stage === 'Group Stage');
     const matchesWithPredictions = matches.filter(m => m.prediction_count > 0);
     const totalPredictions = matches.reduce((sum, m) => sum + m.prediction_count, 0);
@@ -337,162 +558,130 @@ export async function communityPage() {
         `<button class="group-tab ${i === 0 ? 'active' : ''}" data-type="${f.type}" data-val="${f.val}">${f.label}</button>`
     ).join('');
 
-    // Points breakdown for hero section
     const totalPts = communityPoints ? communityPoints.total_points : 0;
     const exactCount = communityPoints ? communityPoints.exact_scores : 0;
     const correctCount = communityPoints ? communityPoints.correct_outcomes : 0;
     const predCount = communityPoints ? communityPoints.predictions_count : 0;
 
-    const html = `
-        <div class="fade-in" id="community-page">
-            <div class="community-hero">
-                <h1 class="page-title">
-                    <span style="background:linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">
-                        👥 ${t('community_title')}
-                    </span>
-                </h1>
-                <p class="page-subtitle">${t('community_subtitle')}</p>
-
-                ${predCount > 0 ? `
-                    <div class="community-points-hero">
-                        <div class="community-points-main">
-                            <div class="community-points-value">${totalPts}</div>
-                            <div class="community-points-label">${t('community_pts_label')}</div>
-                        </div>
-                        <div class="community-points-details">
-                            <div class="community-points-detail">
-                                <span class="community-points-detail-value" style="color:var(--accent-gold)">${exactCount}</span>
-                                <span class="community-points-detail-label">${t('community_pts_exact')}</span>
-                            </div>
-                            <div class="community-points-detail">
-                                <span class="community-points-detail-value" style="color:var(--accent-green)">${correctCount}</span>
-                                <span class="community-points-detail-label">${t('community_pts_correct')}</span>
-                            </div>
-                            <div class="community-points-detail">
-                                <span class="community-points-detail-value" style="color:var(--accent-blue)">${predCount}</span>
-                                <span class="community-points-detail-label">${t('community_pts_matches')}</span>
-                            </div>
-                        </div>
+    return `
+        <div class="community-points-hero" style="margin-bottom: var(--space-xl);">
+            ${predCount > 0 ? `
+                <div class="community-points-main">
+                    <div class="community-points-value">${totalPts}</div>
+                    <div class="community-points-label">${t('community_pts_label')}</div>
+                </div>
+                <div class="community-points-details">
+                    <div class="community-points-detail">
+                        <span class="community-points-detail-value" style="color:var(--accent-gold)">${exactCount}</span>
+                        <span class="community-points-detail-label">${t('community_pts_exact')}</span>
                     </div>
-                ` : ''}
-
-                <div class="community-summary-stats">
-                    <div class="community-summary-stat">
-                        <div class="community-summary-value">${matchesWithPredictions.length}</div>
-                        <div class="community-summary-label">${t('community_stat_pred_matches')}</div>
+                    <div class="community-points-detail">
+                        <span class="community-points-detail-value" style="color:var(--accent-green)">${correctCount}</span>
+                        <span class="community-points-detail-label">${t('community_pts_correct')}</span>
                     </div>
-                    <div class="community-summary-stat">
-                        <div class="community-summary-value">${totalPredictions}</div>
-                        <div class="community-summary-label">${t('community_stat_total_preds')}</div>
-                    </div>
-                    <div class="community-summary-stat">
-                        <div class="community-summary-value">${avgPredictionsPerMatch}</div>
-                        <div class="community-summary-label">${t('community_stat_avg')}</div>
+                    <div class="community-points-detail">
+                        <span class="community-points-detail-value" style="color:var(--accent-blue)">${predCount}</span>
+                        <span class="community-points-detail-label">${t('community_pts_matches')}</span>
                     </div>
                 </div>
-            </div>
-
-            <div class="group-tabs" id="community-tabs">
-                ${tabs}
-            </div>
-
-            <div id="community-standings-container"></div>
-            <div id="community-bracket-container"></div>
-
-            <div class="matches-grid" id="community-grid">
-                ${groupMatches.map(m => renderCommunityMatchCard(m, matchPointsMap)).join('')}
+            ` : ''}
+            <div class="community-summary-stats">
+                <div class="community-summary-stat">
+                    <div class="community-summary-value">${matchesWithPredictions.length}</div>
+                    <div class="community-summary-label">${t('community_stat_pred_matches')}</div>
+                </div>
+                <div class="community-summary-stat">
+                    <div class="community-summary-value">${totalPredictions}</div>
+                    <div class="community-summary-label">${t('community_stat_total_preds')}</div>
+                </div>
+                <div class="community-summary-stat">
+                    <div class="community-summary-value">${avgPredictionsPerMatch}</div>
+                    <div class="community-summary-label">${t('community_stat_avg')}</div>
+                </div>
             </div>
         </div>
+
+        <h2 style="margin-bottom: var(--space-md);">Leaderboard</h2>
+        ${renderLeaderboardTable(leaderboard, currentUser)}
+
+        <h2 style="margin-bottom: var(--space-md);">Average Predictions</h2>
+        <div class="group-tabs" id="community-tabs">
+            ${tabs}
+        </div>
+
+        <div id="community-standings-container"></div>
+        <div id="community-bracket-container"></div>
+
+        <div class="matches-grid" id="community-grid">
+            ${groupMatches.map(m => renderCommunityMatchCard(m, matchPointsMap)).join('')}
+        </div>
     `;
-
-    return {
-        html,
-        init: () => {
-            const grid = document.getElementById('community-grid');
-            const tabsContainer = document.getElementById('community-tabs');
-            const standingsContainer = document.getElementById('community-standings-container');
-            const bracketContainer = document.getElementById('community-bracket-container');
-
-            tabsContainer.addEventListener('click', async (e) => {
-                const tab = e.target.closest('.group-tab');
-                if (!tab) return;
-
-                tabsContainer.querySelectorAll('.group-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-
-                const filterType = tab.dataset.type;
-                const filterVal = tab.dataset.val;
-
-                standingsContainer.innerHTML = '';
-                bracketContainer.innerHTML = '';
-
-                let filtered = matches;
-                if (filterType === 'group') {
-                    filtered = matches.filter(m => m.group_letter === filterVal);
-
-                    // Fetch community standings for this group
-                    try {
-                        const stds = await fetchAPI(`/community/standings/${filterVal}`);
-                        standingsContainer.innerHTML = renderStandingsTable(stds, filterVal);
-                    } catch (err) {
-                        console.error('Failed to load community standings', err);
-                    }
-                } else if (filterType === 'stage') {
-                    filtered = matches.filter(m => m.stage === filterVal);
-                } else {
-                    // "All" — show only group stage by default
-                    filtered = groupMatches;
-                }
-
-                // Check if we should show knockout bracket
-                if (filterType === 'stage' || filterType === 'all') {
-                    // Only show knockout section for stage filters
-                    if (filterType === 'stage') {
-                        // Don't show bracket container for stage filters, just show cards
-                    }
-                }
-
-                if (filtered.length === 0) {
-                    if (filterType === 'stage') {
-                        let stg = filterVal === 'Round of 32' ? t('stage_r32') : filterVal === 'Round of 16' ? t('stage_r16') : filterVal === 'Quarter-finals' ? t('stage_qf') : filterVal === 'Semi-finals' ? t('stage_sf') : filterVal === 'Final' ? t('stage_final') : filterVal;
-                        grid.innerHTML = `
-                            <div class="empty-state" style="grid-column:1/-1">
-                                <div class="empty-state-icon">🏆</div>
-                                <div class="empty-state-text">${t('matches_awaiting_bracket', { stage: stg })}</div>
-                                <div style="color:var(--text-muted);font-size:0.85rem;margin-top:8px">${t('matches_awaiting_sub')}</div>
-                            </div>
-                        `;
-                    } else {
-                        grid.innerHTML = `
-                            <div class="empty-state" style="grid-column:1/-1">
-                                <div class="empty-state-icon">📭</div>
-                                <div class="empty-state-text">${t('matches_no_matches')}</div>
-                            </div>
-                        `;
-                    }
-                } else {
-                    grid.innerHTML = filtered.map(m => renderCommunityMatchCard(m, matchPointsMap)).join('');
-                }
-            });
-
-            // On initial load, try to load community bracket if available
-            loadCommunityBracket(bracketContainer);
-        },
-    };
 }
 
+function initCommunityContent(matches, communityPoints, suffix) {
+    const matchPointsMap = {};
+    if (communityPoints && communityPoints.match_details) {
+        for (const detail of communityPoints.match_details) {
+            matchPointsMap[detail.match_id] = detail;
+        }
+    }
+    const groupMatches = matches.filter(m => m.stage === 'Group Stage');
+    const grid = document.getElementById('community-grid');
+    const tabsContainer = document.getElementById('community-tabs');
+    const standingsContainer = document.getElementById('community-standings-container');
+    const bracketContainer = document.getElementById('community-bracket-container');
 
-/**
- * Attempt to load the community knockout bracket section.
- */
-async function loadCommunityBracket(container) {
-    try {
-        const bracket = await fetchAPI('/community/bracket');
-        if (!bracket.available) {
-            // Don't show anything — bracket not yet available
-            return;
+    tabsContainer.addEventListener('click', async (e) => {
+        const tab = e.target.closest('.group-tab');
+        if (!tab) return;
+        tabsContainer.querySelectorAll('.group-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        const filterType = tab.dataset.type;
+        const filterVal = tab.dataset.val;
+
+        standingsContainer.innerHTML = '';
+        bracketContainer.innerHTML = '';
+
+        let filtered = matches;
+        if (filterType === 'group') {
+            filtered = matches.filter(m => m.group_letter === filterVal);
+            try {
+                let url = `/community/standings/${filterVal}`;
+                if (suffix) {
+                   url += suffix;
+                }
+                const stds = await fetchAPI(url);
+                standingsContainer.innerHTML = renderStandingsTable(stds, filterVal);
+            } catch (err) {
+                console.error('Failed to load community standings', err);
+            }
+        } else if (filterType === 'stage') {
+            filtered = matches.filter(m => m.stage === filterVal);
+        } else {
+            filtered = groupMatches;
         }
 
+        if (filtered.length === 0) {
+            if (filterType === 'stage') {
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🏆</div><div class="empty-state-text">Awaiting Bracket</div></div>`;
+            } else {
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">📭</div><div class="empty-state-text">${t('matches_no_matches')}</div></div>`;
+            }
+        } else {
+            grid.innerHTML = filtered.map(m => renderCommunityMatchCard(m, matchPointsMap)).join('');
+        }
+    });
+
+    loadCommunityBracket(bracketContainer, suffix);
+}
+
+async function loadCommunityBracket(container, suffix) {
+    try {
+        let url = '/community/bracket';
+        if (suffix) url += suffix;
+        const bracket = await fetchAPI(url);
+        if (!bracket.available) return;
         const allKoMatches = [
             ...(bracket.round_of_32 || []),
             ...(bracket.round_of_16 || []),
@@ -501,32 +690,19 @@ async function loadCommunityBracket(container) {
             ...(bracket.third_place ? [bracket.third_place] : []),
             ...(bracket.final ? [bracket.final] : []),
         ];
-
         const predictedCount = allKoMatches.filter(m => m.prediction_count > 0).length;
-
         container.innerHTML = `
             <div class="community-bracket-section card" style="margin-bottom:var(--space-xl);padding:var(--space-xl);">
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-md);margin-bottom:var(--space-lg)">
                     <div>
-                        <h2 style="margin:0;font-size:1.3rem;font-weight:800">
-                            ${t('community_ko_title')}
-                        </h2>
-                        <p style="margin:var(--space-xs) 0 0;font-size:0.85rem;color:var(--text-muted)">
-                            ${t('community_ko_sub')}
-                        </p>
+                        <h2 style="margin:0;font-size:1.3rem;font-weight:800">${t('community_ko_title')}</h2>
+                        <p style="margin:var(--space-xs) 0 0;font-size:0.85rem;color:var(--text-muted)">${t('community_ko_sub')}</p>
                     </div>
                     <div class="bracket-stats-bar" style="margin:0">
-                        <div class="bracket-stat">
-                            <span class="bracket-stat-value">${predictedCount}</span>
-                            <span class="bracket-stat-label">${t('community_ko_stat_pred')}</span>
-                        </div>
-                        <div class="bracket-stat">
-                            <span class="bracket-stat-value">${allKoMatches.length}</span>
-                            <span class="bracket-stat-label">${t('community_ko_stat_ko')}</span>
-                        </div>
+                        <div class="bracket-stat"><span class="bracket-stat-value">${predictedCount}</span><span class="bracket-stat-label">${t('community_ko_stat_pred')}</span></div>
+                        <div class="bracket-stat"><span class="bracket-stat-value">${allKoMatches.length}</span><span class="bracket-stat-label">${t('community_ko_stat_ko')}</span></div>
                     </div>
                 </div>
-
                 <div class="bracket-container">
                     ${renderBracketRound(t('stage_r32'), bracket.round_of_32)}
                     ${renderBracketRound(t('stage_r16'), bracket.round_of_16)}
@@ -540,4 +716,37 @@ async function loadCommunityBracket(container) {
     } catch (err) {
         console.error('Failed to load community bracket', err);
     }
+}
+
+export async function joinCommunityPage(params) {
+    const code = params.code;
+    return {
+        html: `
+            <div class="fade-in card" style="max-width: 400px; margin: 40px auto; text-align: center;">
+                <h2>Join Private Community</h2>
+                <p>You have been invited to join a private community.</p>
+                <button id="btn-confirm-join" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Join Community</button>
+            </div>
+        `,
+        init: () => {
+            document.getElementById('btn-confirm-join').addEventListener('click', async () => {
+                const { isAuthenticated, fetchAPI } = await import('../api.js');
+                if (!isAuthenticated()) {
+                    alert("Please log in first to join a community.");
+                    window.location.hash = '#/login';
+                    return;
+                }
+                try {
+                    await fetchAPI('/community/private/join', {
+                        method: 'POST',
+                        body: JSON.stringify({ invite_code: code })
+                    });
+                    const { navigate } = await import('../router.js');
+                    navigate('/community');
+                } catch (e) {
+                    alert(e.message);
+                }
+            });
+        }
+    };
 }

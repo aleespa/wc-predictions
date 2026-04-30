@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from ..database import get_db
 from .. import models, schemas
+from ..auth import get_current_user
+import secrets
 
 router = APIRouter(prefix="/api/community", tags=["community"])
 
@@ -91,13 +93,27 @@ class CommunityBracketOut(BaseModel):
 
 # ── Helper: compute prediction stats for a set of matches ──
 
-def _compute_match_stats(db: Session, match_ids: list[int]) -> dict:
+def _compute_match_stats(db: Session, match_ids: list[int], community_id: Optional[int] = None) -> dict:
     """
     For each match in match_ids, compute aggregate prediction statistics.
     Returns dict: match_id -> { count, avg_home, avg_away, home_win_pct, draw_pct, away_win_pct }
     """
     if not match_ids:
         return {}
+
+    query = db.query(
+        models.Prediction.match_id,
+        func.count(models.Prediction.id).label("cnt"),
+        func.avg(models.Prediction.predicted_home_score).label("avg_h"),
+        func.avg(models.Prediction.predicted_away_score).label("avg_a"),
+    ).filter(models.Prediction.match_id.in_(match_ids))
+
+    if community_id is not None:
+        query = query.join(models.User, models.Prediction.user_id == models.User.id)\
+                     .join(models.user_community, models.User.id == models.user_community.c.user_id)\
+                     .filter(models.user_community.c.community_id == community_id)
+
+    rows = query.group_by(models.Prediction.match_id).all()
 
     rows = (
         db.query(
@@ -122,14 +138,17 @@ def _compute_match_stats(db: Session, match_ids: list[int]) -> dict:
 
     # Compute outcome percentages per match
     for mid in stats:
-        preds = (
-            db.query(
-                models.Prediction.predicted_home_score,
-                models.Prediction.predicted_away_score,
-            )
-            .filter(models.Prediction.match_id == mid)
-            .all()
-        )
+        preds_query = db.query(
+            models.Prediction.predicted_home_score,
+            models.Prediction.predicted_away_score,
+        ).filter(models.Prediction.match_id == mid)
+
+        if community_id is not None:
+            preds_query = preds_query.join(models.User, models.Prediction.user_id == models.User.id)\
+                                     .join(models.user_community, models.User.id == models.user_community.c.user_id)\
+                                     .filter(models.user_community.c.community_id == community_id)
+
+        preds = preds_query.all()
         total = len(preds)
         if total == 0:
             continue
@@ -147,7 +166,7 @@ def _compute_match_stats(db: Session, match_ids: list[int]) -> dict:
 # ── Group stage community stats + implied standings ──
 
 @router.get("/matches", response_model=list[CommunityMatchStats])
-def get_community_matches(db: Session = Depends(get_db)):
+def get_community_matches(community_id: Optional[int] = None, db: Session = Depends(get_db)):
     """
     Get all group-stage matches with community prediction statistics.
     """
@@ -159,7 +178,7 @@ def get_community_matches(db: Session = Depends(get_db)):
     )
 
     match_ids = [m.id for m in matches]
-    stats = _compute_match_stats(db, match_ids)
+    stats = _compute_match_stats(db, match_ids, community_id)
 
     result = []
     for m in matches:
@@ -192,7 +211,7 @@ def get_community_matches(db: Session = Depends(get_db)):
 
 
 @router.get("/standings/{group_letter}", response_model=list[schemas.StandingOut])
-def get_community_standings(group_letter: str, db: Session = Depends(get_db)):
+def get_community_standings(group_letter: str, community_id: Optional[int] = None, db: Session = Depends(get_db)):
     """
     Compute implied group standings from the community's average predicted scores.
     Uses standard rounding of the average to derive the implied result for each match.
@@ -213,7 +232,7 @@ def get_community_standings(group_letter: str, db: Session = Depends(get_db)):
     )
 
     match_ids = [m.id for m in matches]
-    stats = _compute_match_stats(db, match_ids)
+    stats = _compute_match_stats(db, match_ids, community_id)
 
     std_map = {
         t.id: {
@@ -332,7 +351,7 @@ def _calculate_points(
 
 
 @router.get("/points", response_model=CommunityPointsOut)
-def get_community_points(db: Session = Depends(get_db)):
+def get_community_points(community_id: Optional[int] = None, db: Session = Depends(get_db)):
     """
     Compute the community's virtual prediction points.
     For every finished match with predictions, round the community average
@@ -346,7 +365,7 @@ def get_community_points(db: Session = Depends(get_db)):
     )
 
     match_ids = [m.id for m in finished_matches]
-    stats = _compute_match_stats(db, match_ids)
+    stats = _compute_match_stats(db, match_ids, community_id)
 
     total_points = 0
     predictions_count = 0
@@ -409,7 +428,7 @@ def _r32_fully_defined(db: Session) -> bool:
 
 
 @router.get("/bracket", response_model=CommunityBracketOut)
-def get_community_bracket(db: Session = Depends(get_db)):
+def get_community_bracket(community_id: Optional[int] = None, db: Session = Depends(get_db)):
     """
     Get the community knockout bracket, only available once all R32 matches
     have confirmed (real) teams. Propagates winners based on rounded average
@@ -431,7 +450,7 @@ def get_community_bracket(db: Session = Depends(get_db)):
     )
 
     ko_match_ids = [m.id for m in knockout_matches]
-    stats = _compute_match_stats(db, ko_match_ids)
+    stats = _compute_match_stats(db, ko_match_ids, community_id)
 
     # Build maps for lookup
     match_by_id = {m.id: m for m in knockout_matches}
@@ -651,3 +670,106 @@ def _get_community_team_for_slot(
             return None
 
     return None
+
+
+# ── Private Communities Management ─────────────────────
+
+@router.post("/private", response_model=schemas.CommunityOut)
+def create_private_community(
+    req: schemas.CommunityCreate,
+    db: Session = Depends(get_db),
+    user: schemas.UserOut = Depends(get_current_user),
+):
+    invite_code = secrets.token_urlsafe(8)
+    # Ensure uniqueness (though highly unlikely to collide)
+    while db.query(models.Community).filter(models.Community.invite_code == invite_code).first():
+        invite_code = secrets.token_urlsafe(8)
+
+    db_user = db.query(models.User).filter(models.User.id == user.id).first()
+
+    community = models.Community(
+        name=req.name,
+        invite_code=invite_code,
+        creator_id=user.id
+    )
+    db.add(community)
+    # Add creator as a member
+    community.members.append(db_user)
+    
+    db.commit()
+    db.refresh(community)
+
+    return schemas.CommunityOut(
+        id=community.id,
+        name=community.name,
+        invite_code=community.invite_code,
+        creator_id=community.creator_id,
+        created_at=community.created_at,
+        member_count=1
+    )
+
+
+@router.post("/private/join", response_model=schemas.CommunityOut)
+def join_private_community(
+    req: schemas.JoinCommunityRequest,
+    db: Session = Depends(get_db),
+    user: schemas.UserOut = Depends(get_current_user),
+):
+    from fastapi import HTTPException
+    community = db.query(models.Community).filter(models.Community.invite_code == req.invite_code).first()
+    if not community:
+        raise HTTPException(status_code=404, detail="Community not found or invalid invite code")
+
+    db_user = db.query(models.User).filter(models.User.id == user.id).first()
+    if db_user not in community.members:
+        community.members.append(db_user)
+        db.commit()
+        db.refresh(community)
+
+    return schemas.CommunityOut(
+        id=community.id,
+        name=community.name,
+        invite_code=community.invite_code,
+        creator_id=community.creator_id,
+        created_at=community.created_at,
+        member_count=len(community.members)
+    )
+
+
+@router.get("/private/mine", response_model=list[schemas.CommunityOut])
+def get_my_communities(
+    db: Session = Depends(get_db),
+    user: schemas.UserOut = Depends(get_current_user),
+):
+    db_user = db.query(models.User).filter(models.User.id == user.id).first()
+    res = []
+    for c in db_user.communities:
+        res.append(schemas.CommunityOut(
+            id=c.id,
+            name=c.name,
+            invite_code=c.invite_code,
+            creator_id=c.creator_id,
+            created_at=c.created_at,
+            member_count=len(c.members)
+        ))
+    return res
+
+
+from fastapi import HTTPException
+
+@router.delete("/private/{community_id}/leave")
+def leave_community(
+    community_id: int,
+    db: Session = Depends(get_db),
+    user: schemas.UserOut = Depends(get_current_user),
+):
+    db_user = db.query(models.User).filter(models.User.id == user.id).first()
+    community = db.query(models.Community).filter(models.Community.id == community_id).first()
+    if not community:
+        raise HTTPException(status_code=404, detail="Community not found")
+    
+    if community in db_user.communities:
+        db_user.communities.remove(community)
+        db.commit()
+    
+    return {"status": "ok"}
