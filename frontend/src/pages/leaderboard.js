@@ -1,5 +1,6 @@
 import { fetchAPI } from '../api.js';
 import { getCurrentUser } from '../components/navbar.js';
+import { t } from '../i18n.js';
 
 export async function leaderboardPage() {
     let leaderboard = [];
@@ -26,7 +27,7 @@ export async function leaderboardPage() {
             <div class="podium-item ${isCommunity ? 'podium-community' : ''}">
                 <div class="podium-avatar ${isCommunity ? 'podium-avatar-community' : ''}">${initial}</div>
                 <div class="podium-name ${nameClass}">${entry.display_name || entry.username}</div>
-                <div class="podium-points">${entry.total_points} pts</div>
+                <div class="podium-points">${entry.total_points} ${t('common_pts')}</div>
                 <div class="podium-bar"></div>
             </div>
         `;
@@ -38,7 +39,7 @@ export async function leaderboardPage() {
         const rowClass = isCommunity ? 'leaderboard-community-row' : '';
         const nameDisplay = isCommunity
             ? `<span class="leaderboard-community-name">${entry.display_name || entry.username}</span>`
-            : `${entry.display_name || entry.username}${isMe ? ' (you)' : ''}`;
+            : `${entry.display_name || entry.username}${isMe ? t('leaderboard_you') : ''}`;
         return `
             <tr class="${rowClass}">
                 <td class="leaderboard-rank ${entry.rank <= 3 ? 'top-' + entry.rank : ''}">${entry.rank <= 3 ? ['🥇','🥈','🥉'][entry.rank-1] : entry.rank}</td>
@@ -53,8 +54,8 @@ export async function leaderboardPage() {
 
     return `
         <div class="leaderboard-container fade-in">
-            <h1 class="page-title">🏆 Leaderboard</h1>
-            <p class="page-subtitle">See who's leading the prediction game</p>
+            <h1 class="page-title">${t('leaderboard_title')}</h1>
+            <p class="page-subtitle">${t('leaderboard_subtitle')}</p>
 
             ${top3.length >= 3 ? `
                 <div class="podium">
@@ -65,20 +66,20 @@ export async function leaderboardPage() {
             ${leaderboard.length === 0 ? `
                 <div class="empty-state">
                     <div class="empty-state-icon">🏜️</div>
-                    <div class="empty-state-text">No predictions yet. Be the first to play!</div>
-                    <a href="#/matches" class="btn btn-primary">Start Predicting</a>
+                    <div class="empty-state-text">${t('leaderboard_no_preds')}</div>
+                    <a href="#/matches" class="btn btn-primary">${t('leaderboard_start_pred')}</a>
                 </div>
             ` : `
                 <div class="card" style="overflow-x:auto">
                     <table class="leaderboard-table" style="width:100%">
                         <thead>
                             <tr>
-                                <th>Rank</th>
-                                <th>Player</th>
-                                <th>Points</th>
-                                <th>🎯 Exact</th>
-                                <th>✓ Correct</th>
-                                <th>Predictions</th>
+                                <th>${t('leaderboard_th_rank')}</th>
+                                <th>${t('leaderboard_th_player')}</th>
+                                <th>${t('leaderboard_th_points')}</th>
+                                <th>${t('leaderboard_th_exact')}</th>
+                                <th>${t('leaderboard_th_correct')}</th>
+                                <th>${t('leaderboard_th_preds')}</th>
                             </tr>
                         </thead>
                         <tbody>${tableRows}</tbody>

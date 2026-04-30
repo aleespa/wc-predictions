@@ -43,3 +43,9 @@ start();
 window.addEventListener('hashchange', () => {
     renderNavbar();
 });
+
+// Re-render when language changes
+window.addEventListener('languagechange', () => {
+    renderNavbar();
+    handleRoute();
+});

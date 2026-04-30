@@ -2,6 +2,7 @@ import { fetchAPI, isAuthenticated } from '../api.js';
 import { getCurrentUser, clearUserCache } from '../components/navbar.js';
 import { getFlagURL } from '../components/flags.js';
 import { showToast } from '../components/toast.js';
+import { t } from '../i18n.js';
 
 export async function profilePage() {
     if (!isAuthenticated()) {
@@ -40,9 +41,9 @@ export async function profilePage() {
             let badgeClass = 'wrong';
             if (pts === 5) badgeClass = 'exact';
             else if (pts >= 1) badgeClass = 'correct';
-            pointsBadge = `<span class="match-prediction-badge ${badgeClass}">${pts} pts</span>`;
+            pointsBadge = `<span class="match-prediction-badge ${badgeClass}">${pts} ${t('common_pts')}</span>`;
         } else {
-            pointsBadge = '<span class="match-prediction-badge" style="background:var(--bg-glass);color:var(--text-muted)">Pending</span>';
+            pointsBadge = `<span class="match-prediction-badge" style="background:var(--bg-glass);color:var(--text-muted)">${t('profile_badge_pending')}</span>`;
         }
 
         return `
@@ -67,26 +68,26 @@ export async function profilePage() {
                 <div class="profile-avatar">${initial}</div>
                 <div class="profile-info">
                     <h2>${user.display_name || user.username}</h2>
-                    <p>@${user.username} · Joined ${new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+                    <p>@${user.username} · ${t('profile_joined', { date: new Date(user.created_at).toLocaleDateString(t('locale') || 'en-US', { month: 'long', year: 'numeric' }) })}</p>
                 </div>
-                <button class="btn btn-secondary btn-sm" id="edit-profile-btn" style="margin-left:auto">Edit Profile</button>
+                <button class="btn btn-secondary btn-sm" id="edit-profile-btn" style="margin-left:auto">${t('profile_edit_btn')}</button>
             </div>
 
             <div id="edit-profile-form-container" style="display:${user.username.startsWith('user_') ? 'block' : 'none'}; margin-bottom:var(--space-xl); padding:var(--space-lg); background:var(--bg-glass); border-radius:var(--radius-lg); border:1px solid var(--border-light); animation: slideDown 0.3s ease-out">
-                <h3 style="margin-bottom:var(--space-md)">Update Profile</h3>
+                <h3 style="margin-bottom:var(--space-md)">${t('profile_update_title')}</h3>
                 <form id="edit-profile-form" style="display:grid; gap:var(--space-md)">
                     <div>
-                        <label class="form-label">Display Name</label>
-                        <input type="text" id="edit-display-name" class="form-input" value="${user.display_name || ''}" placeholder="How you want to appear on leaderboard" required>
+                        <label class="form-label">${t('profile_label_display')}</label>
+                        <input type="text" id="edit-display-name" class="form-input" value="${user.display_name || ''}" placeholder="${t('profile_placeholder_display')}" required>
                     </div>
                     <div>
-                        <label class="form-label">Username</label>
-                        <input type="text" id="edit-username" class="form-input" value="${user.username.startsWith('user_') ? '' : user.username}" placeholder="unique_username" required>
-                        <small style="color:var(--text-muted); font-size:0.75rem">Only letters, numbers, and underscores allowed</small>
+                        <label class="form-label">${t('profile_label_username')}</label>
+                        <input type="text" id="edit-username" class="form-input" value="${user.username.startsWith('user_') ? '' : user.username}" placeholder="${t('profile_placeholder_username')}" required>
+                        <small style="color:var(--text-muted); font-size:0.75rem">${t('profile_username_hint')}</small>
                     </div>
                     <div style="display:flex; gap:var(--space-md); margin-top:var(--space-sm)">
-                        <button type="submit" class="btn btn-primary btn-sm" id="save-profile-btn">Save Changes</button>
-                        <button type="button" class="btn btn-secondary btn-sm" id="cancel-edit-btn" ${user.username.startsWith('user_') ? 'disabled style="display:none"' : ''}>Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm" id="save-profile-btn">${t('profile_btn_save')}</button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="cancel-edit-btn" ${user.username.startsWith('user_') ? 'disabled style="display:none"' : ''}>${t('profile_btn_cancel')}</button>
                     </div>
                 </form>
             </div>
@@ -94,29 +95,29 @@ export async function profilePage() {
             <div class="profile-stats">
                 <div class="profile-stat-card">
                     <div class="profile-stat-value">${totalPoints}</div>
-                    <div class="profile-stat-label">Total Points</div>
+                    <div class="profile-stat-label">${t('profile_stat_points')}</div>
                 </div>
                 <div class="profile-stat-card">
                     <div class="profile-stat-value">${predictions.length}</div>
-                    <div class="profile-stat-label">Predictions</div>
+                    <div class="profile-stat-label">${t('profile_stat_preds')}</div>
                 </div>
                 <div class="profile-stat-card">
                     <div class="profile-stat-value">${exactScores}</div>
-                    <div class="profile-stat-label">Exact Scores</div>
+                    <div class="profile-stat-label">${t('profile_stat_exact')}</div>
                 </div>
                 <div class="profile-stat-card">
                     <div class="profile-stat-value">${accuracy}%</div>
-                    <div class="profile-stat-label">Accuracy</div>
+                    <div class="profile-stat-label">${t('profile_stat_accuracy')}</div>
                 </div>
             </div>
 
-            <h3 class="page-title" style="font-size:1.3rem;margin-bottom:var(--space-lg)">Your Predictions</h3>
+            <h3 class="page-title" style="font-size:1.3rem;margin-bottom:var(--space-lg)">${t('profile_preds_title')}</h3>
 
             ${predictions.length === 0 ? `
                 <div class="empty-state">
                     <div class="empty-state-icon">🔮</div>
-                    <div class="empty-state-text">You haven't made any predictions yet</div>
-                    <a href="#/matches" class="btn btn-primary">Start Predicting</a>
+                    <div class="empty-state-text">${t('profile_no_preds')}</div>
+                    <a href="#/matches" class="btn btn-primary">${t('leaderboard_start_pred')}</a>
                 </div>
             ` : `
                 <div>${predictionRows}</div>
@@ -155,7 +156,7 @@ export async function profilePage() {
                         method: 'PUT',
                         body: JSON.stringify({ display_name: displayName, username: username })
                     });
-                    showToast('Profile updated successfully', 'success');
+                    showToast(t('toast_prof_updated'), 'success');
                     clearUserCache();
                     location.reload();
                 } catch (err) {

@@ -1,5 +1,6 @@
 import { isAuthenticated, fetchAPI } from '../api.js';
 import { clerk } from '../auth.js';
+import { t, getLanguage, setLanguage } from '../i18n.js';
 
 let cachedUser = null;
 
@@ -23,6 +24,7 @@ export async function renderNavbar() {
     const authed = isAuthenticated();
     const clerkUser = clerk.user;
     const user = authed ? await getCurrentUser() : null;
+    const lang = getLanguage();
 
     nav.innerHTML = `
         <div class="nav-inner">
@@ -34,21 +36,25 @@ export async function renderNavbar() {
             <button class="nav-mobile-toggle" id="nav-toggle" aria-label="Toggle navigation">☰</button>
 
             <div class="nav-links" id="nav-links">
-                <button class="nav-link" data-route="/matches" onclick="location.hash='#/matches'">Matches</button>
-                <button class="nav-link" data-route="/bracket" onclick="location.hash='#/bracket'">Bracket</button>
-                <button class="nav-link" data-route="/community" onclick="location.hash='#/community'">Community</button>
-                <button class="nav-link" data-route="/leaderboard" onclick="location.hash='#/leaderboard'">Leaderboard</button>
+                <button class="nav-link" data-route="/matches" onclick="location.hash='#/matches'">${t('nav_matches')}</button>
+                <button class="nav-link" data-route="/bracket" onclick="location.hash='#/bracket'">🏆 ${t('nav_bracket')}</button>
+                <button class="nav-link" data-route="/community" onclick="location.hash='#/community'">👥 ${t('nav_community')}</button>
+                <button class="nav-link" data-route="/leaderboard" onclick="location.hash='#/leaderboard'">🏆 ${t('nav_leaderboard')}</button>
                 ${authed ? `
-                    ${user?.is_admin ? `<button class="nav-link" data-route="/admin" onclick="location.hash='#/admin'">Admin</button>` : ''}
-                    <button class="nav-link" data-route="/profile" onclick="location.hash='#/profile'">My Predictions</button>
+                    ${user?.is_admin ? `<button class="nav-link" data-route="/admin" onclick="location.hash='#/admin'">⚙️ ${t('nav_admin')}</button>` : ''}
+                    <button class="nav-link" data-route="/profile" onclick="location.hash='#/profile'">🔮 ${t('nav_my_predictions')}</button>
                     <div class="nav-user-info">
                         <img src="${clerkUser.imageUrl}" class="nav-user-avatar" alt="User avatar">
                         <span class="nav-link nav-user-name" id="nav-username"></span>
                     </div>
-                    <button class="nav-link" id="nav-logout">Logout</button>
+                    <button class="nav-link" id="nav-logout">${t('nav_logout')}</button>
                 ` : `
-                    <button class="nav-link" data-route="/login" onclick="location.hash='#/login'">Login</button>
+                    <button class="nav-link" data-route="/login" onclick="location.hash='#/login'">${t('nav_login')}</button>
                 `}
+                <div class="nav-lang-toggle" style="display:flex;align-items:center;margin-left:8px;border-left:1px solid var(--border-medium);padding-left:12px">
+                    <button class="btn btn-sm ${lang === 'en' ? 'btn-primary' : 'btn-secondary'}" onclick="window.__setLang('en')" style="padding:4px 8px;font-size:0.7rem;border-radius:4px 0 0 4px">EN</button>
+                    <button class="btn btn-sm ${lang === 'es' ? 'btn-primary' : 'btn-secondary'}" onclick="window.__setLang('es')" style="padding:4px 8px;font-size:0.7rem;border-radius:0 4px 4px 0">ES</button>
+                </div>
             </div>
         </div>
     `;
@@ -64,6 +70,8 @@ export async function renderNavbar() {
     links?.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', () => links.classList.remove('open'));
     });
+
+    window.__setLang = (l) => setLanguage(l);
 
     // Logout
     if (authed) {

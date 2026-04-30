@@ -1,12 +1,13 @@
 import { fetchAPI, isAuthenticated } from '../api.js';
 import { showToast } from '../components/toast.js';
 import { getFlagURL } from '../components/flags.js';
+import { t } from '../i18n.js';
 
 /**
  * Renders a single team slot in the bracket.
  */
 function renderSlotTeam(slot, side) {
-    if (!slot) return `<div class="bracket-team bracket-tbd"><span class="bracket-team-name">TBD</span></div>`;
+    if (!slot) return `<div class="bracket-team bracket-tbd"><span class="bracket-team-name">${t('bracket_tbd')}</span></div>`;
 
     if (slot.team) {
         const predictedClass = slot.is_predicted ? 'bracket-predicted' : '';
@@ -14,13 +15,13 @@ function renderSlotTeam(slot, side) {
             <div class="bracket-team ${predictedClass}" data-side="${side}">
                 <img src="${getFlagURL(slot.team.code)}" alt="${slot.team.code}" class="bracket-team-flag" />
                 <span class="bracket-team-name">${slot.team.name}</span>
-                ${slot.is_predicted ? '<span class="bracket-predicted-badge" title="Based on your predictions">⟡</span>' : ''}
+                ${slot.is_predicted ? `<span class="bracket-predicted-badge" title="${t('bracket_legend_pred')}">⟡</span>` : ''}
             </div>
         `;
     }
 
     // Placeholder slot
-    const label = slot.slot_label || 'TBD';
+    const label = slot.slot_label || t('bracket_tbd');
     return `
         <div class="bracket-team bracket-tbd">
             <span class="bracket-team-name bracket-placeholder">${label}</span>
@@ -92,7 +93,7 @@ function renderRound(title, matches, options = {}) {
         <div class="bracket-round">
             <div class="bracket-round-header">
                 <h3 class="bracket-round-title">${title}</h3>
-                <span class="bracket-round-count">${matches.length} matches</span>
+                <span class="bracket-round-count">${matches.length === 1 ? t('bracket_round_match', { count: matches.length }) : t('bracket_round_matches', { count: matches.length })}</span>
             </div>
             <div class="bracket-round-matches">
                 ${matches.map(m => renderBracketMatch(m, options)).join('')}
@@ -128,21 +129,21 @@ export async function bracketPage() {
     const html = `
         <div class="bracket-page fade-in">
             <div class="bracket-hero">
-                <h1 class="page-title">🏆 Knockout Bracket</h1>
+                <h1 class="page-title">${t('bracket_title')}</h1>
                 <p class="page-subtitle">
                     ${authed
-                        ? 'Your predicted bracket based on your group-stage predictions. Click any match with resolved teams to predict the score.'
-                        : 'Log in to see your personalized bracket based on your predictions.'}
+                        ? t('bracket_subtitle_authed')
+                        : t('bracket_subtitle_unauthed')}
                 </p>
                 ${authed ? `
                     <div class="bracket-stats-bar">
                         <div class="bracket-stat">
                             <span class="bracket-stat-value">${predictedCount}</span>
-                            <span class="bracket-stat-label">Predicted</span>
+                            <span class="bracket-stat-label">${t('bracket_stat_pred')}</span>
                         </div>
                         <div class="bracket-stat">
                             <span class="bracket-stat-value">${totalKO}</span>
-                            <span class="bracket-stat-label">Total Matches</span>
+                            <span class="bracket-stat-label">${t('bracket_stat_total')}</span>
                         </div>
                     </div>
                 ` : ''}
@@ -151,31 +152,31 @@ export async function bracketPage() {
             <div class="bracket-legend">
                 <div class="bracket-legend-item">
                     <span class="bracket-legend-dot bracket-legend-predicted"></span>
-                    <span>Based on your predictions</span>
+                    <span>${t('bracket_legend_pred')}</span>
                 </div>
                 <div class="bracket-legend-item">
                     <span class="bracket-legend-dot bracket-legend-confirmed"></span>
-                    <span>Confirmed (real result)</span>
+                    <span>${t('bracket_legend_conf')}</span>
                 </div>
                 <div class="bracket-legend-item">
                     <span class="bracket-legend-dot bracket-legend-tbd"></span>
-                    <span>Awaiting group results</span>
+                    <span>${t('bracket_legend_tbd')}</span>
                 </div>
             </div>
 
             <div class="bracket-view-toggle">
-                <button class="bracket-view-btn active" data-view="rounds" id="btn-rounds-view">Rounds View</button>
-                <button class="bracket-view-btn" data-view="tree" id="btn-tree-view">Tree View</button>
+                <button class="bracket-view-btn active" data-view="rounds" id="btn-rounds-view">${t('bracket_view_rounds')}</button>
+                <button class="bracket-view-btn" data-view="tree" id="btn-tree-view">${t('bracket_view_tree')}</button>
             </div>
 
             <div id="bracket-content">
                 <div id="bracket-rounds-view" class="bracket-container">
-                    ${renderRound('Round of 32', bracket.round_of_32)}
-                    ${renderRound('Round of 16', bracket.round_of_16, { compact: true })}
-                    ${renderRound('Quarter-finals', bracket.quarter_finals, { compact: true })}
-                    ${renderRound('Semi-finals', bracket.semi_finals, { compact: true })}
-                    ${bracket.third_place ? renderRound('Third Place', [bracket.third_place], { compact: true }) : ''}
-                    ${bracket.final ? renderRound('🏆 Final', [bracket.final]) : ''}
+                    ${renderRound(t('stage_r32'), bracket.round_of_32)}
+                    ${renderRound(t('stage_r16'), bracket.round_of_16, { compact: true })}
+                    ${renderRound(t('stage_qf'), bracket.quarter_finals, { compact: true })}
+                    ${renderRound(t('stage_sf'), bracket.semi_finals, { compact: true })}
+                    ${bracket.third_place ? renderRound(t('stage_3rd'), [bracket.third_place], { compact: true }) : ''}
+                    ${bracket.final ? renderRound(t('stage_final'), [bracket.final]) : ''}
                 </div>
                 <div id="bracket-tree-view" class="bracket-tree-container" style="display:none;">
                     ${renderTreeBracket(bracket)}
@@ -230,25 +231,25 @@ function renderTreeBracket(bracket) {
     let treeHtml = `
         <div class="tree-bracket">
             <div class="tree-column tree-col-r32">
-                <div class="tree-column-header">Round of 32</div>
+                <div class="tree-column-header">${t('stage_r32')}</div>
                 ${r32.map(m => renderTreeMatch(m)).join('')}
             </div>
             <div class="tree-column tree-col-r16">
-                <div class="tree-column-header">Round of 16</div>
+                <div class="tree-column-header">${t('stage_r16')}</div>
                 ${r16.map(m => renderTreeMatch(m)).join('')}
             </div>
             <div class="tree-column tree-col-qf">
-                <div class="tree-column-header">Quarter-finals</div>
+                <div class="tree-column-header">${t('stage_qf')}</div>
                 ${qf.map(m => renderTreeMatch(m)).join('')}
             </div>
             <div class="tree-column tree-col-sf">
-                <div class="tree-column-header">Semi-finals</div>
+                <div class="tree-column-header">${t('stage_sf')}</div>
                 ${sf.map(m => renderTreeMatch(m)).join('')}
             </div>
             <div class="tree-column tree-col-final">
-                <div class="tree-column-header">🏆 Final</div>
+                <div class="tree-column-header">${t('stage_final')}</div>
                 ${final ? renderTreeMatch(final) : ''}
-                ${thirdPlace ? `<div style="margin-top:var(--space-xl)"><div class="tree-column-header" style="font-size:0.75rem">3rd Place</div>${renderTreeMatch(thirdPlace)}</div>` : ''}
+                ${thirdPlace ? `<div style="margin-top:var(--space-xl)"><div class="tree-column-header" style="font-size:0.75rem">${t('stage_3rd')}</div>${renderTreeMatch(thirdPlace)}</div>` : ''}
             </div>
         </div>
     `;
@@ -271,7 +272,7 @@ function renderTreeMatch(match) {
 
     function teamRow(slot, score, side) {
         if (!slot || !slot.team) {
-            const label = slot?.slot_label || 'TBD';
+            const label = slot?.slot_label || t('bracket_tbd');
             return `
                 <div class="tree-team tree-tbd ${side}">
                     <span class="tree-team-name tree-placeholder">${label}</span>

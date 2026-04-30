@@ -1,5 +1,6 @@
 import { fetchAPI, isAuthenticated } from '../api.js';
 import { renderMatchCard } from '../components/matchCard.js';
+import { t } from '../i18n.js';
 
 export async function homePage() {
     const authed = isAuthenticated();
@@ -19,31 +20,31 @@ export async function homePage() {
 
     const html = `
         <div class="hero">
-            <div class="hero-badge">🏆 FIFA World Cup 2026 · USA · Mexico · Canada</div>
-            <h1>Predict. Compete.<br/><span class="gradient-text">Win the Glory.</span></h1>
-            <p>Make your predictions for every World Cup 2026 match. Earn points for accuracy and climb the global leaderboard.</p>
+            <div class="hero-badge">${t('home_hero_badge')}</div>
+            <h1>${t('home_hero_title')}</h1>
+            <p>${t('home_hero_desc')}</p>
             <div class="hero-actions">
                 ${authed
-                    ? '<a href="#/matches" class="btn btn-primary btn-lg">Browse Matches</a><a href="#/bracket" class="btn btn-secondary btn-lg">🏆 Bracket</a><a href="#/leaderboard" class="btn btn-secondary btn-lg">Leaderboard</a>'
-                    : '<a href="#/register" class="btn btn-primary btn-lg">Get Started Free</a><a href="#/matches" class="btn btn-secondary btn-lg">View Matches</a>'
+                    ? `<a href="#/matches" class="btn btn-primary btn-lg">${t('home_btn_browse')}</a><a href="#/bracket" class="btn btn-secondary btn-lg">${t('home_btn_bracket')}</a><a href="#/leaderboard" class="btn btn-secondary btn-lg">${t('home_btn_leaderboard')}</a>`
+                    : `<a href="#/register" class="btn btn-primary btn-lg">${t('home_btn_get_started')}</a><a href="#/matches" class="btn btn-secondary btn-lg">${t('home_btn_view_matches')}</a>`
                 }
             </div>
             <div class="hero-stats">
                 <div class="hero-stat">
                     <div class="hero-stat-value">48</div>
-                    <div class="hero-stat-label">Teams</div>
+                    <div class="hero-stat-label">${t('home_stat_teams')}</div>
                 </div>
                 <div class="hero-stat">
                     <div class="hero-stat-value">104</div>
-                    <div class="hero-stat-label">Matches</div>
+                    <div class="hero-stat-label">${t('home_stat_matches')}</div>
                 </div>
                 <div class="hero-stat">
                     <div class="hero-stat-value">16</div>
-                    <div class="hero-stat-label">Venues</div>
+                    <div class="hero-stat-label">${t('home_stat_venues')}</div>
                 </div>
                 <div class="hero-stat">
                     <div class="hero-stat-value">5</div>
-                    <div class="hero-stat-label">Max Points</div>
+                    <div class="hero-stat-label">${t('home_stat_points')}</div>
                 </div>
             </div>
         </div>
@@ -51,8 +52,8 @@ export async function homePage() {
         ${upcomingMatches.length > 0 ? `
             <section class="fade-in" style="margin-top: var(--space-2xl)">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-lg)">
-                    <h2 class="page-title" style="margin-bottom:0">Upcoming Matches</h2>
-                    <a href="#/matches" class="btn btn-secondary btn-sm">View All →</a>
+                    <h2 class="page-title" style="margin-bottom:0">${t('home_upcoming')}</h2>
+                    <a href="#/matches" class="btn btn-secondary btn-sm">${t('home_view_all')}</a>
                 </div>
                 <div class="matches-grid">${matchCards}</div>
             </section>
@@ -61,17 +62,17 @@ export async function homePage() {
         ${top5.length > 0 ? `
             <section class="fade-in" style="margin-top: var(--space-2xl)">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-lg)">
-                    <h2 class="page-title" style="margin-bottom:0">Top Players</h2>
-                    <a href="#/leaderboard" class="btn btn-secondary btn-sm">Full Rankings →</a>
+                    <h2 class="page-title" style="margin-bottom:0">${t('home_top_players')}</h2>
+                    <a href="#/leaderboard" class="btn btn-secondary btn-sm">${t('home_full_rankings')}</a>
                 </div>
                 <div class="card">
                     <table class="leaderboard-table">
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Player</th>
-                                <th>Points</th>
-                                <th>Predictions</th>
+                                <th>${t('leaderboard_th_player')}</th>
+                                <th>${t('leaderboard_th_points')}</th>
+                                <th>${t('leaderboard_th_preds')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -91,19 +92,19 @@ export async function homePage() {
 
         <section class="fade-in" style="margin-top: var(--space-2xl)">
             <div class="card" style="text-align:center;padding:var(--space-2xl)">
-                <h3 style="margin-bottom:var(--space-md)">🏅 How Scoring Works</h3>
+                <h3 style="margin-bottom:var(--space-md)">${t('home_scoring_works')}</h3>
                 <div class="points-preview-grid" style="max-width:500px;margin:0 auto">
                     <div class="points-preview-item">
-                        <div class="points-preview-value" style="color:var(--accent-gold)">5 pts</div>
-                        <div class="points-preview-label">Exact Score</div>
+                        <div class="points-preview-value" style="color:var(--accent-gold)">5 ${t('common_pts')}</div>
+                        <div class="points-preview-label">${t('home_exact_score')}</div>
                     </div>
                     <div class="points-preview-item">
-                        <div class="points-preview-value" style="color:var(--accent-green)">3 pts</div>
-                        <div class="points-preview-label">Result + Goal Diff</div>
+                        <div class="points-preview-value" style="color:var(--accent-green)">3 ${t('common_pts')}</div>
+                        <div class="points-preview-label">${t('home_result_gd')}</div>
                     </div>
                     <div class="points-preview-item">
-                        <div class="points-preview-value" style="color:var(--accent-blue)">1 pt</div>
-                        <div class="points-preview-label">Correct Outcome</div>
+                        <div class="points-preview-value" style="color:var(--accent-blue)">1 ${t('common_pt')}</div>
+                        <div class="points-preview-label">${t('home_correct_outcome')}</div>
                     </div>
                 </div>
             </div>

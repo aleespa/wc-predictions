@@ -1,4 +1,5 @@
 import { getFlagURL } from './flags.js';
+import { t } from '../i18n.js';
 
 export function renderMatchCard(match, options = {}) {
     const { onClick, showPrediction = true } = options;
@@ -15,11 +16,11 @@ export function renderMatchCard(match, options = {}) {
 
     let statusHtml = '';
     if (isFinished) {
-        statusHtml = '<span class="match-status finished">✓ Finished</span>';
+        statusHtml = `<span class="match-status finished">${t('match_status_finished')}</span>`;
     } else if (hasPrediction) {
-        statusHtml = '<span class="match-status predicted">⚡ Predicted</span>';
+        statusHtml = `<span class="match-status predicted">${t('match_status_predicted')}</span>`;
     } else {
-        statusHtml = '<span class="match-status upcoming">● Upcoming</span>';
+        statusHtml = `<span class="match-status upcoming">${t('match_status_upcoming')}</span>`;
     }
 
     let scoreHtml;
@@ -37,21 +38,21 @@ export function renderMatchCard(match, options = {}) {
         const pts = match.user_prediction.points_awarded;
         const pred = match.user_prediction;
         let badgeClass = 'wrong';
-        let badgeText = `${pred.predicted_home_score}-${pred.predicted_away_score} · 0 pts`;
+        let badgeText = t('match_badge_0pts', { h: pred.predicted_home_score, a: pred.predicted_away_score });
         if (pts === 5) {
             badgeClass = 'exact';
-            badgeText = `${pred.predicted_home_score}-${pred.predicted_away_score} · 5 pts 🎯`;
+            badgeText = t('match_badge_exact', { h: pred.predicted_home_score, a: pred.predicted_away_score });
         } else if (pts === 3) {
             badgeClass = 'correct';
-            badgeText = `${pred.predicted_home_score}-${pred.predicted_away_score} · 3 pts`;
+            badgeText = t('match_badge_3pts', { h: pred.predicted_home_score, a: pred.predicted_away_score });
         } else if (pts === 1) {
             badgeClass = 'correct';
-            badgeText = `${pred.predicted_home_score}-${pred.predicted_away_score} · 1 pt`;
+            badgeText = t('match_badge_1pt', { h: pred.predicted_home_score, a: pred.predicted_away_score });
         }
         predictionBadge = `<span class="match-prediction-badge ${badgeClass}">${badgeText}</span>`;
     } else if (showPrediction && hasPrediction && !isFinished) {
         const pred = match.user_prediction;
-        predictionBadge = `<span class="match-prediction-badge correct">Your pick: ${pred.predicted_home_score}-${pred.predicted_away_score}</span>`;
+        predictionBadge = `<span class="match-prediction-badge correct">${t('match_your_pick', { h: pred.predicted_home_score, a: pred.predicted_away_score })}</span>`;
     }
 
     const classes = ['match-card'];
@@ -63,7 +64,7 @@ export function renderMatchCard(match, options = {}) {
     return `
         <div class="${classes.join(' ')}" ${clickAttr} id="match-card-${match.id}">
             <div class="match-card-header">
-                <span class="match-group-badge">${match.group_letter ? 'Group ' + match.group_letter : match.stage}</span>
+                <span class="match-group-badge">${match.group_letter ? t('stage_group', { group: match.group_letter }) : t('stage_' + match.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || match.stage}</span>
                 ${statusHtml}
             </div>
             <div class="match-teams">

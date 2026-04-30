@@ -1,14 +1,15 @@
 import { fetchAPI } from '../api.js';
 import { getFlagURL } from '../components/flags.js';
+import { t } from '../i18n.js';
 
-const FILTERS = [
-    { label: '🌍 All', type: 'all', val: 'All' },
-    ...['A','B','C','D','E','F','G','H','I','J','K','L'].map(g => ({ label: `Grp ${g}`, type: 'group', val: g })),
-    { label: 'R32', type: 'stage', val: 'Round of 32' },
-    { label: 'R16', type: 'stage', val: 'Round of 16' },
-    { label: 'QF', type: 'stage', val: 'Quarter-finals' },
-    { label: 'SF', type: 'stage', val: 'Semi-finals' },
-    { label: 'Final', type: 'stage', val: 'Final' },
+const getFilters = () => [
+    { label: t('matches_filter_all'), type: 'all', val: 'All' },
+    ...['A','B','C','D','E','F','G','H','I','J','K','L'].map(g => ({ label: t('matches_filter_grp', { group: g }), type: 'group', val: g })),
+    { label: t('matches_filter_r32'), type: 'stage', val: 'Round of 32' },
+    { label: t('matches_filter_r16'), type: 'stage', val: 'Round of 16' },
+    { label: t('matches_filter_qf'), type: 'stage', val: 'Quarter-finals' },
+    { label: t('matches_filter_sf'), type: 'stage', val: 'Semi-finals' },
+    { label: t('matches_filter_final'), type: 'stage', val: 'Final' },
 ];
 
 /**
@@ -28,9 +29,9 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
 
     let statusHtml = '';
     if (isFinished) {
-        statusHtml = '<span class="match-status finished">✓ Finished</span>';
+        statusHtml = `<span class="match-status finished">${t('match_status_finished')}</span>`;
     } else {
-        statusHtml = '<span class="match-status upcoming">● Upcoming</span>';
+        statusHtml = `<span class="match-status upcoming">${t('match_status_upcoming')}</span>`;
     }
 
     let scoreHtml;
@@ -52,20 +53,20 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
         let impliedResult = '';
         let impliedColor = '';
         if (roundedHome > roundedAway) {
-            impliedResult = `${match.home_team?.name || 'Home'} Win`;
+            impliedResult = t('community_win', { team: match.home_team?.name || 'Home' });
             impliedColor = 'var(--accent-green)';
         } else if (roundedAway > roundedHome) {
-            impliedResult = `${match.away_team?.name || 'Away'} Win`;
+            impliedResult = t('community_win', { team: match.away_team?.name || 'Away' });
             impliedColor = 'var(--accent-blue)';
         } else {
-            impliedResult = 'Draw';
+            impliedResult = t('community_draw');
             impliedColor = 'var(--accent-gold)';
         }
 
         communitySection = `
             <div class="community-stats-section">
                 <div class="community-avg-score">
-                    <div class="community-avg-label">Community Average</div>
+                    <div class="community-avg-label">${t('community_avg_label')}</div>
                     <div class="community-avg-value">${match.avg_home_score.toFixed(1)} — ${match.avg_away_score.toFixed(1)}</div>
                     <div class="community-implied" style="color:${impliedColor}">
                         → ${roundedHome} – ${roundedAway} · ${impliedResult}
@@ -96,10 +97,10 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
                     if (!detail) return '';
                     const pts = detail.points_awarded;
                     let color = 'var(--accent-red)';
-                    let label = `${detail.predicted_home}–${detail.predicted_away} · 0 pts ❌`;
-                    if (pts === 5) { color = 'var(--accent-gold)'; label = `${detail.predicted_home}–${detail.predicted_away} · 5 pts 🎯`; }
-                    else if (pts === 3) { color = 'var(--accent-green)'; label = `${detail.predicted_home}–${detail.predicted_away} · 3 pts ✓`; }
-                    else if (pts === 1) { color = 'var(--accent-blue)'; label = `${detail.predicted_home}–${detail.predicted_away} · 1 pt ✓`; }
+                    let label = t('match_badge_0pts', { h: detail.predicted_home, a: detail.predicted_away }) + ' ❌';
+                    if (pts === 5) { color = 'var(--accent-gold)'; label = t('match_badge_exact', { h: detail.predicted_home, a: detail.predicted_away }); }
+                    else if (pts === 3) { color = 'var(--accent-green)'; label = t('match_badge_3pts', { h: detail.predicted_home, a: detail.predicted_away }) + ' ✓'; }
+                    else if (pts === 1) { color = 'var(--accent-blue)'; label = t('match_badge_1pt', { h: detail.predicted_home, a: detail.predicted_away }) + ' ✓'; }
                     return `
                         <div class="community-match-points" style="color:${color}">
                             ${label}
@@ -108,7 +109,7 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
                 })()}
                 <div class="community-count">
                     <span class="community-count-icon">👥</span>
-                    ${match.prediction_count} prediction${match.prediction_count !== 1 ? 's' : ''}
+                    ${match.prediction_count === 1 ? t('community_pred_count', { count: match.prediction_count }) : t('community_preds_count', { count: match.prediction_count })}
                 </div>
             </div>
         `;
@@ -116,8 +117,8 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
         communitySection = `
             <div class="community-stats-section community-empty">
                 <div class="community-empty-icon">📊</div>
-                <div class="community-empty-text">No predictions yet</div>
-                <div class="community-empty-sub">Be the first to predict this match!</div>
+                <div class="community-empty-text">${t('community_no_preds')}</div>
+                <div class="community-empty-sub">${t('community_be_first')}</div>
             </div>
         `;
     }
@@ -128,7 +129,7 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
     return `
         <div class="${classes.join(' ')}" id="community-match-${match.match_id}">
             <div class="match-card-header">
-                <span class="match-group-badge">${match.group_letter ? 'Group ' + match.group_letter : match.stage}</span>
+                <span class="match-group-badge">${match.group_letter ? t('stage_group', { group: match.group_letter }) : t('stage_' + match.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || match.stage}</span>
                 ${statusHtml}
             </div>
             <div class="match-teams">
@@ -184,10 +185,10 @@ function renderStandingsTable(standings, groupLetter, label = 'Community Predict
     return `
         <div class="card" style="margin-bottom:var(--space-lg);overflow-x:auto;">
             <h3 style="margin-top:0;margin-bottom:var(--space-md)">
-                <span style="color:var(--accent-purple-light)">👥</span> ${label} Standings — Group ${groupLetter}
+                <span style="color:var(--accent-purple-light)">👥</span> ${t('community_standings_title', { label: label, group: groupLetter })}
             </h3>
             <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:var(--space-md)">
-                Derived from rounding the community's average predicted scores
+                ${t('community_standings_sub')}
             </p>
             <table style="width:100%;border-collapse:collapse;font-size:0.95rem;white-space:nowrap;">
                 <thead>
@@ -223,7 +224,7 @@ function renderCommunityBracketMatch(match) {
 
     function renderSlot(slot) {
         if (!slot || !slot.team) {
-            const label = slot?.slot_label || 'TBD';
+            const label = slot?.slot_label || t('bracket_tbd');
             return `
                 <div class="bracket-team bracket-tbd">
                     <span class="bracket-team-name bracket-placeholder">${label}</span>
@@ -332,7 +333,7 @@ export async function communityPage() {
         ? Math.round(totalPredictions / matchesWithPredictions.length)
         : 0;
 
-    const tabs = FILTERS.map((f, i) =>
+    const tabs = getFilters().map((f, i) =>
         `<button class="group-tab ${i === 0 ? 'active' : ''}" data-type="${f.type}" data-val="${f.val}">${f.label}</button>`
     ).join('');
 
@@ -347,29 +348,29 @@ export async function communityPage() {
             <div class="community-hero">
                 <h1 class="page-title">
                     <span style="background:linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">
-                        👥 Community Predictions
+                        👥 ${t('community_title')}
                     </span>
                 </h1>
-                <p class="page-subtitle">See what the crowd thinks — aggregated prediction statistics from all users</p>
+                <p class="page-subtitle">${t('community_subtitle')}</p>
 
                 ${predCount > 0 ? `
                     <div class="community-points-hero">
                         <div class="community-points-main">
                             <div class="community-points-value">${totalPts}</div>
-                            <div class="community-points-label">Community Points</div>
+                            <div class="community-points-label">${t('community_pts_label')}</div>
                         </div>
                         <div class="community-points-details">
                             <div class="community-points-detail">
                                 <span class="community-points-detail-value" style="color:var(--accent-gold)">${exactCount}</span>
-                                <span class="community-points-detail-label">🎯 Exact</span>
+                                <span class="community-points-detail-label">${t('community_pts_exact')}</span>
                             </div>
                             <div class="community-points-detail">
                                 <span class="community-points-detail-value" style="color:var(--accent-green)">${correctCount}</span>
-                                <span class="community-points-detail-label">✓ Correct</span>
+                                <span class="community-points-detail-label">${t('community_pts_correct')}</span>
                             </div>
                             <div class="community-points-detail">
                                 <span class="community-points-detail-value" style="color:var(--accent-blue)">${predCount}</span>
-                                <span class="community-points-detail-label">Matches</span>
+                                <span class="community-points-detail-label">${t('community_pts_matches')}</span>
                             </div>
                         </div>
                     </div>
@@ -378,15 +379,15 @@ export async function communityPage() {
                 <div class="community-summary-stats">
                     <div class="community-summary-stat">
                         <div class="community-summary-value">${matchesWithPredictions.length}</div>
-                        <div class="community-summary-label">Matches Predicted</div>
+                        <div class="community-summary-label">${t('community_stat_pred_matches')}</div>
                     </div>
                     <div class="community-summary-stat">
                         <div class="community-summary-value">${totalPredictions}</div>
-                        <div class="community-summary-label">Total Predictions</div>
+                        <div class="community-summary-label">${t('community_stat_total_preds')}</div>
                     </div>
                     <div class="community-summary-stat">
                         <div class="community-summary-value">${avgPredictionsPerMatch}</div>
-                        <div class="community-summary-label">Avg per Match</div>
+                        <div class="community-summary-label">${t('community_stat_avg')}</div>
                     </div>
                 </div>
             </div>
@@ -453,18 +454,19 @@ export async function communityPage() {
 
                 if (filtered.length === 0) {
                     if (filterType === 'stage') {
+                        let stg = filterVal === 'Round of 32' ? t('stage_r32') : filterVal === 'Round of 16' ? t('stage_r16') : filterVal === 'Quarter-finals' ? t('stage_qf') : filterVal === 'Semi-finals' ? t('stage_sf') : filterVal === 'Final' ? t('stage_final') : filterVal;
                         grid.innerHTML = `
                             <div class="empty-state" style="grid-column:1/-1">
                                 <div class="empty-state-icon">🏆</div>
-                                <div class="empty-state-text">Awaiting ${filterVal} Bracket</div>
-                                <div style="color:var(--text-muted);font-size:0.85rem;margin-top:8px">Pairs will be scheduled once the group stages conclude.</div>
+                                <div class="empty-state-text">${t('matches_awaiting_bracket', { stage: stg })}</div>
+                                <div style="color:var(--text-muted);font-size:0.85rem;margin-top:8px">${t('matches_awaiting_sub')}</div>
                             </div>
                         `;
                     } else {
                         grid.innerHTML = `
                             <div class="empty-state" style="grid-column:1/-1">
                                 <div class="empty-state-icon">📭</div>
-                                <div class="empty-state-text">No matches in this filter yet</div>
+                                <div class="empty-state-text">${t('matches_no_matches')}</div>
                             </div>
                         `;
                     }
@@ -507,31 +509,31 @@ async function loadCommunityBracket(container) {
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-md);margin-bottom:var(--space-lg)">
                     <div>
                         <h2 style="margin:0;font-size:1.3rem;font-weight:800">
-                            🏆 Community Knockout Bracket
+                            ${t('community_ko_title')}
                         </h2>
                         <p style="margin:var(--space-xs) 0 0;font-size:0.85rem;color:var(--text-muted)">
-                            Bracket progression derived from the community's average predictions
+                            ${t('community_ko_sub')}
                         </p>
                     </div>
                     <div class="bracket-stats-bar" style="margin:0">
                         <div class="bracket-stat">
                             <span class="bracket-stat-value">${predictedCount}</span>
-                            <span class="bracket-stat-label">With Predictions</span>
+                            <span class="bracket-stat-label">${t('community_ko_stat_pred')}</span>
                         </div>
                         <div class="bracket-stat">
                             <span class="bracket-stat-value">${allKoMatches.length}</span>
-                            <span class="bracket-stat-label">KO Matches</span>
+                            <span class="bracket-stat-label">${t('community_ko_stat_ko')}</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="bracket-container">
-                    ${renderBracketRound('Round of 32', bracket.round_of_32)}
-                    ${renderBracketRound('Round of 16', bracket.round_of_16)}
-                    ${renderBracketRound('Quarter-finals', bracket.quarter_finals)}
-                    ${renderBracketRound('Semi-finals', bracket.semi_finals)}
-                    ${bracket.third_place ? renderBracketRound('Third Place', [bracket.third_place]) : ''}
-                    ${bracket.final ? renderBracketRound('🏆 Final', [bracket.final]) : ''}
+                    ${renderBracketRound(t('stage_r32'), bracket.round_of_32)}
+                    ${renderBracketRound(t('stage_r16'), bracket.round_of_16)}
+                    ${renderBracketRound(t('stage_qf'), bracket.quarter_finals)}
+                    ${renderBracketRound(t('stage_sf'), bracket.semi_finals)}
+                    ${bracket.third_place ? renderBracketRound(t('stage_3rd'), [bracket.third_place]) : ''}
+                    ${bracket.final ? renderBracketRound(t('stage_final'), [bracket.final]) : ''}
                 </div>
             </div>
         `;

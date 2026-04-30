@@ -1,18 +1,18 @@
 import { fetchAPI } from '../api.js';
 import { renderMatchCard } from '../components/matchCard.js';
 import { getFlagURL } from '../components/flags.js';
-
-const FILTERS = [
-    { label: '🌍 All', type: 'all', val: 'All' },
-    ...['A','B','C','D','E','F','G','H','I','J','K','L'].map(g => ({ label: `Grp ${g}`, type: 'group', val: g })),
-    { label: 'R32', type: 'stage', val: 'Round of 32' },
-    { label: 'R16', type: 'stage', val: 'Round of 16' },
-    { label: 'QF', type: 'stage', val: 'Quarter-finals' },
-    { label: 'SF', type: 'stage', val: 'Semi-finals' },
-    { label: 'Final', type: 'stage', val: 'Final' },
-];
+import { t } from '../i18n.js';
 
 export async function matchesPage() {
+    const FILTERS = [
+        { label: t('matches_filter_all'), type: 'all', val: 'All' },
+        ...['A','B','C','D','E','F','G','H','I','J','K','L'].map(g => ({ label: t('matches_filter_grp', { group: g }), type: 'group', val: g })),
+        { label: t('matches_filter_r32'), type: 'stage', val: 'Round of 32' },
+        { label: t('matches_filter_r16'), type: 'stage', val: 'Round of 16' },
+        { label: t('matches_filter_qf'), type: 'stage', val: 'Quarter-finals' },
+        { label: t('matches_filter_sf'), type: 'stage', val: 'Semi-finals' },
+        { label: t('matches_filter_final'), type: 'stage', val: 'Final' },
+    ];
     let matches = [];
     try {
         matches = await fetchAPI('/matches');
@@ -26,8 +26,8 @@ export async function matchesPage() {
 
     const html = `
         <div class="fade-in">
-            <h1 class="page-title">Matches</h1>
-            <p class="page-subtitle">Click any match to submit your prediction</p>
+            <h1 class="page-title">${t('matches_title')}</h1>
+            <p class="page-subtitle">${t('matches_subtitle')}</p>
 
             <div class="group-tabs" id="group-tabs">
                 ${tabs}
@@ -82,18 +82,18 @@ export async function matchesPage() {
 
                         standingsContainer.innerHTML = `
                             <div class="card" style="margin-bottom:var(--space-lg);overflow-x:auto;">
-                                <h3 style="margin-top:0;margin-bottom:var(--space-md)">Group ${filterVal} Standings</h3>
+                                <h3 style="margin-top:0;margin-bottom:var(--space-md)">${t('matches_standings_title', { group: filterVal })}</h3>
                                 <table style="width:100%;border-collapse:collapse;font-size:0.95rem;white-space:nowrap;">
                                     <thead>
                                         <tr style="border-bottom:2px solid var(--border-medium);color:var(--text-muted)">
                                             <th style="padding:8px 4px;text-align:center">#</th>
-                                            <th style="padding:8px 4px;text-align:left">Team</th>
-                                            <th style="padding:8px 4px;text-align:center">MP</th>
-                                            <th style="padding:8px 4px;text-align:center">W</th>
-                                            <th style="padding:8px 4px;text-align:center">D</th>
-                                            <th style="padding:8px 4px;text-align:center">L</th>
-                                            <th style="padding:8px 4px;text-align:center">GD</th>
-                                            <th style="padding:8px 4px;text-align:center">Pts</th>
+                                            <th style="padding:8px 4px;text-align:left">${t('matches_standings_team')}</th>
+                                            <th style="padding:8px 4px;text-align:center">${t('matches_standings_mp')}</th>
+                                            <th style="padding:8px 4px;text-align:center">${t('matches_standings_w')}</th>
+                                            <th style="padding:8px 4px;text-align:center">${t('matches_standings_d')}</th>
+                                            <th style="padding:8px 4px;text-align:center">${t('matches_standings_l')}</th>
+                                            <th style="padding:8px 4px;text-align:center">${t('matches_standings_gd')}</th>
+                                            <th style="padding:8px 4px;text-align:center">${t('matches_standings_pts')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -111,18 +111,19 @@ export async function matchesPage() {
 
                 if (filtered.length === 0) {
                     if (filterType === 'stage') {
+                        let stg = filterVal === 'Round of 32' ? t('stage_r32') : filterVal === 'Round of 16' ? t('stage_r16') : filterVal === 'Quarter-finals' ? t('stage_qf') : filterVal === 'Semi-finals' ? t('stage_sf') : filterVal === 'Final' ? t('stage_final') : filterVal;
                         grid.innerHTML = `
                             <div class="empty-state" style="grid-column:1/-1">
                                 <div class="empty-state-icon">🏆</div>
-                                <div class="empty-state-text">Awaiting ${filterVal} Bracket</div>
-                                <div style="color:var(--text-muted);font-size:0.85rem;margin-top:8px">Pairs will be scheduled once the group stages conclude.</div>
+                                <div class="empty-state-text">${t('matches_awaiting_bracket', { stage: stg })}</div>
+                                <div style="color:var(--text-muted);font-size:0.85rem;margin-top:8px">${t('matches_awaiting_sub')}</div>
                             </div>
                         `;
                     } else {
                         grid.innerHTML = `
                             <div class="empty-state" style="grid-column:1/-1">
                                 <div class="empty-state-icon">📭</div>
-                                <div class="empty-state-text">No matches available in this filter yet</div>
+                                <div class="empty-state-text">${t('matches_no_matches')}</div>
                             </div>
                         `;
                     }

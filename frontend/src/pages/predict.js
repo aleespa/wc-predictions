@@ -1,6 +1,7 @@
 import { fetchAPI, isAuthenticated } from '../api.js';
 import { showToast } from '../components/toast.js';
 import { getFlagURL } from '../components/flags.js';
+import { t } from '../i18n.js';
 
 export async function predictPage(params) {
     const matchId = params.id;
@@ -35,21 +36,21 @@ export async function predictPage(params) {
         if (existingPred) {
             const pts = existingPred.points_awarded;
             let color = 'var(--accent-red)';
-            let label = 'Wrong ❌';
-            if (pts === 5) { color = 'var(--accent-gold)'; label = 'Exact Score! 🎯'; }
-            else if (pts === 3) { color = 'var(--accent-green)'; label = 'Goal Difference ✓'; }
-            else if (pts === 1) { color = 'var(--accent-blue)'; label = 'Correct Outcome ✓'; }
+            let label = t('predict_wrong');
+            if (pts === 5) { color = 'var(--accent-gold)'; label = t('predict_exact'); }
+            else if (pts === 3) { color = 'var(--accent-green)'; label = t('predict_gd'); }
+            else if (pts === 1) { color = 'var(--accent-blue)'; label = t('predict_correct'); }
             pointsBadge = `
                 <div style="margin-top:var(--space-lg);padding:var(--space-lg);background:var(--bg-glass);border-radius:var(--radius-lg);text-align:center">
-                    <div style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">Your Prediction</div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">${t('predict_your_pred')}</div>
                     <div style="font-size:1.5rem;font-weight:800;margin:var(--space-sm) 0">${existingPred.predicted_home_score} — ${existingPred.predicted_away_score}</div>
-                    <div style="font-size:1.2rem;font-weight:700;color:${color}">${pts} points · ${label}</div>
+                    <div style="font-size:1.2rem;font-weight:700;color:${color}">${pts} ${t('common_pts')} · ${label}</div>
                 </div>
             `;
         }
         resultSection = `
             <div style="text-align:center;margin:var(--space-xl) 0">
-                <div style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-sm)">Final Score</div>
+                <div style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-sm)">${t('predict_final_score')}</div>
                 <div style="font-size:2.5rem;font-weight:900">${match.home_score} — ${match.away_score}</div>
             </div>
             ${pointsBadge}
@@ -78,10 +79,9 @@ export async function predictPage(params) {
             </div>
             <div style="text-align:center;padding:var(--space-xl);margin-top:var(--space-md);background:var(--bg-glass);border-radius:var(--radius-lg);border:1px dashed var(--border-medium)">
                 <div style="font-size:1.5rem;margin-bottom:var(--space-sm)">🏆</div>
-                <div style="font-weight:600;margin-bottom:var(--space-sm)">Teams Not Yet Determined</div>
+                <div style="font-weight:600;margin-bottom:var(--space-sm)">${t('predict_tbd')}</div>
                 <div style="font-size:0.85rem;color:var(--text-muted)">
-                    Predict group stage matches first to see which teams qualify for this knockout match.
-                    <br><a href="#/bracket" style="color:var(--accent-gold);font-weight:600">View your bracket →</a>
+                    ${t('predict_tbd_sub')}
                 </div>
             </div>
         `;
@@ -104,11 +104,11 @@ export async function predictPage(params) {
 
             <div style="text-align:center;padding:var(--space-xl);margin-top:var(--space-md);background:var(--bg-glass);border-radius:var(--radius-lg);border:1px dashed var(--border-medium)">
                 <div style="font-size:1.5rem;margin-bottom:var(--space-sm)">🔮</div>
-                <div style="font-weight:600;margin-bottom:var(--space-sm)">Log in to make your prediction</div>
-                <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:var(--space-lg)">Create an account or log in to predict match results and earn points</div>
+                <div style="font-weight:600;margin-bottom:var(--space-sm)">${t('predict_login_title')}</div>
+                <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:var(--space-lg)">${t('predict_login_sub')}</div>
                 <div style="display:flex;gap:var(--space-md);justify-content:center;flex-wrap:wrap">
-                    <a href="#/register" class="btn btn-primary">Sign Up Free</a>
-                    <a href="#/login" class="btn btn-secondary">Log In</a>
+                    <a href="#/register" class="btn btn-primary">${t('predict_signup_btn')}</a>
+                    <a href="#/login" class="btn btn-secondary">${t('predict_login_btn')}</a>
                 </div>
             </div>
         `;
@@ -134,29 +134,29 @@ export async function predictPage(params) {
 
                 ${isLocked ? `
                     <div class="empty-state" style="padding:var(--space-lg)">
-                        <div style="color:var(--accent-red);font-weight:600">🔒 Predictions are locked — match has started</div>
+                        <div style="color:var(--accent-red);font-weight:600">${t('predict_locked')}</div>
                     </div>
                 ` : `
                     <div class="points-preview">
-                        <div class="points-preview-title">Points you can earn</div>
+                        <div class="points-preview-title">${t('predict_pts_earn')}</div>
                         <div class="points-preview-grid">
                             <div class="points-preview-item">
                                 <div class="points-preview-value" style="color:var(--accent-gold)">5</div>
-                                <div class="points-preview-label">Exact Score</div>
+                                <div class="points-preview-label">${t('home_exact_score')}</div>
                             </div>
                             <div class="points-preview-item">
                                 <div class="points-preview-value" style="color:var(--accent-green)">3</div>
-                                <div class="points-preview-label">Result + GD</div>
+                                <div class="points-preview-label">${t('home_result_gd')}</div>
                             </div>
                             <div class="points-preview-item">
                                 <div class="points-preview-value" style="color:var(--accent-blue)">1</div>
-                                <div class="points-preview-label">Outcome</div>
+                                <div class="points-preview-label">${t('home_correct_outcome')}</div>
                             </div>
                         </div>
                     </div>
 
                     <button class="btn btn-primary btn-lg" type="submit" style="width:100%;margin-top:var(--space-lg)" id="predict-submit">
-                        ${existingPred ? '✏️ Update Prediction' : '⚡ Submit Prediction'}
+                        ${existingPred ? t('predict_btn_update') : t('predict_btn_submit')}
                     </button>
                 `}
             </form>
@@ -164,7 +164,7 @@ export async function predictPage(params) {
     }
 
     const backTarget = match.group_letter ? '#/matches' : '#/bracket';
-    const backLabel = match.group_letter ? '← Back to Matches' : '← Back to Bracket';
+    const backLabel = match.group_letter ? t('predict_back_matches') : t('predict_back_bracket');
 
     const html = `
         <div class="predict-container fade-in">
@@ -172,8 +172,8 @@ export async function predictPage(params) {
 
             <div class="card">
                 <div class="match-card-header" style="margin-bottom:var(--space-sm)">
-                    <span class="match-group-badge">${match.group_letter ? 'Group ' + match.group_letter : match.stage}</span>
-                    <span class="match-status ${match.is_finished ? 'finished' : 'upcoming'}">${match.is_finished ? '✓ Finished' : '● Upcoming'}</span>
+                    <span class="match-group-badge">${match.group_letter ? t('stage_group', { group: match.group_letter }) : t('stage_' + match.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || match.stage}</span>
+                    <span class="match-status ${match.is_finished ? 'finished' : 'upcoming'}">${match.is_finished ? t('predict_status_finished') : t('predict_status_upcoming')}</span>
                 </div>
 
                 <div class="predict-info">
@@ -196,7 +196,7 @@ export async function predictPage(params) {
                 e.preventDefault();
                 const submitBtn = document.getElementById('predict-submit');
                 submitBtn.disabled = true;
-                submitBtn.textContent = 'Saving...';
+                submitBtn.textContent = t('btn_saving');
 
                 try {
                     await fetchAPI('/predictions', {
@@ -207,12 +207,12 @@ export async function predictPage(params) {
                             predicted_away_score: parseInt(document.getElementById('away-score').value),
                         }),
                     });
-                    showToast('Prediction saved! ⚡');
+                    showToast(t('toast_pred_saved'));
                     location.hash = match.group_letter ? '#/matches' : '#/bracket';
                 } catch (err) {
                     showToast(err.message, 'error');
                     submitBtn.disabled = false;
-                    submitBtn.textContent = existingPred ? '✏️ Update Prediction' : '⚡ Submit Prediction';
+                    submitBtn.textContent = existingPred ? t('predict_btn_update') : t('predict_btn_submit');
                 }
             });
         },

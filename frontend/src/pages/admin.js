@@ -2,6 +2,7 @@ import { fetchAPI, isAuthenticated } from '../api.js';
 import { showToast } from '../components/toast.js';
 import { getCurrentUser } from '../components/navbar.js';
 import { getFlagURL } from '../components/flags.js';
+import { t } from '../i18n.js';
 
 export async function adminPage() {
     if (!isAuthenticated()) {
@@ -14,8 +15,8 @@ export async function adminPage() {
         return `
             <div class="empty-state">
                 <div class="empty-state-icon">🔒</div>
-                <div class="empty-state-text">Admin access required</div>
-                <a href="#/" class="btn btn-secondary">Go Home</a>
+                <div class="empty-state-text">${t('admin_access_req')}</div>
+                <a href="#/" class="btn btn-secondary">${t('admin_go_home')}</a>
             </div>
         `;
     }
@@ -51,66 +52,66 @@ export async function adminPage() {
                 ${awayFlag}
             </span>
             <div class="admin-match-score-inputs">
-                <input type="number" class="admin-score-input" id="admin-home-${m.id}" min="0" max="20" placeholder="H" value="${m.home_score ?? ''}" />
+                <input type="number" class="admin-score-input" id="admin-home-${m.id}" min="0" max="20" placeholder="${t('admin_placeholder_h')}" value="${m.home_score ?? ''}" />
                 <span style="color:var(--text-muted);font-weight:700">—</span>
-                <input type="number" class="admin-score-input" id="admin-away-${m.id}" min="0" max="20" placeholder="A" value="${m.away_score ?? ''}" />
+                <input type="number" class="admin-score-input" id="admin-away-${m.id}" min="0" max="20" placeholder="${t('admin_placeholder_a')}" value="${m.away_score ?? ''}" />
             </div>
             <button class="btn btn-sm ${m.is_finished ? 'btn-secondary' : 'btn-success'}" onclick="window.__setResult(${m.id})" id="admin-btn-${m.id}">
-                ${m.is_finished ? '✓ Done' : 'Set Result'}
+                ${m.is_finished ? t('admin_btn_done') : t('admin_btn_set')}
             </button>
         </div>
     `};
 
     const html = `
         <div class="fade-in">
-            <h1 class="page-title">⚙️ Admin Panel</h1>
-            <p class="page-subtitle">Manage tournament results and scheduling</p>
+            <h1 class="page-title">${t('admin_title')}</h1>
+            <p class="page-subtitle">${t('admin_subtitle')}</p>
 
             <div class="card" style="margin: var(--space-xl) 0;">
-                <h3 style="margin-top:0;margin-bottom:var(--space-md);color:var(--accent-gold)">Edit Match Details</h3>
+                <h3 style="margin-top:0;margin-bottom:var(--space-md);color:var(--accent-gold)">${t('admin_edit_title')}</h3>
                 <form id="admin-edit-match-form" style="display:flex;gap:var(--space-md);flex-wrap:wrap;align-items:flex-end;">
                     <div style="flex:1;min-width:250px">
-                        <label class="form-label" style="display:block;margin-bottom:0.5rem">Select Match</label>
+                        <label class="form-label" style="display:block;margin-bottom:0.5rem">${t('admin_select_match')}</label>
                         <select id="am-match-id" class="form-input" required>
-                            <option value="" disabled selected>Select Match...</option>
+                            <option value="" disabled selected>${t('admin_select_match')}</option>
                             ${matches.map(m => `<option value="${m.id}">[${m.stage}] ${m.home_team?.name || m.home_slot || 'TBD'} vs ${m.away_team?.name || m.away_slot || 'TBD'} (Match ${m.match_number || m.id})</option>`).join('')}
                         </select>
                     </div>
                     <div style="flex:1;min-width:150px">
-                        <label class="form-label" style="display:block;margin-bottom:0.5rem">Override Home Team</label>
+                        <label class="form-label" style="display:block;margin-bottom:0.5rem">${t('admin_override_home')}</label>
                         <select id="am-home" class="form-input">
-                            <option value="">(No Change)</option>
+                            <option value="">${t('admin_no_change')}</option>
                             ${teamOptions}
                         </select>
                     </div>
                     <div style="flex:1;min-width:150px">
-                        <label class="form-label" style="display:block;margin-bottom:0.5rem">Override Away Team</label>
+                        <label class="form-label" style="display:block;margin-bottom:0.5rem">${t('admin_override_away')}</label>
                         <select id="am-away" class="form-input">
-                            <option value="">(No Change)</option>
+                            <option value="">${t('admin_no_change')}</option>
                             ${teamOptions}
                         </select>
                     </div>
                     <div style="flex:1;min-width:180px">
-                        <label class="form-label" style="display:block;margin-bottom:0.5rem">Date/Time (Local)</label>
+                        <label class="form-label" style="display:block;margin-bottom:0.5rem">${t('admin_datetime')}</label>
                         <input type="datetime-local" id="am-date" class="form-input" />
                     </div>
                     <div style="flex:1;min-width:150px">
-                        <label class="form-label" style="display:block;margin-bottom:0.5rem">Venue or Note</label>
-                        <input type="text" id="am-venue" class="form-input" placeholder="(No Change)" />
+                        <label class="form-label" style="display:block;margin-bottom:0.5rem">${t('admin_venue')}</label>
+                        <input type="text" id="am-venue" class="form-input" placeholder="${t('admin_no_change')}" />
                     </div>
-                    <button type="submit" class="btn btn-primary" id="am-submit">Update Match</button>
+                    <button type="submit" class="btn btn-primary" id="am-submit">${t('admin_btn_update')}</button>
                 </form>
             </div>
 
             <h3 style="margin:var(--space-xl) 0 var(--space-md);font-size:1.1rem;color:var(--accent-gold)">
-                Pending Results (${unfinished.length})
+                ${t('admin_pending', { count: unfinished.length })}
             </h3>
             <div id="admin-pending">
-                ${unfinished.length === 0 ? '<p style="color:var(--text-muted)">All matches have results!</p>' : unfinished.map(matchRow).join('')}
+                ${unfinished.length === 0 ? `<p style="color:var(--text-muted)">${t('admin_all_results')}</p>` : unfinished.map(matchRow).join('')}
             </div>
 
             <h3 style="margin:var(--space-xl) 0 var(--space-md);font-size:1.1rem;color:var(--accent-green)">
-                Completed (${finished.length})
+                ${t('admin_completed', { count: finished.length })}
             </h3>
             <div>
                 ${finished.map(matchRow).join('')}
@@ -130,20 +131,20 @@ export async function adminPage() {
                 const awayScore = parseInt(awayInput.value);
 
                 if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) {
-                    showToast('Please enter valid scores', 'error');
+                    showToast(t('toast_invalid_scores'), 'error');
                     return;
                 }
 
                 btn.disabled = true;
-                btn.textContent = 'Saving...';
+                btn.textContent = t('btn_saving');
 
                 try {
                     await fetchAPI(`/admin/matches/${matchId}/result`, {
                         method: 'PUT',
                         body: JSON.stringify({ home_score: homeScore, away_score: awayScore }),
                     });
-                    showToast(`Result saved: ${homeScore} — ${awayScore} ✓`);
-                    btn.textContent = '✓ Done';
+                    showToast(t('toast_res_saved', { h: homeScore, a: awayScore }));
+                    btn.textContent = t('admin_btn_done');
                     btn.className = 'btn btn-sm btn-secondary';
                 } catch (err) {
                     showToast(err.message, 'error');
@@ -192,21 +193,21 @@ export async function adminPage() {
 
                     const btn = document.getElementById('am-submit');
                     btn.disabled = true;
-                    btn.textContent = 'Updating...';
+                    btn.textContent = t('btn_updating');
 
                     try {
                         await fetchAPI(`/admin/matches/${matchId}`, {
                             method: 'PUT',
                             body: JSON.stringify(body)
                         });
-                        showToast('Match updated successfully! ✓');
+                        showToast(t('toast_match_updated'));
                         setTimeout(() => {
                            window.dispatchEvent(new HashChangeEvent("hashchange"));
                         }, 600);
                     } catch (err) {
                         showToast(err.message, 'error');
                         btn.disabled = false;
-                        btn.textContent = 'Update Match';
+                        btn.textContent = t('admin_btn_update');
                     }
                 });
             }

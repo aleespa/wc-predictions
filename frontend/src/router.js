@@ -1,4 +1,5 @@
 import { isAuthenticated } from './api.js';
+import { t } from './i18n.js';
 
 const routes = {};
 let currentCleanup = null;
@@ -69,7 +70,7 @@ export async function handleRoute() {
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">⚠️</div>
-                    <div class="empty-state-text">Error: ${err.message}</div>
+                    <div class="empty-state-text">${t('router_error', { msg: err.message })}</div>
                 </div>
             `;
         }
@@ -77,8 +78,8 @@ export async function handleRoute() {
         container.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">🔍</div>
-                <div class="empty-state-text">Page not found</div>
-                <button class="btn btn-primary" onclick="location.hash='#/'">Go Home</button>
+                <div class="empty-state-text">${t('router_page_not_found')}</div>
+                <button class="btn btn-primary" onclick="location.hash='#/'">${t('router_go_home')}</button>
             </div>
         `;
     }
