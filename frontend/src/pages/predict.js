@@ -16,6 +16,7 @@ export async function predictPage(params) {
     const matchDate = new Date(match.match_date);
     const now = new Date();
     const isLocked = matchDate <= now || match.is_finished;
+    const teamsKnown = match.home_team && match.away_team;
 
     const existingPred = match.user_prediction;
     const homeScore = existingPred ? existingPred.predicted_home_score : '';
@@ -59,6 +60,31 @@ export async function predictPage(params) {
     let formSection = '';
     if (match.is_finished) {
         formSection = resultSection;
+    } else if (!teamsKnown) {
+        // Knockout match where teams are not yet determined
+        const homeLabel = match.home_slot || 'TBD';
+        const awayLabel = match.away_slot || 'TBD';
+        formSection = `
+            <div class="score-input-container">
+                <div class="score-input-team">
+                    <span class="match-team-name" style="color:var(--text-muted);font-style:italic">${homeLabel}</span>
+                </div>
+                <div class="match-vs">
+                    <span class="match-vs-label">VS</span>
+                </div>
+                <div class="score-input-team">
+                    <span class="match-team-name" style="color:var(--text-muted);font-style:italic">${awayLabel}</span>
+                </div>
+            </div>
+            <div style="text-align:center;padding:var(--space-xl);margin-top:var(--space-md);background:var(--bg-glass);border-radius:var(--radius-lg);border:1px dashed var(--border-medium)">
+                <div style="font-size:1.5rem;margin-bottom:var(--space-sm)">🏆</div>
+                <div style="font-weight:600;margin-bottom:var(--space-sm)">Teams Not Yet Determined</div>
+                <div style="font-size:0.85rem;color:var(--text-muted)">
+                    Predict group stage matches first to see which teams qualify for this knockout match.
+                    <br><a href="#/bracket" style="color:var(--accent-gold);font-weight:600">View your bracket →</a>
+                </div>
+            </div>
+        `;
     } else if (!authed) {
         // Show login prompt for unauthenticated users
         formSection = `
@@ -137,9 +163,12 @@ export async function predictPage(params) {
         `;
     }
 
+    const backTarget = match.group_letter ? '#/matches' : '#/bracket';
+    const backLabel = match.group_letter ? '← Back to Matches' : '← Back to Bracket';
+
     const html = `
         <div class="predict-container fade-in">
-            <button class="btn btn-secondary btn-sm" onclick="location.hash='#/matches'" style="margin-bottom:var(--space-lg)">← Back to Matches</button>
+            <button class="btn btn-secondary btn-sm" onclick="location.hash='${backTarget}'" style="margin-bottom:var(--space-lg)">${backLabel}</button>
 
             <div class="card">
                 <div class="match-card-header" style="margin-bottom:var(--space-sm)">
@@ -179,7 +208,7 @@ export async function predictPage(params) {
                         }),
                     });
                     showToast('Prediction saved! ⚡');
-                    location.hash = '#/matches';
+                    location.hash = match.group_letter ? '#/matches' : '#/bracket';
                 } catch (err) {
                     showToast(err.message, 'error');
                     submitBtn.disabled = false;

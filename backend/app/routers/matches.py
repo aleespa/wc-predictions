@@ -47,14 +47,18 @@ def list_matches(
             group_letter=match.group_letter,
             stage=match.stage,
             match_number=match.match_number,
-            home_team=schemas.TeamOut.model_validate(match.home_team),
-            away_team=schemas.TeamOut.model_validate(match.away_team),
+            home_team=schemas.TeamOut.model_validate(match.home_team) if match.home_team else None,
+            away_team=schemas.TeamOut.model_validate(match.away_team) if match.away_team else None,
             match_date=match.match_date,
             venue=match.venue,
             home_score=match.home_score,
             away_score=match.away_score,
             is_finished=match.is_finished,
             user_prediction=None,
+            home_slot=match.home_slot,
+            away_slot=match.away_slot,
+            home_source_match_id=match.home_source_match_id,
+            away_source_match_id=match.away_source_match_id,
         )
         if match.id in user_predictions:
             pred = user_predictions[match.id]
@@ -160,14 +164,18 @@ def get_match(
         group_letter=match.group_letter,
         stage=match.stage,
         match_number=match.match_number,
-        home_team=schemas.TeamOut.model_validate(match.home_team),
-        away_team=schemas.TeamOut.model_validate(match.away_team),
+        home_team=schemas.TeamOut.model_validate(match.home_team) if match.home_team else None,
+        away_team=schemas.TeamOut.model_validate(match.away_team) if match.away_team else None,
         match_date=match.match_date,
         venue=match.venue,
         home_score=match.home_score,
         away_score=match.away_score,
         is_finished=match.is_finished,
         user_prediction=None,
+        home_slot=match.home_slot,
+        away_slot=match.away_slot,
+        home_source_match_id=match.home_source_match_id,
+        away_source_match_id=match.away_source_match_id,
     )
 
     if current_user:

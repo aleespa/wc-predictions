@@ -9,6 +9,8 @@ import { predictPage } from './pages/predict.js';
 import { leaderboardPage } from './pages/leaderboard.js';
 import { profilePage } from './pages/profile.js';
 import { adminPage } from './pages/admin.js';
+import { bracketPage } from './pages/bracket.js';
+import { communityPage } from './pages/community.js';
 
 // Register all routes
 registerRoute('/', homePage);
@@ -19,6 +21,8 @@ registerRoute('/predict/:id', predictPage);
 registerRoute('/leaderboard', leaderboardPage);
 registerRoute('/profile', profilePage);
 registerRoute('/admin', adminPage);
+registerRoute('/bracket', bracketPage);
+registerRoute('/community', communityPage);
 
 // Initialize
 async function start() {

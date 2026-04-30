@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, SessionLocal, Base
-from .routers import users, matches, predictions, leaderboard, admin
+from .routers import users, matches, predictions, leaderboard, admin, knockout, community
 from . import models  # noqa - ensure models are imported for table creation
 
 app = FastAPI(
@@ -25,11 +25,14 @@ app.include_router(matches.router)
 app.include_router(predictions.router)
 app.include_router(leaderboard.router)
 app.include_router(admin.router)
+app.include_router(knockout.router)
+app.include_router(community.router)
 
 
 @app.on_event("startup")
 def on_startup():
-    # Tables are created by Alembic migrations in Docker
+    # Create tables (safe to run multiple times — only creates if missing)
+    Base.metadata.create_all(bind=engine)
 
     # Seed data
     from .seed import seed_database

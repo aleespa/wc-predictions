@@ -19,11 +19,13 @@ export async function leaderboardPage() {
 
     const podiumHtml = podiumOrder.map((entry, idx) => {
         const actualRank = entry.rank;
-        const initial = (entry.display_name || entry.username).charAt(0).toUpperCase();
+        const isCommunity = entry.is_community;
+        const initial = isCommunity ? '👥' : (entry.display_name || entry.username).charAt(0).toUpperCase();
+        const nameClass = isCommunity ? 'podium-name-community' : '';
         return `
-            <div class="podium-item">
-                <div class="podium-avatar">${initial}</div>
-                <div class="podium-name">${entry.display_name || entry.username}</div>
+            <div class="podium-item ${isCommunity ? 'podium-community' : ''}">
+                <div class="podium-avatar ${isCommunity ? 'podium-avatar-community' : ''}">${initial}</div>
+                <div class="podium-name ${nameClass}">${entry.display_name || entry.username}</div>
                 <div class="podium-points">${entry.total_points} pts</div>
                 <div class="podium-bar"></div>
             </div>
@@ -32,11 +34,16 @@ export async function leaderboardPage() {
 
     const tableRows = leaderboard.map(entry => {
         const isMe = currentUser && currentUser.id === entry.user_id;
+        const isCommunity = entry.is_community;
+        const rowClass = isCommunity ? 'leaderboard-community-row' : '';
+        const nameDisplay = isCommunity
+            ? `<span class="leaderboard-community-name">${entry.display_name || entry.username}</span>`
+            : `${entry.display_name || entry.username}${isMe ? ' (you)' : ''}`;
         return `
-            <tr>
+            <tr class="${rowClass}">
                 <td class="leaderboard-rank ${entry.rank <= 3 ? 'top-' + entry.rank : ''}">${entry.rank <= 3 ? ['🥇','🥈','🥉'][entry.rank-1] : entry.rank}</td>
-                <td class="leaderboard-user ${isMe ? 'is-me' : ''}">${entry.display_name || entry.username}${isMe ? ' (you)' : ''}</td>
-                <td class="leaderboard-points">${entry.total_points}</td>
+                <td class="leaderboard-user ${isMe ? 'is-me' : ''}">${nameDisplay}</td>
+                <td class="leaderboard-points ${isCommunity ? 'leaderboard-community-points' : ''}">${entry.total_points}</td>
                 <td class="leaderboard-stat">${entry.exact_scores}</td>
                 <td class="leaderboard-stat">${entry.correct_outcomes}</td>
                 <td class="leaderboard-stat">${entry.predictions_count}</td>

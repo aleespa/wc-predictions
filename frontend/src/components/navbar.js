@@ -35,6 +35,8 @@ export async function renderNavbar() {
 
             <div class="nav-links" id="nav-links">
                 <button class="nav-link" data-route="/matches" onclick="location.hash='#/matches'">Matches</button>
+                <button class="nav-link" data-route="/bracket" onclick="location.hash='#/bracket'">Bracket</button>
+                <button class="nav-link" data-route="/community" onclick="location.hash='#/community'">Community</button>
                 <button class="nav-link" data-route="/leaderboard" onclick="location.hash='#/leaderboard'">Leaderboard</button>
                 ${authed ? `
                     ${user?.is_admin ? `<button class="nav-link" data-route="/admin" onclick="location.hash='#/admin'">Admin</button>` : ''}

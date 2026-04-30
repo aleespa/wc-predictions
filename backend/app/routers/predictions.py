@@ -34,6 +34,13 @@ def submit_prediction(
             detail="Match is already finished",
         )
 
+    # For knockout matches, teams must be resolved before predictions are allowed
+    if match.stage != "Group Stage" and (not match.home_team_id or not match.away_team_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot predict yet — teams for this knockout match are not determined",
+        )
+
     # Check for existing prediction (upsert)
     existing = (
         db.query(models.Prediction)
@@ -48,6 +55,11 @@ def submit_prediction(
         existing.predicted_home_score = data.predicted_home_score
         existing.predicted_away_score = data.predicted_away_score
         existing.updated_at = datetime.now(timezone.utc)
+        # Track knockout teams if applicable
+        if match.home_team_id:
+            existing.predicted_home_team_id = match.home_team_id
+        if match.away_team_id:
+            existing.predicted_away_team_id = match.away_team_id
         db.commit()
         db.refresh(existing)
         return existing
@@ -57,6 +69,8 @@ def submit_prediction(
             match_id=data.match_id,
             predicted_home_score=data.predicted_home_score,
             predicted_away_score=data.predicted_away_score,
+            predicted_home_team_id=match.home_team_id,
+            predicted_away_team_id=match.away_team_id,
         )
         db.add(prediction)
         db.commit()
@@ -88,13 +102,15 @@ def my_predictions(
             group_letter=match.group_letter,
             stage=match.stage,
             match_number=match.match_number,
-            home_team=schemas.TeamOut.model_validate(match.home_team),
-            away_team=schemas.TeamOut.model_validate(match.away_team),
+            home_team=schemas.TeamOut.model_validate(match.home_team) if match.home_team else None,
+            away_team=schemas.TeamOut.model_validate(match.away_team) if match.away_team else None,
             match_date=match.match_date,
             venue=match.venue,
             home_score=match.home_score,
             away_score=match.away_score,
             is_finished=match.is_finished,
+            home_slot=match.home_slot,
+            away_slot=match.away_slot,
         )
         result.append(schemas.PredictionWithMatch(
             id=pred.id,

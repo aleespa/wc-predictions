@@ -34,15 +34,21 @@ export async function adminPage() {
 
     const teamOptions = teams.map(t => `<option value="${t.id}">${t.code} ${t.name}</option>`).join('');
 
-    const matchRow = (m) => `
+    const matchRow = (m) => {
+        const homeName = m.home_team ? m.home_team.name : 'TBD';
+        const awayName = m.away_team ? m.away_team.name : 'TBD';
+        const homeFlag = m.home_team ? `<img src="${getFlagURL(m.home_team.code)}" class="match-team-flag-svg" style="width:20px;vertical-align:middle;margin-right:4px;">` : '';
+        const awayFlag = m.away_team ? `<img src="${getFlagURL(m.away_team.code)}" class="match-team-flag-svg" style="width:20px;vertical-align:middle;margin-left:4px;">` : '';
+        
+        return `
         <div class="admin-match-row" id="admin-match-${m.id}">
             <span class="match-group-badge" style="flex-shrink:0">${m.group_letter ? 'Grp ' + m.group_letter : m.stage}</span>
             <span class="admin-match-teams">
-                <img src="${getFlagURL(m.home_team.code)}" class="match-team-flag-svg" style="width:20px;vertical-align:middle;margin-right:4px;"> 
-                ${m.home_team.name}
+                ${homeFlag}
+                ${homeName}
                 <span style="color:var(--text-muted);margin:0 var(--space-sm)">vs</span>
-                ${m.away_team.name}
-                <img src="${getFlagURL(m.away_team.code)}" class="match-team-flag-svg" style="width:20px;vertical-align:middle;margin-left:4px;">
+                ${awayName}
+                ${awayFlag}
             </span>
             <div class="admin-match-score-inputs">
                 <input type="number" class="admin-score-input" id="admin-home-${m.id}" min="0" max="20" placeholder="H" value="${m.home_score ?? ''}" />
@@ -53,7 +59,7 @@ export async function adminPage() {
                 ${m.is_finished ? '✓ Done' : 'Set Result'}
             </button>
         </div>
-    `;
+    `};
 
     const html = `
         <div class="fade-in">
@@ -61,41 +67,38 @@ export async function adminPage() {
             <p class="page-subtitle">Manage tournament results and scheduling</p>
 
             <div class="card" style="margin: var(--space-xl) 0;">
-                <h3 style="margin-top:0;margin-bottom:var(--space-md);color:var(--accent-gold)">Create Knockout Match</h3>
-                <form id="admin-create-match-form" style="display:flex;gap:var(--space-md);flex-wrap:wrap;align-items:flex-end;">
-                    <div style="flex:1;min-width:150px">
-                        <label class="form-label">Stage</label>
-                        <select id="am-stage" class="form-input" required>
-                            <option value="Round of 32">Round of 32</option>
-                            <option value="Round of 16">Round of 16</option>
-                            <option value="Quarter-finals">Quarter-finals</option>
-                            <option value="Semi-finals">Semi-finals</option>
-                            <option value="Final">Final</option>
+                <h3 style="margin-top:0;margin-bottom:var(--space-md);color:var(--accent-gold)">Edit Match Details</h3>
+                <form id="admin-edit-match-form" style="display:flex;gap:var(--space-md);flex-wrap:wrap;align-items:flex-end;">
+                    <div style="flex:1;min-width:250px">
+                        <label class="form-label" style="display:block;margin-bottom:0.5rem">Select Match</label>
+                        <select id="am-match-id" class="form-input" required>
+                            <option value="" disabled selected>Select Match...</option>
+                            ${matches.map(m => `<option value="${m.id}">[${m.stage}] ${m.home_team?.name || m.home_slot || 'TBD'} vs ${m.away_team?.name || m.away_slot || 'TBD'} (Match ${m.match_number || m.id})</option>`).join('')}
                         </select>
                     </div>
                     <div style="flex:1;min-width:150px">
-                        <label class="form-label" style="display:block;margin-bottom:0.5rem">Home Team</label>
-                        <select id="am-home" class="form-input" required>
-                            <option value="" disabled selected>Select Team...</option>
+                        <label class="form-label" style="display:block;margin-bottom:0.5rem">Override Home Team</label>
+                        <select id="am-home" class="form-input">
+                            <option value="">(No Change)</option>
                             ${teamOptions}
                         </select>
                     </div>
                     <div style="flex:1;min-width:150px">
-                        <label class="form-label" style="display:block;margin-bottom:0.5rem">Away Team</label>
-                        <select id="am-away" class="form-input" required>
-                            <option value="" disabled selected>Select Team...</option>
+                        <label class="form-label" style="display:block;margin-bottom:0.5rem">Override Away Team</label>
+                        <select id="am-away" class="form-input">
+                            <option value="">(No Change)</option>
                             ${teamOptions}
                         </select>
                     </div>
                     <div style="flex:1;min-width:180px">
                         <label class="form-label" style="display:block;margin-bottom:0.5rem">Date/Time (Local)</label>
-                        <input type="datetime-local" id="am-date" class="form-input" required />
+                        <input type="datetime-local" id="am-date" class="form-input" />
                     </div>
                     <div style="flex:1;min-width:150px">
                         <label class="form-label" style="display:block;margin-bottom:0.5rem">Venue or Note</label>
-                        <input type="text" id="am-venue" class="form-input" placeholder="Optional" />
+                        <input type="text" id="am-venue" class="form-input" placeholder="(No Change)" />
                     </div>
-                    <button type="submit" class="btn btn-primary" id="am-submit">Create Bracket</button>
+                    <button type="submit" class="btn btn-primary" id="am-submit">Update Match</button>
                 </form>
             </div>
 
@@ -149,47 +152,61 @@ export async function adminPage() {
                 }
             };
 
-            const createFormEl = document.getElementById('admin-create-match-form');
-            if (createFormEl) {
-                createFormEl.addEventListener('submit', async (e) => {
+            const editFormEl = document.getElementById('admin-edit-match-form');
+            if (editFormEl) {
+                const matchSelect = document.getElementById('am-match-id');
+                matchSelect.addEventListener('change', (e) => {
+                    const matchId = parseInt(e.target.value);
+                    const match = matches.find(m => m.id === matchId);
+                    if (match) {
+                        if (match.match_date) {
+                            const d = new Date(match.match_date);
+                            const pad = (n) => n.toString().padStart(2, '0');
+                            const localStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                            document.getElementById('am-date').value = localStr;
+                        } else {
+                            document.getElementById('am-date').value = '';
+                        }
+                        document.getElementById('am-venue').value = match.venue || '';
+                        document.getElementById('am-home').value = match.home_team ? match.home_team.id : '';
+                        document.getElementById('am-away').value = match.away_team ? match.away_team.id : '';
+                    }
+                });
+
+                editFormEl.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     
-                    const stage = document.getElementById('am-stage').value;
-                    const homeId = parseInt(document.getElementById('am-home').value);
-                    const awayId = parseInt(document.getElementById('am-away').value);
-                    
-                    if (homeId === awayId) {
-                        showToast('Home and Away teams must be different', 'error');
-                        return;
-                    }
-
+                    const matchId = parseInt(document.getElementById('am-match-id').value);
+                    const homeId = document.getElementById('am-home').value;
+                    const awayId = document.getElementById('am-away').value;
                     const dateStr = document.getElementById('am-date').value;
                     const venue = document.getElementById('am-venue').value;
                     
+                    if (!matchId) return;
+
+                    const body = {};
+                    if (homeId) body.home_team_id = parseInt(homeId);
+                    if (awayId) body.away_team_id = parseInt(awayId);
+                    if (dateStr) body.match_date = new Date(dateStr).toISOString();
+                    if (venue) body.venue = venue;
+
                     const btn = document.getElementById('am-submit');
                     btn.disabled = true;
-                    btn.textContent = 'Creating...';
+                    btn.textContent = 'Updating...';
 
                     try {
-                        const matchDate = new Date(dateStr).toISOString();
-                        await fetchAPI('/admin/matches', {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                stage: stage,
-                                home_team_id: homeId,
-                                away_team_id: awayId,
-                                match_date: matchDate,
-                                venue: venue || "TBD",
-                            })
+                        await fetchAPI(`/admin/matches/${matchId}`, {
+                            method: 'PUT',
+                            body: JSON.stringify(body)
                         });
-                        showToast('Knockout Match scheduled successfully! 🏆');
+                        showToast('Match updated successfully! ✓');
                         setTimeout(() => {
                            window.dispatchEvent(new HashChangeEvent("hashchange"));
                         }, 600);
                     } catch (err) {
                         showToast(err.message, 'error');
                         btn.disabled = false;
-                        btn.textContent = 'Create Bracket';
+                        btn.textContent = 'Update Match';
                     }
                 });
             }

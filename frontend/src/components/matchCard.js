@@ -63,20 +63,28 @@ export function renderMatchCard(match, options = {}) {
     return `
         <div class="${classes.join(' ')}" ${clickAttr} id="match-card-${match.id}">
             <div class="match-card-header">
-                <span class="match-group-badge">Group ${match.group_letter || match.stage}</span>
+                <span class="match-group-badge">${match.group_letter ? 'Group ' + match.group_letter : match.stage}</span>
                 ${statusHtml}
             </div>
             <div class="match-teams">
                 <div class="match-team">
-                    <img src="${getFlagURL(match.home_team.code)}" alt="${match.home_team.code}" class="match-team-flag-svg" />
-                    <span class="match-team-name">${match.home_team.name}</span>
+                    ${match.home_team ? `
+                        <img src="${getFlagURL(match.home_team.code)}" alt="${match.home_team.code}" class="match-team-flag-svg" />
+                        <span class="match-team-name">${match.home_team.name}</span>
+                    ` : `
+                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.home_slot || 'TBD'}</span>
+                    `}
                 </div>
                 <div class="match-vs">
                     ${scoreHtml}
                 </div>
                 <div class="match-team">
-                    <img src="${getFlagURL(match.away_team.code)}" alt="${match.away_team.code}" class="match-team-flag-svg" />
-                    <span class="match-team-name">${match.away_team.name}</span>
+                    ${match.away_team ? `
+                        <img src="${getFlagURL(match.away_team.code)}" alt="${match.away_team.code}" class="match-team-flag-svg" />
+                        <span class="match-team-name">${match.away_team.name}</span>
+                    ` : `
+                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.away_slot || 'TBD'}</span>
+                    `}
                 </div>
             </div>
             <div class="match-card-footer">

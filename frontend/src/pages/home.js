@@ -24,7 +24,7 @@ export async function homePage() {
             <p>Make your predictions for every World Cup 2026 match. Earn points for accuracy and climb the global leaderboard.</p>
             <div class="hero-actions">
                 ${authed
-                    ? '<a href="#/matches" class="btn btn-primary btn-lg">Browse Matches</a><a href="#/leaderboard" class="btn btn-secondary btn-lg">Leaderboard</a>'
+                    ? '<a href="#/matches" class="btn btn-primary btn-lg">Browse Matches</a><a href="#/bracket" class="btn btn-secondary btn-lg">🏆 Bracket</a><a href="#/leaderboard" class="btn btn-secondary btn-lg">Leaderboard</a>'
                     : '<a href="#/register" class="btn btn-primary btn-lg">Get Started Free</a><a href="#/matches" class="btn btn-secondary btn-lg">View Matches</a>'
                 }
             </div>

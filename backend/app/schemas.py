@@ -58,14 +58,20 @@ class MatchOut(BaseModel):
     group_letter: Optional[str]
     stage: str
     match_number: Optional[int]
-    home_team: TeamOut
-    away_team: TeamOut
+    home_team: Optional[TeamOut] = None  # nullable for knockout TBD
+    away_team: Optional[TeamOut] = None  # nullable for knockout TBD
     match_date: datetime
     venue: Optional[str]
     home_score: Optional[int]
     away_score: Optional[int]
     is_finished: bool
     user_prediction: Optional["PredictionOut"] = None
+    # Knockout slot labels
+    home_slot: Optional[str] = None
+    away_slot: Optional[str] = None
+    # Source match IDs for progressive bracket
+    home_source_match_id: Optional[int] = None
+    away_source_match_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -101,6 +107,8 @@ class PredictionOut(BaseModel):
     points_awarded: Optional[int]
     created_at: datetime
     updated_at: datetime
+    predicted_home_team_id: Optional[int] = None
+    predicted_away_team_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -129,3 +137,41 @@ class LeaderboardEntry(BaseModel):
     predictions_count: int
     exact_scores: int
     correct_outcomes: int
+    is_community: bool = False
+
+
+# ── Knockout Bracket ──────────────────────────────────
+
+class BracketSlotTeam(BaseModel):
+    """A team slot in the bracket — either a real team or a placeholder label."""
+    team: Optional[TeamOut] = None
+    slot_label: Optional[str] = None  # e.g. "Winner Group A", "W73" (winner of match 73)
+    is_predicted: bool = False  # True if team comes from user's predictions (not real results)
+
+
+class BracketMatchOut(BaseModel):
+    """A single match in the bracket with resolved or placeholder teams."""
+    match_id: int
+    match_number: Optional[int]
+    stage: str
+    match_date: datetime
+    venue: Optional[str]
+    home: BracketSlotTeam
+    away: BracketSlotTeam
+    home_score: Optional[int] = None
+    away_score: Optional[int] = None
+    is_finished: bool = False
+    user_prediction: Optional[PredictionOut] = None
+    # Source match IDs for building the tree
+    home_source_match_id: Optional[int] = None
+    away_source_match_id: Optional[int] = None
+
+
+class BracketOut(BaseModel):
+    """Full knockout bracket."""
+    round_of_32: list[BracketMatchOut]
+    round_of_16: list[BracketMatchOut]
+    quarter_finals: list[BracketMatchOut]
+    semi_finals: list[BracketMatchOut]
+    third_place: Optional[BracketMatchOut] = None
+    final: Optional[BracketMatchOut] = None
