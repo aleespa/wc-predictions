@@ -1,0 +1,18 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "variables": {
+    "CLERK_SECRET_KEY": {
+      "description": "Your Clerk Secret Key (starts with sk_test_... or sk_live_...)",
+      "required": true
+    },
+    "VITE_CLERK_PUBLISHABLE_KEY": {
+      "description": "Your Clerk Publishable Key (starts with pk_test_... or pk_live_...)",
+      "required": true
+    },
+    "ADMIN_EMAILS": {
+      "description": "Comma-separated list of admin email addresses",
+      "default": "admin@example.com",
+      "required": true
+    }
+  }
+}
