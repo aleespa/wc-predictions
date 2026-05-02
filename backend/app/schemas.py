@@ -13,6 +13,7 @@ class UserOut(BaseModel):
     created_at: datetime
     total_points: Optional[int] = 0
     predictions_count: Optional[int] = 0
+    is_group_stage_locked: bool = False
 
     class Config:
         from_attributes = True
@@ -214,3 +215,5 @@ class BracketOut(BaseModel):
     semi_finals: list[BracketMatchOut]
     third_place: Optional[BracketMatchOut] = None
     final: Optional[BracketMatchOut] = None
+    is_unlocked: bool = True
+    unlock_reason: Optional[str] = None  # e.g. "Complete group stage" or "R32 defined"

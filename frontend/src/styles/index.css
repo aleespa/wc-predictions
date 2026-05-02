@@ -1805,4 +1805,213 @@ select.form-input option {
 }
 
 
+/* ══════════════════════════════════════════════════
+   Community Predictions Page
+   ══════════════════════════════════════════════════ */
+
+.community-hero {
+    text-align: center;
+    margin-bottom: var(--space-xl);
+}
+
+.community-summary-stats {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-xl);
+    margin-top: var(--space-lg);
+    flex-wrap: wrap;
+}
+
+.community-summary-stat {
+    text-align: center;
+    padding: var(--space-md) var(--space-lg);
+    background: var(--bg-glass);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    min-width: 120px;
+}
+
+.community-summary-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.community-summary-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: var(--space-xs);
+}
+
+.community-match-card {
+    border-color: rgba(139, 92, 246, 0.2);
+}
+
+.community-stats-section {
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.community-avg-score {
+    text-align: center;
+    margin-bottom: var(--space-md);
+}
+
+.community-avg-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.community-avg-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--accent-purple-light);
+}
+
+.community-outcome-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.community-bar-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.community-bar-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    min-width: 60px;
+    text-align: right;
+}
+
+.community-bar-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.community-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+}
+
+.community-bar-home { background: var(--accent-green); }
+.community-bar-draw { background: var(--accent-gold); }
+.community-bar-away { background: var(--accent-blue); }
+
+.community-points-hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xl);
+    background: var(--bg-glass);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md) var(--space-xl);
+    margin-bottom: var(--space-xl);
+}
+
+.community-points-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--accent-gold);
+}
+
+.community-points-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Leaderboard Highlights */
+.leaderboard-community-row td {
+    background: rgba(139, 92, 246, 0.05) !important;
+}
+
+.leaderboard-community-name {
+    color: var(--accent-purple-light);
+    font-weight: 800;
+}
+
+.leaderboard-community-points {
+    color: var(--accent-gold) !important;
+    font-weight: 800;
+}
+
+/* ── Bracket Gating & Locking ──────────────────────── */
+.bracket-lock-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid var(--border-accent);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    margin: var(--space-xl) auto;
+    max-width: 800px;
+    animation: fadeInUp 0.5s ease-out;
+    text-align: left;
+    position: relative;
+    z-index: 10;
+}
+
+.lock-icon {
+    font-size: 2rem;
+    filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.4));
+}
+
+.lock-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.lock-message {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.lock-hint {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.bracket-container-locked {
+    opacity: 0.5;
+    pointer-events: none;
+    filter: grayscale(0.8) blur(1px);
+    transition: all 0.5s ease;
+}
+
+.bracket-match-locked {
+    border-color: var(--border-subtle) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    cursor: not-allowed !important;
+}
+
+.bracket-match-locked:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+@media (max-width: 640px) {
+    .bracket-lock-banner {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-md);
+    }
+}
 

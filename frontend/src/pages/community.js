@@ -231,7 +231,7 @@ function renderCommunityBracketMatch(match) {
                 </div>
             `;
         }
-        const isWinner = match.derived_winner_team && match.derived_winner_team.id === slot.team.id;
+        const isWinner = match.derived_winner_team && slot.team && match.derived_winner_team.id === slot.team.id;
         return `
             <div class="bracket-team ${isWinner ? 'community-winner' : ''}">
                 <img src="${getFlagURL(slot.team.code)}" alt="${slot.team.code}" class="bracket-team-flag" />

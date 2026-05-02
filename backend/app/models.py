@@ -33,6 +33,7 @@ class User(Base):
     hashed_password = Column(String(255), nullable=True)
     display_name = Column(String(100), nullable=True)
     is_admin = Column(Boolean, default=False)
+    is_group_stage_locked = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     predictions = relationship("Prediction", back_populates="user", cascade="all, delete-orphan")

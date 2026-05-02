@@ -66,11 +66,13 @@ export function renderBracketMatch(match, options = {}) {
         statusIcon = '🔮';
     }
 
-    const clickable = bothTeamsKnown && !isFinished ? `onclick="location.hash='#/predict/${match.match_id}'"` : '';
-    const clickableClass = bothTeamsKnown && !isFinished ? 'bracket-match-clickable' : '';
+    const isLocked = options.isLocked;
+    const clickable = bothTeamsKnown && !isFinished && !isLocked ? `onclick="location.hash='#/predict/${match.match_id}'"` : '';
+    const clickableClass = bothTeamsKnown && !isFinished && !isLocked ? 'bracket-match-clickable' : '';
+    const lockedClass = isLocked ? 'bracket-match-locked' : '';
 
     return `
-        <div class="bracket-match ${statusClass} ${clickableClass} ${compact ? 'bracket-match-compact' : ''}" 
+        <div class="bracket-match ${statusClass} ${clickableClass} ${lockedClass} ${compact ? 'bracket-match-compact' : ''}" 
              id="bracket-match-${match.match_id}" ${clickable}
              data-match-id="${match.match_id}" data-match-number="${match.match_number}">
             <div class="bracket-match-header">
@@ -151,6 +153,17 @@ export async function bracketPage() {
                         </div>
                     </div>
                 ` : ''}
+                
+                ${!bracket.is_unlocked ? `
+                    <div class="bracket-lock-banner">
+                        <span class="lock-icon">🔒</span>
+                        <div class="lock-details">
+                            <span class="lock-message">${bracket.unlock_reason || t('bracket_locked_msg')}</span>
+                            <span class="lock-hint">${t('bracket_lock_hint')}</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="location.hash='#/predict'">${t('bracket_go_predict')}</button>
+                    </div>
+                ` : ''}
             </div>
 
             <div class="bracket-legend">
@@ -169,13 +182,13 @@ export async function bracketPage() {
             </div>
 
             <div id="bracket-content">
-                <div id="bracket-rounds-view" class="bracket-container">
-                    ${renderRound(t('stage_r32'), bracket.round_of_32)}
-                    ${renderRound(t('stage_r16'), bracket.round_of_16, { compact: true })}
-                    ${renderRound(t('stage_qf'), bracket.quarter_finals, { compact: true })}
-                    ${renderRound(t('stage_sf'), bracket.semi_finals, { compact: true })}
-                    ${bracket.third_place ? renderRound(t('stage_3rd'), [bracket.third_place], { compact: true }) : ''}
-                    ${bracket.final ? renderRound(t('stage_final'), [bracket.final]) : ''}
+                <div id="bracket-rounds-view" class="bracket-container ${!bracket.is_unlocked ? 'bracket-container-locked' : ''}">
+                    ${renderRound(t('stage_r32'), bracket.round_of_32, { isLocked: !bracket.is_unlocked })}
+                    ${renderRound(t('stage_r16'), bracket.round_of_16, { compact: true, isLocked: !bracket.is_unlocked })}
+                    ${renderRound(t('stage_qf'), bracket.quarter_finals, { compact: true, isLocked: !bracket.is_unlocked })}
+                    ${renderRound(t('stage_sf'), bracket.semi_finals, { compact: true, isLocked: !bracket.is_unlocked })}
+                    ${bracket.third_place ? renderRound(t('stage_3rd'), [bracket.third_place], { compact: true, isLocked: !bracket.is_unlocked }) : ''}
+                    ${bracket.final ? renderRound(t('stage_final'), [bracket.final], { isLocked: !bracket.is_unlocked }) : ''}
                 </div>
             </div>
         </div>

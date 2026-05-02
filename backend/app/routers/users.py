@@ -28,6 +28,7 @@ def get_me(current_user: models.User = Depends(get_current_user), db: Session = 
         created_at=current_user.created_at,
         total_points=total_points,
         predictions_count=predictions_count,
+        is_group_stage_locked=current_user.is_group_stage_locked,
     )
 
 
@@ -58,7 +59,8 @@ def update_me(
         is_admin=current_user.is_admin,
         created_at=current_user.created_at,
         total_points=0, # These won't be recalculated here for performance but usually 0 is fine for the response
-        predictions_count=0
+        predictions_count=0,
+        is_group_stage_locked=current_user.is_group_stage_locked
     )
 @router.delete("/me")
 def delete_me(

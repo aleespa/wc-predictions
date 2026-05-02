@@ -46,13 +46,18 @@ export async function profilePage() {
             pointsBadge = `<span class="match-prediction-badge" style="background:var(--bg-glass);color:var(--text-muted)">${t('profile_badge_pending')}</span>`;
         }
 
+        const homeLabel = match.home_team ? match.home_team.code : (match.home_slot || 'TBD');
+        const awayLabel = match.away_team ? match.away_team.code : (match.away_slot || 'TBD');
+        const homeFlag = match.home_team ? `<img src="${getFlagURL(match.home_team.code)}" class="match-team-flag-svg" style="width:20px; height:14px; margin-right:4px">` : '';
+        const awayFlag = match.away_team ? `<img src="${getFlagURL(match.away_team.code)}" class="match-team-flag-svg" style="width:20px; height:14px; margin-left:4px">` : '';
+
         return `
             <div class="admin-match-row" onclick="location.hash='#/predict/${match.id}'" style="cursor:pointer">
                 <span style="width:60px;color:var(--text-muted);font-size:0.8rem">${dateStr}</span>
                 <span class="admin-match-teams">
-                    <img src="${getFlagURL(match.home_team.code)}" class="match-team-flag-svg" style="width:20px; height:14px; margin-right:4px"> ${match.home_team.code}
+                    ${homeFlag} ${homeLabel}
                     <span style="color:var(--text-muted);margin:0 var(--space-sm)">${isFinished ? match.home_score + ' — ' + match.away_score : 'vs'}</span>
-                    ${match.away_team.code} <img src="${getFlagURL(match.away_team.code)}" class="match-team-flag-svg" style="width:20px; height:14px; margin-left:4px">
+                    ${awayLabel} ${awayFlag}
                 </span>
                 <span style="font-weight:700;color:var(--text-secondary);min-width:50px;text-align:center">
                     ${pred.predicted_home_score} — ${pred.predicted_away_score}

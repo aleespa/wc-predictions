@@ -7,16 +7,20 @@ export async function predictPage(params) {
     const matchId = params.id;
     const authed = isAuthenticated();
 
-    let match;
+    let match, user;
     try {
-        match = await fetchAPI(`/matches/${matchId}`);
+        [match, user] = await Promise.all([
+            fetchAPI(`/matches/${matchId}`),
+            authed ? fetchAPI('/users/me') : Promise.resolve(null)
+        ]);
     } catch (e) {
         return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${e.message}</div></div>`;
     }
 
     const matchDate = new Date(match.match_date);
     const now = new Date();
-    const isLocked = matchDate <= now || match.is_finished;
+    const isGroupLocked = user?.is_group_stage_locked && match.stage === 'Group Stage';
+    const isLocked = matchDate <= now || match.is_finished || isGroupLocked;
     const teamsKnown = match.home_team && match.away_team;
     const isKnockout = match.stage !== 'Group Stage';
 
@@ -167,7 +171,9 @@ export async function predictPage(params) {
 
                 ${isLocked ? `
                     <div class="empty-state" style="padding:var(--space-lg)">
-                        <div style="color:var(--accent-red);font-weight:600">${t('predict_locked')}</div>
+                        <div style="color:var(--accent-red);font-weight:600">
+                            ${isGroupLocked ? t('predict_group_locked') : t('predict_locked')}
+                        </div>
                     </div>
                 ` : `
                     <div class="points-preview">
@@ -264,6 +270,12 @@ export async function predictPage(params) {
                 if (isKnockout && h === a && !penWinnerInput.value) {
                     showToast(t('predict_penalty_desc'), 'warning');
                     return;
+                }
+
+                // Confirmation for first knockout prediction
+                if (isKnockout && !user?.is_group_stage_locked) {
+                    const confirmed = confirm(t('predict_knockout_lock_confirm'));
+                    if (!confirmed) return;
                 }
 
                 const submitBtn = document.getElementById('predict-submit');

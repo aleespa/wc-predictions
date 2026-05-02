@@ -34,6 +34,37 @@ def submit_prediction(
             detail="Match is already finished",
         )
 
+    # Enforce Group Stage Lock
+    if match.stage == "Group Stage" and current_user.is_group_stage_locked:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Group stage predictions are locked because you have already started your knockout bracket."
+        )
+
+    # Enforce Knockout Gating
+    if match.stage != "Group Stage":
+        # Check if already unlocked
+        group_matches = db.query(models.Match).filter(models.Match.stage == "Group Stage").all()
+        all_finished = all(m.is_finished for m in group_matches)
+        
+        user_predicted_all = False
+        group_match_ids = [m.id for m in group_matches]
+        group_preds_count = (
+            db.query(models.Prediction)
+            .filter(
+                models.Prediction.user_id == current_user.id,
+                models.Prediction.match_id.in_(group_match_ids)
+            )
+            .count()
+        )
+        user_predicted_all = group_preds_count >= len(group_matches)
+
+        if not (all_finished or user_predicted_all):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You must complete all group-stage predictions to unlock the knockout bracket."
+            )
+
     # For knockout matches, ensure we have teams (either official or speculative)
     p_home_id = data.predicted_home_team_id or match.home_team_id
     p_away_id = data.predicted_away_team_id or match.away_team_id
@@ -61,6 +92,11 @@ def submit_prediction(
         existing.predicted_home_team_id = p_home_id
         existing.predicted_away_team_id = p_away_id
         existing.penalty_winner_id = data.penalty_winner_id
+        
+        # Lock group stage if this is a knockout match
+        if match.stage != "Group Stage" and not current_user.is_group_stage_locked:
+            current_user.is_group_stage_locked = True
+
         db.commit()
         db.refresh(existing)
         return existing
@@ -75,6 +111,11 @@ def submit_prediction(
             penalty_winner_id=data.penalty_winner_id,
         )
         db.add(prediction)
+        
+        # Lock group stage if this is a knockout match
+        if match.stage != "Group Stage" and not current_user.is_group_stage_locked:
+            current_user.is_group_stage_locked = True
+            
         db.commit()
         db.refresh(prediction)
         return prediction

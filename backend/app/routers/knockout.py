@@ -404,6 +404,34 @@ def get_bracket(
     Get the full knockout bracket with teams resolved from the user's
     predicted standings (or real results where available).
     """
+    # Determine if bracket is unlocked
+    # 1. Check if all group stage matches are finished
+    group_matches = db.query(models.Match).filter(models.Match.stage == "Group Stage").all()
+    all_finished = all(m.is_finished for m in group_matches)
+    
+    # 2. Check if user has predicted all group stage matches
+    user_predicted_all = False
+    if current_user:
+        group_match_ids = [m.id for m in group_matches]
+        group_preds_count = (
+            db.query(models.Prediction)
+            .filter(
+                models.Prediction.user_id == current_user.id,
+                models.Prediction.match_id.in_(group_match_ids)
+            )
+            .count()
+        )
+        user_predicted_all = group_preds_count >= len(group_matches)
+
+    is_unlocked = all_finished or user_predicted_all
+    unlock_reason = None
+    if not is_unlocked:
+        unlock_reason = "Complete all group-stage predictions to unlock the bracket"
+    elif all_finished:
+        unlock_reason = "Round of 32 is officially defined"
+    else:
+        unlock_reason = "All group stage matches predicted"
+
     user_id = current_user.id if current_user else None
 
     # Resolve bracket teams from standings
@@ -484,6 +512,8 @@ def get_bracket(
         semi_finals=sf,
         third_place=third,
         final=final,
+        is_unlocked=is_unlocked,
+        unlock_reason=unlock_reason
     )
 
 
@@ -498,5 +528,5 @@ def get_predicted_standings(
     Real results take priority; user predictions fill in for unplayed matches.
     """
     user_id = current_user.id if current_user else None
-    standings = _compute_blended_standings(db, group_letter, user_id)
+    standings = compute_blended_standings(db, group_letter, user_id)
     return standings
