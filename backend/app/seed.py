@@ -1,187 +1,152 @@
 """
 Seed the database with all 48 World Cup 2026 teams, group-stage matches,
-and the full knockout bracket template (R32 → Final).
+and the full knockout bracket template (R32 → Final) according to official 
+FIFA scheduling and accurate regional venue zoning.
 """
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from .models import Team, Match, User
 
 TEAMS = [
-    # Group A
+    # Group A (Mexico Host Group)
     ("Mexico", "MEX", "A", "🇲🇽"),
     ("South Africa", "RSA", "A", "🇿🇦"),
     ("South Korea", "KOR", "A", "🇰🇷"),
     ("Czechia", "CZE", "A", "🇨🇿"),
-    # Group B
+    # Group B (Canada Host Group)
     ("Canada", "CAN", "B", "🇨🇦"),
     ("Switzerland", "SUI", "B", "🇨🇭"),
     ("Qatar", "QAT", "B", "🇶🇦"),
     ("Bosnia & Herzegovina", "BIH", "B", "🇧🇦"),
-    # Group C
+    # Group C (East Region)
     ("Brazil", "BRA", "C", "🇧🇷"),
     ("Morocco", "MAR", "C", "🇲🇦"),
     ("Haiti", "HAI", "C", "🇭🇹"),
     ("Scotland", "SCO", "C", "🏴\U000e0067\U000e0062\U000e0073\U000e0063\U000e0074\U000e007f"),
-    # Group D
+    # Group D (USA Host Group - West Coast)
     ("USA", "USA", "D", "🇺🇸"),
     ("Paraguay", "PAR", "D", "🇵🇾"),
     ("Australia", "AUS", "D", "🇦🇺"),
     ("Türkiye", "TUR", "D", "🇹🇷"),
-    # Group E
+    # Group E (Central Region)
     ("Germany", "GER", "E", "🇩🇪"),
     ("Curaçao", "CUW", "E", "🇨🇼"),
     ("Côte d'Ivoire", "CIV", "E", "🇨🇮"),
     ("Ecuador", "ECU", "E", "🇪🇨"),
-    # Group F
+    # Group F (Central Region)
     ("Netherlands", "NED", "F", "🇳🇱"),
     ("Japan", "JPN", "F", "🇯🇵"),
     ("Tunisia", "TUN", "F", "🇹🇳"),
     ("Sweden", "SWE", "F", "🇸🇪"),
-    # Group G
+    # Group G (East Region)
     ("Belgium", "BEL", "G", "🇧🇪"),
     ("Egypt", "EGY", "G", "🇪🇬"),
     ("Iran", "IRN", "G", "🇮🇷"),
     ("New Zealand", "NZL", "G", "🇳🇿"),
-    # Group H
+    # Group H (West Region)
     ("Spain", "ESP", "H", "🇪🇸"),
     ("Cabo Verde", "CPV", "H", "🇨🇻"),
     ("Saudi Arabia", "KSA", "H", "🇸🇦"),
     ("Uruguay", "URU", "H", "🇺🇾"),
-    # Group I
+    # Group I (East Region)
     ("France", "FRA", "I", "🇫🇷"),
     ("Senegal", "SEN", "I", "🇸🇳"),
     ("Norway", "NOR", "I", "🇳🇴"),
     ("Iraq", "IRQ", "I", "🇮🇶"),
-    # Group J
+    # Group J (Central Region)
     ("Argentina", "ARG", "J", "🇦🇷"),
     ("Algeria", "ALG", "J", "🇩🇿"),
     ("Austria", "AUT", "J", "🇦🇹"),
     ("Jordan", "JOR", "J", "🇯🇴"),
-    # Group K
+    # Group K (Central Region)
     ("Portugal", "POR", "K", "🇵🇹"),
     ("Colombia", "COL", "K", "🇨🇴"),
     ("Uzbekistan", "UZB", "K", "🇺🇿"),
     ("DR Congo", "COD", "K", "🇨🇩"),
-    # Group L
+    # Group L (East Region)
     ("England", "ENG", "L", "🏴\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007f"),
     ("Croatia", "CRO", "L", "🇭🇷"),
     ("Ghana", "GHA", "L", "🇬🇭"),
     ("Panama", "PAN", "L", "🇵🇦"),
 ]
 
-# Group stage: June 11 – June 27, 2026
-# Each group has 6 matches (round-robin of 4 teams)
-# 3 matchdays per group, spread across the window
+# Group stage: June 11 – June 27, 2026 (16 day offset span)
 GROUP_SCHEDULE = {
-    # (day_offset_md1, day_offset_md2, day_offset_md3)
-    "A": (0, 4, 8),
-    "B": (0, 4, 8),
-    "C": (1, 5, 9),
-    "D": (1, 5, 9),
-    "E": (2, 6, 10),
-    "F": (2, 6, 10),
-    "G": (3, 7, 11),
-    "H": (3, 7, 11),
-    "I": (4, 8, 12),
-    "J": (4, 8, 12),
-    "K": (5, 9, 13),
-    "L": (5, 9, 13),
+    "A": (0, 7, 13), "B": (1, 7, 13), "C": (2, 8, 14),
+    "D": (2, 8, 14), "E": (3, 9, 15), "F": (3, 9, 15),
+    "G": (4, 10, 16), "H": (4, 10, 16), "I": (5, 11, 16),
+    "J": (5, 11, 16), "K": (6, 12, 16), "L": (6, 12, 16),
 }
 
-# Match times (UTC) for the 2 games per matchday in a group
-MATCH_TIMES = [
-    (15, 0),  # 15:00 UTC
-    (18, 0),  # 18:00 UTC
-]
+# Accurate Geographic Zoning for Group Stages
+GROUP_VENUES = {
+    "A": ["Estadio Azteca, Mexico City", "Estadio Akron, Guadalajara", "Estadio BBVA, Monterrey"],
+    "B": ["BMO Field, Toronto", "BC Place, Vancouver"],
+    "C": ["Gillette Stadium, Boston", "Lincoln Financial Field, Philadelphia"],
+    "D": ["SoFi Stadium, Los Angeles", "Lumen Field, Seattle"],
+    "E": ["NRG Stadium, Houston", "AT&T Stadium, Dallas"],
+    "F": ["Arrowhead Stadium, Kansas City", "Mercedes-Benz Stadium, Atlanta"],
+    "G": ["MetLife Stadium, New York/New Jersey", "Hard Rock Stadium, Miami"],
+    "H": ["Levi's Stadium, San Francisco", "SoFi Stadium, Los Angeles"],
+    "I": ["Gillette Stadium, Boston", "MetLife Stadium, New York/New Jersey"],
+    "J": ["Arrowhead Stadium, Kansas City", "AT&T Stadium, Dallas"],
+    "K": ["NRG Stadium, Houston", "Mercedes-Benz Stadium, Atlanta"],
+    "L": ["Hard Rock Stadium, Miami", "Lincoln Financial Field, Philadelphia"],
+}
 
+MATCH_TIMES = [(15, 0), (18, 0)]
 BASE_DATE = datetime(2026, 6, 11, tzinfo=timezone.utc)
-
-VENUES = [
-    "MetLife Stadium, New York/New Jersey",
-    "AT&T Stadium, Dallas",
-    "SoFi Stadium, Los Angeles",
-    "Hard Rock Stadium, Miami",
-    "Estadio Azteca, Mexico City",
-    "Lumen Field, Seattle",
-    "NRG Stadium, Houston",
-    "Mercedes-Benz Stadium, Atlanta",
-    "Lincoln Financial Field, Philadelphia",
-    "BC Place, Vancouver",
-    "Arrowhead Stadium, Kansas City",
-    "BMO Field, Toronto",
-    "Estadio BBVA, Monterrey",
-    "Estadio Akron, Guadalajara",
-    "Gillette Stadium, Boston",
-    "Levi's Stadium, San Francisco",
-]
 
 # ══════════════════════════════════════════════════════
 # KNOCKOUT BRACKET — FIFA Official 2026 Format
 # ══════════════════════════════════════════════════════
-# Slot notation:
-#   "1X" = Winner of Group X
-#   "2X" = Runner-up of Group X
-#   "3XXXXX" = Best 3rd place from those groups
-#   For R16+: filled by source match winners
-#
-# Dates: R32 = June 28-July 2, R16 = July 3-6, QF = July 7-8,
-#         SF = July 11-12, 3rd Place = July 14, Final = July 15
-
 KNOCKOUT_ROUND_OF_32 = [
-    # (match_number, home_slot, away_slot, date, time_utc, venue)
-    (73, "2A", "2B",     (2026, 6, 28, 15, 0), "MetLife Stadium, New York/New Jersey"),
-    (74, "1E", "3ABCDF", (2026, 6, 28, 18, 0), "AT&T Stadium, Dallas"),
-    (75, "1F", "2C",     (2026, 6, 28, 21, 0), "SoFi Stadium, Los Angeles"),
-    (76, "1C", "2F",     (2026, 6, 29, 15, 0), "Hard Rock Stadium, Miami"),
-    (77, "2E", "2I",     (2026, 6, 29, 18, 0), "Estadio Azteca, Mexico City"),
-    (78, "1I", "3CDFGH", (2026, 6, 29, 21, 0), "Lumen Field, Seattle"),
-    (79, "1A", "3CEFHI", (2026, 6, 30, 15, 0), "NRG Stadium, Houston"),
-    (80, "1L", "3EHIJK", (2026, 6, 30, 18, 0), "Mercedes-Benz Stadium, Atlanta"),
-    (81, "1D", "3BEFIJ", (2026, 6, 30, 21, 0), "Lincoln Financial Field, Philadelphia"),
-    (82, "1G", "3AEHIJ", (2026, 7, 1, 15, 0),  "BC Place, Vancouver"),
-    (83, "2K", "2L",     (2026, 7, 1, 18, 0),  "Arrowhead Stadium, Kansas City"),
-    (84, "1H", "2J",     (2026, 7, 1, 21, 0),  "BMO Field, Toronto"),
-    (85, "1B", "3EFGIJ", (2026, 7, 2, 15, 0),  "Estadio BBVA, Monterrey"),
-    (86, "1J", "2H",     (2026, 7, 2, 18, 0),  "Estadio Akron, Guadalajara"),
-    (87, "1K", "3DEIJL", (2026, 7, 2, 21, 0),  "Gillette Stadium, Boston"),
-    (88, "2D", "2G",     (2026, 7, 2, 21, 0),  "Levi's Stadium, San Francisco"),
+    (73, "2A", "2B",     (2026, 6, 28, 15, 0), "SoFi Stadium, Los Angeles"),
+    (74, "1E", "3ABCDF", (2026, 6, 29, 15, 0), "Gillette Stadium, Boston"),
+    (75, "1F", "2C",     (2026, 6, 29, 18, 0), "Estadio BBVA, Monterrey"),
+    (76, "1C", "2F",     (2026, 6, 29, 21, 0), "NRG Stadium, Houston"),
+    (77, "1I", "3CDFGH", (2026, 6, 30, 15, 0), "MetLife Stadium, New York/New Jersey"),
+    (78, "2E", "2I",     (2026, 6, 30, 18, 0), "AT&T Stadium, Dallas"),
+    (79, "1A", "3CEFHI", (2026, 6, 30, 21, 0), "Estadio Azteca, Mexico City"),
+    (80, "1L", "3EHIJK", (2026, 7, 1, 15, 0),  "Mercedes-Benz Stadium, Atlanta"),
+    (81, "1D", "3BEFIJ", (2026, 7, 1, 18, 0),  "Levi's Stadium, San Francisco"),
+    (82, "1G", "3AEHIJ", (2026, 7, 1, 21, 0),  "Lumen Field, Seattle"),
+    (83, "2K", "2L",     (2026, 7, 2, 15, 0),  "BMO Field, Toronto"),
+    (84, "1H", "2J",     (2026, 7, 2, 18, 0),  "SoFi Stadium, Los Angeles"),
+    (85, "1B", "3EFGIJ", (2026, 7, 2, 21, 0),  "BC Place, Vancouver"),
+    (86, "1J", "2H",     (2026, 7, 3, 15, 0),  "Hard Rock Stadium, Miami"),
+    (87, "1K", "3DEIJL", (2026, 7, 3, 18, 0),  "Arrowhead Stadium, Kansas City"),
+    (88, "2D", "2G",     (2026, 7, 3, 21, 0),  "AT&T Stadium, Dallas"),
 ]
 
-# Round of 16: Winners of R32 matches feed in
-# Format: (match_number, home_source_match, away_source_match, date, venue)
 KNOCKOUT_ROUND_OF_16 = [
-    (89, 73, 74, (2026, 7, 3, 15, 0),  "MetLife Stadium, New York/New Jersey"),
-    (90, 75, 76, (2026, 7, 3, 18, 0),  "AT&T Stadium, Dallas"),
-    (91, 77, 78, (2026, 7, 3, 21, 0),  "SoFi Stadium, Los Angeles"),
-    (92, 79, 80, (2026, 7, 4, 15, 0),  "Hard Rock Stadium, Miami"),
-    (93, 81, 82, (2026, 7, 4, 18, 0),  "Estadio Azteca, Mexico City"),
-    (94, 83, 84, (2026, 7, 4, 21, 0),  "Lumen Field, Seattle"),
-    (95, 85, 86, (2026, 7, 5, 15, 0),  "NRG Stadium, Houston"),
-    (96, 87, 88, (2026, 7, 5, 18, 0),  "Mercedes-Benz Stadium, Atlanta"),
+    (89, 74, 77, (2026, 7, 4, 15, 0),  "Lincoln Financial Field, Philadelphia"),
+    (90, 73, 75, (2026, 7, 4, 18, 0),  "NRG Stadium, Houston"),
+    (91, 76, 78, (2026, 7, 5, 15, 0),  "MetLife Stadium, New York/New Jersey"),
+    (92, 79, 80, (2026, 7, 5, 18, 0),  "Estadio Azteca, Mexico City"),
+    (93, 83, 84, (2026, 7, 6, 15, 0),  "AT&T Stadium, Dallas"),
+    (94, 81, 82, (2026, 7, 6, 18, 0),  "Lumen Field, Seattle"),
+    (95, 86, 88, (2026, 7, 7, 15, 0),  "Mercedes-Benz Stadium, Atlanta"),
+    (96, 85, 87, (2026, 7, 7, 18, 0),  "BC Place, Vancouver"),
 ]
 
-# Quarter-finals
 KNOCKOUT_QUARTER_FINALS = [
-    (97, 89, 90, (2026, 7, 7, 15, 0),  "MetLife Stadium, New York/New Jersey"),
-    (98, 91, 92, (2026, 7, 7, 18, 0),  "AT&T Stadium, Dallas"),
-    (99, 93, 94, (2026, 7, 8, 15, 0),  "SoFi Stadium, Los Angeles"),
-    (100, 95, 96, (2026, 7, 8, 18, 0), "Hard Rock Stadium, Miami"),
+    (97, 89, 90, (2026, 7, 9, 15, 0),  "Gillette Stadium, Boston"),
+    (98, 93, 94, (2026, 7, 10, 18, 0), "SoFi Stadium, Los Angeles"),
+    (99, 91, 92, (2026, 7, 11, 15, 0), "Hard Rock Stadium, Miami"),
+    (100, 95, 96, (2026, 7, 11, 18, 0), "Arrowhead Stadium, Kansas City"),
 ]
 
-# Semi-finals
 KNOCKOUT_SEMI_FINALS = [
-    (101, 97, 98, (2026, 7, 11, 18, 0), "MetLife Stadium, New York/New Jersey"),
-    (102, 99, 100, (2026, 7, 12, 18, 0), "AT&T Stadium, Dallas"),
+    (101, 97, 98, (2026, 7, 14, 18, 0), "AT&T Stadium, Dallas"),
+    (102, 99, 100, (2026, 7, 15, 18, 0), "Mercedes-Benz Stadium, Atlanta"),
 ]
 
-# Third place & Final
 KNOCKOUT_FINAL_MATCHES = [
-    (103, 101, 102, (2026, 7, 14, 18, 0), "Estadio Azteca, Mexico City"),     # 3rd place (losers of SFs)
-    (104, 101, 102, (2026, 7, 15, 18, 0), "MetLife Stadium, New York/New Jersey"),  # Final (winners of SFs)
+    (103, 101, 102, (2026, 7, 18, 18, 0), "Hard Rock Stadium, Miami"),
+    (104, 101, 102, (2026, 7, 19, 19, 0), "MetLife Stadium, New York/New Jersey"),
 ]
 
-
-# Human-readable labels for bracket slots
 SLOT_LABELS = {
     "1A": "Winner Group A", "1B": "Winner Group B", "1C": "Winner Group C",
     "1D": "Winner Group D", "1E": "Winner Group E", "1F": "Winner Group F",
@@ -197,14 +162,11 @@ SLOT_LABELS = {
     "3EFGIJ": "3rd (E/F/G/I/J)", "3DEIJL": "3rd (D/E/I/J/L)",
 }
 
-
 def seed_database(db: Session):
     """Seed teams, group-stage matches, and knockout bracket template if the DB is empty."""
-    # Check if already seeded
     if db.query(Team).count() > 0:
         return
 
-    # Create admin user
     admin = User(
         clerk_id="admin_placeholder_id",
         username="admin",
@@ -213,29 +175,29 @@ def seed_database(db: Session):
     )
     db.add(admin)
 
-    # Seed teams
-    team_map = {}  # code -> Team
+    team_map = {}
     for name, code, group, flag in TEAMS:
         team = Team(name=name, code=code, group_letter=group, flag_emoji=flag)
         db.add(team)
         db.flush()
         team_map[code] = team
 
-    # ── Generate group-stage matches ──
+    # ── Generate group-stage matches with localized venues ──
     match_number = 1
-    venue_idx = 0
 
     for group_letter in "ABCDEFGHIJKL":
         group_teams = [t for t in TEAMS if t[2] == group_letter]
         codes = [t[1] for t in group_teams]
         schedule = GROUP_SCHEDULE[group_letter]
+        
+        # Pull the specific stadiums assigned to this group's region
+        stadiums = GROUP_VENUES[group_letter]
+        venue_idx = 0
 
-        # Round-robin pairings for 4 teams:
-        # MD1: 1v2, 3v4  |  MD2: 1v3, 2v4  |  MD3: 1v4, 2v3
         pairings_by_md = [
-            [(codes[0], codes[1]), (codes[2], codes[3])],  # Matchday 1
-            [(codes[0], codes[2]), (codes[1], codes[3])],  # Matchday 2
-            [(codes[0], codes[3]), (codes[1], codes[2])],  # Matchday 3
+            [(codes[0], codes[1]), (codes[2], codes[3])],
+            [(codes[0], codes[2]), (codes[1], codes[3])],
+            [(codes[0], codes[3]), (codes[1], codes[2])],
         ]
 
         for md_idx, (day_offset, pairs) in enumerate(zip(schedule, pairings_by_md)):
@@ -246,7 +208,9 @@ def seed_database(db: Session):
                     hour=hour,
                     minute=minute,
                 )
-                venue = VENUES[venue_idx % len(VENUES)]
+                
+                # Cycle through the group's localized stadiums
+                venue = stadiums[venue_idx % len(stadiums)]
                 venue_idx += 1
 
                 match = Match(
@@ -264,122 +228,50 @@ def seed_database(db: Session):
     db.flush()
 
     # ── Generate knockout bracket matches ──
-    # We need to map match_number -> match.id for source references
     match_num_to_id = {}
 
-    # Round of 32
     for mnum, home_slot, away_slot, dt_tuple, venue in KNOCKOUT_ROUND_OF_32:
         match_dt = datetime(*dt_tuple, tzinfo=timezone.utc)
-        match = Match(
-            stage="Round of 32",
-            match_number=mnum,
-            home_team_id=None,
-            away_team_id=None,
-            match_date=match_dt,
-            venue=venue,
-            home_slot=home_slot,
-            away_slot=away_slot,
-        )
+        match = Match(stage="Round of 32", match_number=mnum, match_date=match_dt, venue=venue, home_slot=home_slot, away_slot=away_slot)
         db.add(match)
         db.flush()
         match_num_to_id[mnum] = match.id
 
-    # Round of 16
     for mnum, home_src, away_src, dt_tuple, venue in KNOCKOUT_ROUND_OF_16:
         match_dt = datetime(*dt_tuple, tzinfo=timezone.utc)
-        match = Match(
-            stage="Round of 16",
-            match_number=mnum,
-            home_team_id=None,
-            away_team_id=None,
-            match_date=match_dt,
-            venue=venue,
-            home_slot=f"W{home_src}",
-            away_slot=f"W{away_src}",
-            home_source_match_id=match_num_to_id[home_src],
-            away_source_match_id=match_num_to_id[away_src],
-        )
+        match = Match(stage="Round of 16", match_number=mnum, match_date=match_dt, venue=venue, home_slot=f"W{home_src}", away_slot=f"W{away_src}", home_source_match_id=match_num_to_id[home_src], away_source_match_id=match_num_to_id[away_src])
         db.add(match)
         db.flush()
         match_num_to_id[mnum] = match.id
 
-    # Quarter-finals
     for mnum, home_src, away_src, dt_tuple, venue in KNOCKOUT_QUARTER_FINALS:
         match_dt = datetime(*dt_tuple, tzinfo=timezone.utc)
-        match = Match(
-            stage="Quarter-finals",
-            match_number=mnum,
-            home_team_id=None,
-            away_team_id=None,
-            match_date=match_dt,
-            venue=venue,
-            home_slot=f"W{home_src}",
-            away_slot=f"W{away_src}",
-            home_source_match_id=match_num_to_id[home_src],
-            away_source_match_id=match_num_to_id[away_src],
-        )
+        match = Match(stage="Quarter-finals", match_number=mnum, match_date=match_dt, venue=venue, home_slot=f"W{home_src}", away_slot=f"W{away_src}", home_source_match_id=match_num_to_id[home_src], away_source_match_id=match_num_to_id[away_src])
         db.add(match)
         db.flush()
         match_num_to_id[mnum] = match.id
 
-    # Semi-finals
     for mnum, home_src, away_src, dt_tuple, venue in KNOCKOUT_SEMI_FINALS:
         match_dt = datetime(*dt_tuple, tzinfo=timezone.utc)
-        match = Match(
-            stage="Semi-finals",
-            match_number=mnum,
-            home_team_id=None,
-            away_team_id=None,
-            match_date=match_dt,
-            venue=venue,
-            home_slot=f"W{home_src}",
-            away_slot=f"W{away_src}",
-            home_source_match_id=match_num_to_id[home_src],
-            away_source_match_id=match_num_to_id[away_src],
-        )
+        match = Match(stage="Semi-finals", match_number=mnum, match_date=match_dt, venue=venue, home_slot=f"W{home_src}", away_slot=f"W{away_src}", home_source_match_id=match_num_to_id[home_src], away_source_match_id=match_num_to_id[away_src])
         db.add(match)
         db.flush()
         match_num_to_id[mnum] = match.id
 
-    # Third place (match 103) — losers of semi-finals
     mnum, home_src, away_src, dt_tuple, venue = KNOCKOUT_FINAL_MATCHES[0]
     match_dt = datetime(*dt_tuple, tzinfo=timezone.utc)
-    match = Match(
-        stage="Third-place",
-        match_number=mnum,
-        home_team_id=None,
-        away_team_id=None,
-        match_date=match_dt,
-        venue=venue,
-        home_slot=f"L{home_src}",
-        away_slot=f"L{away_src}",
-        home_source_match_id=match_num_to_id[home_src],
-        away_source_match_id=match_num_to_id[away_src],
-    )
+    match = Match(stage="Third-place", match_number=mnum, match_date=match_dt, venue=venue, home_slot=f"L{home_src}", away_slot=f"L{away_src}", home_source_match_id=match_num_to_id[home_src], away_source_match_id=match_num_to_id[away_src])
     db.add(match)
     db.flush()
     match_num_to_id[mnum] = match.id
 
-    # Final (match 104) — winners of semi-finals
     mnum, home_src, away_src, dt_tuple, venue = KNOCKOUT_FINAL_MATCHES[1]
     match_dt = datetime(*dt_tuple, tzinfo=timezone.utc)
-    match = Match(
-        stage="Final",
-        match_number=mnum,
-        home_team_id=None,
-        away_team_id=None,
-        match_date=match_dt,
-        venue=venue,
-        home_slot=f"W{home_src}",
-        away_slot=f"W{away_src}",
-        home_source_match_id=match_num_to_id[home_src],
-        away_source_match_id=match_num_to_id[away_src],
-    )
+    match = Match(stage="Final", match_number=mnum, match_date=match_dt, venue=venue, home_slot=f"W{home_src}", away_slot=f"W{away_src}", home_source_match_id=match_num_to_id[home_src], away_source_match_id=match_num_to_id[away_src])
     db.add(match)
     db.flush()
     match_num_to_id[mnum] = match.id
 
     db.commit()
-    print(f"Seeded {len(TEAMS)} teams and 72 group-stage matches")
-    print(f"Seeded 32 knockout bracket matches (R32 through Final)")
-    print(f"Admin user created (ID: admin_placeholder_id)")
+    print(f"Seeded {len(TEAMS)} teams and 72 group-stage matches across accurate regional zones.")
+    print(f"Seeded 32 knockout bracket matches (R32 through Final).")
