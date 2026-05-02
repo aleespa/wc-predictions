@@ -1,6 +1,6 @@
 import { clerk } from './auth.js';
 
-const API_BASE = '/api';
+const API_BASE = `${import.meta.env.VITE_API_URL}/api`;
 
 export function isAuthenticated() {
     return !!clerk.user;
@@ -9,7 +9,7 @@ export function isAuthenticated() {
 export async function fetchAPI(endpoint, options = {}) {
     const token = await clerk.session?.getToken();
     console.log(`API Call to ${endpoint}. Token present: ${!!token}`);
-    
+
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers,
