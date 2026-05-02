@@ -11,7 +11,7 @@ export async function predictPage(params) {
     try {
         [match, user] = await Promise.all([
             fetchAPI(`/matches/${matchId}`),
-            authed ? fetchAPI('/users/me') : Promise.resolve(null)
+            authed ? fetchAPI('/me') : Promise.resolve(null)
         ]);
     } catch (e) {
         return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${e.message}</div></div>`;

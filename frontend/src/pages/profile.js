@@ -119,16 +119,6 @@ export async function profilePage() {
                 </div>
             </div>
 
-            <div class="card danger-zone" style="margin-top:var(--space-2xl); margin-bottom:var(--space-2xl); border: 1px solid rgba(239, 68, 68, 0.2); background:rgba(239, 68, 68, 0.05); padding:var(--space-lg); border-radius:var(--radius-lg)">
-                <h3 style="color:var(--accent-red); margin-top:0">${t('profile_delete_title')}</h3>
-                <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:var(--space-md)">
-                    ${t('profile_delete_desc')}
-                </p>
-                <button id="btn-delete-account" class="btn" style="background:var(--accent-red); color:white; border:none; padding:8px 16px; border-radius:var(--radius-md); font-weight:600; cursor:pointer">
-                    ${t('profile_delete_btn')}
-                </button>
-            </div>
-
             <h3 class="page-title" style="font-size:1.3rem;margin-bottom:var(--space-lg)">${t('profile_preds_title')}</h3>
 
             ${predictions.length === 0 ? `
@@ -140,6 +130,16 @@ export async function profilePage() {
             ` : `
                 <div>${predictionRows}</div>
             `}
+
+            <div class="card danger-zone" style="margin-top:var(--space-2xl); margin-bottom:var(--space-2xl); border: 1px solid rgba(239, 68, 68, 0.2); background:rgba(239, 68, 68, 0.05); padding:var(--space-lg); border-radius:var(--radius-lg)">
+                <h3 style="color:var(--accent-red); margin-top:0">${t('profile_delete_title')}</h3>
+                <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:var(--space-md)">
+                    ${t('profile_delete_desc')}
+                </p>
+                <button id="btn-delete-account" class="btn" style="background:var(--accent-red); color:white; border:none; padding:8px 16px; border-radius:var(--radius-md); font-weight:600; cursor:pointer">
+                    ${t('profile_delete_btn')}
+                </button>
+            </div>
         </div>
     `;
 

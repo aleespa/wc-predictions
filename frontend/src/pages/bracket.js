@@ -67,14 +67,15 @@ export function renderBracketMatch(match, options = {}) {
     }
 
     const isLocked = options.isLocked;
-    const clickable = bothTeamsKnown && !isFinished && !isLocked ? `onclick="location.hash='#/predict/${match.match_id}'"` : '';
+    const finalMatchId = match.match_id || match.id;
+    const clickable = bothTeamsKnown && !isFinished && !isLocked ? `onclick="location.hash='#/predict/${finalMatchId}'"` : '';
     const clickableClass = bothTeamsKnown && !isFinished && !isLocked ? 'bracket-match-clickable' : '';
     const lockedClass = isLocked ? 'bracket-match-locked' : '';
 
     return `
         <div class="bracket-match ${statusClass} ${clickableClass} ${lockedClass} ${compact ? 'bracket-match-compact' : ''}" 
-             id="bracket-match-${match.match_id}" ${clickable}
-             data-match-id="${match.match_id}" data-match-number="${match.match_number}">
+             id="bracket-match-${finalMatchId}" ${clickable}
+             data-match-id="${finalMatchId}" data-match-number="${match.match_number}">
             <div class="bracket-match-header">
                 <span class="bracket-match-num">M${match.match_number}</span>
                 <span class="bracket-match-info">${dateStr} · ${timeStr}</span>

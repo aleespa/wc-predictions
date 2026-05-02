@@ -13,7 +13,12 @@ export function navigate(path) {
 }
 
 export function getCurrentPath() {
-    return window.location.hash.slice(1) || '/';
+    let path = decodeURIComponent(window.location.hash.slice(1)) || '/';
+    // Remove trailing slash if it's not the root
+    if (path.length > 1 && path.endsWith('/')) {
+        path = path.slice(0, -1);
+    }
+    return path;
 }
 
 export async function handleRoute() {
@@ -42,14 +47,19 @@ export async function handleRoute() {
     let handler = routes[path];
     let params = {};
 
+    console.log(`Router: Handling path "${path}"`);
+
     if (!handler) {
         for (const [pattern, h] of Object.entries(routes)) {
-            const regex = patternToRegex(pattern);
-            const match = path.match(regex);
-            if (match) {
-                handler = h;
-                params = extractParams(pattern, match);
-                break;
+            if (pattern.includes(':')) {
+                const regex = patternToRegex(pattern);
+                const match = path.match(regex);
+                if (match) {
+                    console.log(`Router: Matched pattern "${pattern}"`);
+                    handler = h;
+                    params = extractParams(pattern, match);
+                    break;
+                }
             }
         }
     }
@@ -67,6 +77,7 @@ export async function handleRoute() {
                 }
             }
         } catch (err) {
+            console.error('Router: Handler error', err);
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">⚠️</div>
@@ -75,11 +86,17 @@ export async function handleRoute() {
             `;
         }
     } else {
+        console.warn(`Router: No handler found for path "${path}"`);
+        const registeredRoutes = Object.keys(routes).join(', ');
         container.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">🔍</div>
                 <div class="empty-state-text">${t('router_page_not_found')}</div>
-                <button class="btn btn-primary" onclick="location.hash='#/'">${t('router_go_home')}</button>
+                <div style="font-size:0.7rem; color:var(--text-muted); margin-top:var(--space-md); text-align:center; opacity:0.6">
+                    Path: "${path}"<br>
+                    Routes: ${registeredRoutes}
+                </div>
+                <button class="btn btn-primary" style="margin-top:var(--space-lg)" onclick="location.hash='#/'">${t('router_go_home')}</button>
             </div>
         `;
     }
@@ -99,7 +116,7 @@ export function initRouter() {
 function patternToRegex(pattern) {
     const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const withParams = escaped.replace(/:(\w+)/g, '([^/]+)');
-    return new RegExp(`^${withParams}$`);
+    return new RegExp(`^${withParams}$`, 'i');
 }
 
 function extractParams(pattern, match) {
