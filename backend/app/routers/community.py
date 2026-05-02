@@ -115,18 +115,6 @@ def _compute_match_stats(db: Session, match_ids: list[int], community_id: Option
 
     rows = query.group_by(models.Prediction.match_id).all()
 
-    rows = (
-        db.query(
-            models.Prediction.match_id,
-            func.count(models.Prediction.id).label("cnt"),
-            func.avg(models.Prediction.predicted_home_score).label("avg_h"),
-            func.avg(models.Prediction.predicted_away_score).label("avg_a"),
-        )
-        .filter(models.Prediction.match_id.in_(match_ids))
-        .group_by(models.Prediction.match_id)
-        .all()
-    )
-
     # Build base stats
     stats = {}
     for row in rows:

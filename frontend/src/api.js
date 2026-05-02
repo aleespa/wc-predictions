@@ -1,6 +1,6 @@
 import { clerk } from './auth.js';
 
-const API_BASE = `${import.meta.env.VITE_API_URL}/api`;
+const API_BASE = (import.meta.env.VITE_API_URL || '') + '/api';
 
 export function isAuthenticated() {
     return !!clerk.user;
@@ -29,7 +29,15 @@ export async function fetchAPI(endpoint, options = {}) {
         throw new Error('Session expired. Please log in again.');
     }
 
-    const data = await response.json();
+    let data;
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+    } else {
+        const text = await response.text();
+        console.error('Expected JSON but received:', text.substring(0, 100));
+        throw new Error(`Server returned non-JSON response (${response.status}). This usually indicates a routing error or server crash.`);
+    }
 
     if (!response.ok) {
         throw new Error(data.detail || 'Something went wrong');
