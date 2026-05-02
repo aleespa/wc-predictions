@@ -30,8 +30,11 @@ def list_matches(
 
     matches = query.order_by(models.Match.match_date, models.Match.id).all()
 
-    # Attach user predictions if authenticated
+    # Attach user predictions and resolve speculative teams if authenticated
     user_predictions = {}
+    resolved_bracket = {}
+    match_num_map = {}
+    match_id_to_num = {}
     if current_user:
         preds = (
             db.query(models.Prediction)
@@ -39,38 +42,38 @@ def list_matches(
             .all()
         )
         user_predictions = {p.match_id: p for p in preds}
+        
+        # Resolve bracket teams for speculative display in knockout
+        from .knockout import resolve_bracket_teams, resolve_bracket_slot
+        resolved_bracket = resolve_bracket_teams(db, current_user.id)
+        
+        # We need the match maps for full resolution (R16+)
+        ko_matches = db.query(models.Match).filter(models.Match.stage != "Group Stage").all()
+        match_num_map = {m.match_number: m for m in ko_matches}
+        match_id_to_num = {m.id: m.match_number for m in ko_matches}
 
     result = []
     for match in matches:
-        match_data = schemas.MatchOut(
-            id=match.id,
-            group_letter=match.group_letter,
-            stage=match.stage,
-            match_number=match.match_number,
-            home_team=schemas.TeamOut.model_validate(match.home_team) if match.home_team else None,
-            away_team=schemas.TeamOut.model_validate(match.away_team) if match.away_team else None,
-            match_date=match.match_date,
-            venue=match.venue,
-            home_score=match.home_score,
-            away_score=match.away_score,
-            is_finished=match.is_finished,
-            user_prediction=None,
-            home_slot=match.home_slot,
-            away_slot=match.away_slot,
-            home_source_match_id=match.home_source_match_id,
-            away_source_match_id=match.away_source_match_id,
-        )
+        match_data = schemas.MatchOut.model_validate(match)
+        
+        # Attach prediction
         if match.id in user_predictions:
-            pred = user_predictions[match.id]
-            match_data.user_prediction = schemas.PredictionOut(
-                id=pred.id,
-                match_id=pred.match_id,
-                predicted_home_score=pred.predicted_home_score,
-                predicted_away_score=pred.predicted_away_score,
-                points_awarded=pred.points_awarded,
-                created_at=pred.created_at,
-                updated_at=pred.updated_at,
-            )
+            match_data.user_prediction = schemas.PredictionOut.model_validate(user_predictions[match.id])
+            
+        # Speculative resolution for knockout matches
+        if match.stage != "Group Stage" and (not match.home_team_id or not match.away_team_id) and current_user:
+            from .knockout import resolve_bracket_slot
+            home_res = resolve_bracket_slot(match, "home", resolved_bracket, match_num_map, match_id_to_num, user_predictions)
+            away_res = resolve_bracket_slot(match, "away", resolved_bracket, match_num_map, match_id_to_num, user_predictions)
+            
+            if not match_data.home_team and home_res.team:
+                match_data.home_team = home_res.team
+                match_data.is_home_predicted = home_res.is_predicted
+            
+            if not match_data.away_team and away_res.team:
+                match_data.away_team = away_res.team
+                match_data.is_away_predicted = away_res.is_predicted
+                    
         result.append(match_data)
 
     return result
@@ -226,10 +229,10 @@ def get_match(
 
     # For knockout matches without official teams, resolve speculatively
     if match.stage != "Group Stage" and (not match.home_team_id or not match.away_team_id):
-        from .knockout import _resolve_bracket_teams, resolve_bracket_slot
+        from .knockout import resolve_bracket_teams, resolve_bracket_slot
         
         user_id = current_user.id if current_user else None
-        resolved = _resolve_bracket_teams(db, user_id)
+        resolved = resolve_bracket_teams(db, user_id)
         
         # We need the match maps for resolution
         ko_matches = db.query(models.Match).filter(models.Match.stage != "Group Stage").all()
@@ -251,8 +254,10 @@ def get_match(
         
         if not match_data.home_team and home_res.team:
             match_data.home_team = home_res.team
+            match_data.is_home_predicted = home_res.is_predicted
         if not match_data.away_team and away_res.team:
             match_data.away_team = away_res.team
+            match_data.is_away_predicted = away_res.is_predicted
             
         # Also detect if existing prediction is invalid (teams changed)
         if match_data.user_prediction:

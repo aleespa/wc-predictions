@@ -97,6 +97,8 @@ class MatchOut(BaseModel):
     # Source match IDs for progressive bracket
     home_source_match_id: Optional[int] = None
     away_source_match_id: Optional[int] = None
+    is_home_predicted: bool = False
+    is_away_predicted: bool = False
 
     class Config:
         from_attributes = True

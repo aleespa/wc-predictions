@@ -6,7 +6,7 @@ import { t } from '../i18n.js';
 /**
  * Renders a single team slot in the bracket.
  */
-function renderSlotTeam(slot, side) {
+export function renderSlotTeam(slot, side) {
     if (!slot) return `<div class="bracket-team bracket-tbd"><span class="bracket-team-name">${t('bracket_tbd')}</span></div>`;
 
     if (slot.team) {
@@ -32,7 +32,7 @@ function renderSlotTeam(slot, side) {
 /**
  * Renders a single bracket match card.
  */
-function renderBracketMatch(match, options = {}) {
+export function renderBracketMatch(match, options = {}) {
     const { compact = false } = options;
     const matchDate = new Date(match.match_date);
     const dateStr = matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -168,11 +168,6 @@ export async function bracketPage() {
                 </div>
             </div>
 
-            <div class="bracket-view-toggle">
-                <button class="bracket-view-btn active" data-view="rounds" id="btn-rounds-view">${t('bracket_view_rounds')}</button>
-                <button class="bracket-view-btn" data-view="tree" id="btn-tree-view">${t('bracket_view_tree')}</button>
-            </div>
-
             <div id="bracket-content">
                 <div id="bracket-rounds-view" class="bracket-container">
                     ${renderRound(t('stage_r32'), bracket.round_of_32)}
@@ -182,130 +177,9 @@ export async function bracketPage() {
                     ${bracket.third_place ? renderRound(t('stage_3rd'), [bracket.third_place], { compact: true }) : ''}
                     ${bracket.final ? renderRound(t('stage_final'), [bracket.final]) : ''}
                 </div>
-                <div id="bracket-tree-view" class="bracket-tree-container" style="display:none;">
-                    ${renderTreeBracket(bracket)}
-                </div>
             </div>
         </div>
     `;
 
-    return {
-        html,
-        init: () => {
-            // View toggle
-            const roundsBtn = document.getElementById('btn-rounds-view');
-            const treeBtn = document.getElementById('btn-tree-view');
-            const roundsView = document.getElementById('bracket-rounds-view');
-            const treeView = document.getElementById('bracket-tree-view');
-
-            roundsBtn?.addEventListener('click', () => {
-                roundsBtn.classList.add('active');
-                treeBtn.classList.remove('active');
-                roundsView.style.display = '';
-                treeView.style.display = 'none';
-            });
-
-            treeBtn?.addEventListener('click', () => {
-                treeBtn.classList.add('active');
-                roundsBtn.classList.remove('active');
-                treeView.style.display = '';
-                roundsView.style.display = 'none';
-            });
-        },
-    };
-}
-
-
-/**
- * Renders a traditional tournament tree bracket.
- * Groups R32 matches into pairs that feed into R16 matches, etc.
- */
-function renderTreeBracket(bracket) {
-    const r32 = bracket.round_of_32 || [];
-    const r16 = bracket.round_of_16 || [];
-    const qf = bracket.quarter_finals || [];
-    const sf = bracket.semi_finals || [];
-    const final = bracket.final;
-    const thirdPlace = bracket.third_place;
-
-    // Build the tree column by column
-    // R32 (16 matches) -> R16 (8) -> QF (4) -> SF (2) -> Final (1)
-    // Split into top and bottom halves for display
-
-    let treeHtml = `
-        <div class="tree-bracket">
-            <div class="tree-column tree-col-r32">
-                <div class="tree-column-header">${t('stage_r32')}</div>
-                ${r32.map(m => renderTreeMatch(m)).join('')}
-            </div>
-            <div class="tree-column tree-col-r16">
-                <div class="tree-column-header">${t('stage_r16')}</div>
-                ${r16.map(m => renderTreeMatch(m)).join('')}
-            </div>
-            <div class="tree-column tree-col-qf">
-                <div class="tree-column-header">${t('stage_qf')}</div>
-                ${qf.map(m => renderTreeMatch(m)).join('')}
-            </div>
-            <div class="tree-column tree-col-sf">
-                <div class="tree-column-header">${t('stage_sf')}</div>
-                ${sf.map(m => renderTreeMatch(m)).join('')}
-            </div>
-            <div class="tree-column tree-col-final">
-                <div class="tree-column-header">${t('stage_final')}</div>
-                ${final ? renderTreeMatch(final) : ''}
-                ${thirdPlace ? `<div style="margin-top:var(--space-xl)"><div class="tree-column-header" style="font-size:0.75rem">${t('stage_3rd')}</div>${renderTreeMatch(thirdPlace)}</div>` : ''}
-            </div>
-        </div>
-    `;
-
-    return treeHtml;
-}
-
-function renderTreeMatch(match) {
-    const bothTeams = match.home.team && match.away.team;
-    const isFinished = match.is_finished;
-    const hasPred = match.user_prediction != null;
-    const isInvalid = match.is_invalid_prediction;
-    const clickable = bothTeams && !isFinished;
-
-    let statusClass = '';
-    if (isFinished) statusClass = 'bracket-finished';
-    else if (isInvalid) statusClass = 'tree-match-invalid';
-    else if (hasPred) statusClass = 'bracket-has-prediction';
-    else if (bothTeams) statusClass = 'bracket-predictable';
-
-    const onClick = clickable ? `onclick="location.hash='#/predict/${match.match_id}'"` : '';
-
-    function teamRow(slot, score, side) {
-        if (!slot || !slot.team) {
-            const label = slot?.slot_label || t('bracket_tbd');
-            return `
-                <div class="tree-team tree-tbd ${side}">
-                    <span class="tree-team-name tree-placeholder">${label}</span>
-                    <span class="tree-team-score">-</span>
-                </div>
-            `;
-        }
-        const predicted = slot.is_predicted ? 'tree-predicted' : '';
-        const winnerClass = isFinished && score !== null ? (
-            (side === 'home' && match.home_score > match.away_score) ||
-            (side === 'away' && match.away_score > match.home_score)
-                ? 'tree-winner' : ''
-        ) : '';
-        return `
-            <div class="tree-team ${predicted} ${winnerClass} ${side}">
-                <img src="${getFlagURL(slot.team.code)}" class="tree-team-flag" />
-                <span class="tree-team-name">${slot.team.code}</span>
-                ${slot.is_predicted ? '<span class="tree-pred-dot" title="Predicted">⟡</span>' : ''}
-                <span class="tree-team-score">${score !== null && score !== undefined ? score : (hasPred ? (side === 'home' ? match.user_prediction.predicted_home_score : match.user_prediction.predicted_away_score) : '-')}</span>
-            </div>
-        `;
-    }
-
-    return `
-        <div class="tree-match ${statusClass} ${clickable ? 'tree-match-clickable' : ''}" ${onClick} data-match-num="${match.match_number}">
-            ${teamRow(match.home, isFinished ? match.home_score : null, 'home')}
-            ${teamRow(match.away, isFinished ? match.away_score : null, 'away')}
-        </div>
-    `;
+    return html;
 }

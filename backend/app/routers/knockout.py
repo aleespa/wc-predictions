@@ -13,7 +13,7 @@ from ..seed import SLOT_LABELS
 router = APIRouter(prefix="/api/knockout", tags=["knockout"])
 
 
-def _compute_blended_standings(
+def compute_blended_standings(
     db: Session,
     group_letter: str,
     user_id: Optional[int] = None,
@@ -114,7 +114,7 @@ def _compute_blended_standings(
     return standings
 
 
-def _resolve_bracket_teams(
+def resolve_bracket_teams(
     db: Session,
     user_id: Optional[int] = None,
 ) -> dict:
@@ -125,7 +125,7 @@ def _resolve_bracket_teams(
     # Compute blended standings for every group
     all_standings = {}
     for gl in "ABCDEFGHIJKL":
-        all_standings[gl] = _compute_blended_standings(db, gl, user_id)
+        all_standings[gl] = compute_blended_standings(db, gl, user_id)
 
     resolved = {}
 
@@ -247,7 +247,7 @@ def resolve_bracket_slot(
     team_obj = match.home_team if side == "home" else match.away_team
     if team_id and team_obj:
         return schemas.BracketSlotTeam(
-            team=_team_to_out(team_obj),
+            team=team_to_out(team_obj),
             slot_label=slot,
             is_predicted=False,
         )
@@ -257,7 +257,7 @@ def resolve_bracket_slot(
         if slot in resolved:
             info = resolved[slot]
             return schemas.BracketSlotTeam(
-                team=_team_to_out(info["team"]),
+                team=team_to_out(info["team"]),
                 slot_label=SLOT_LABELS.get(slot, slot),
                 is_predicted=info["is_predicted"],
             )
@@ -289,7 +289,7 @@ def resolve_bracket_slot(
                 chosen = loser_team if is_loser_slot else winner_team
                 if chosen:
                     return schemas.BracketSlotTeam(
-                        team=_team_to_out(chosen),
+                        team=team_to_out(chosen),
                         slot_label=slot,
                         is_predicted=False,
                     )
@@ -389,7 +389,7 @@ def build_bracket_match_data(
     )
 
 
-def _team_to_out(team: Optional[models.Team]) -> Optional[schemas.TeamOut]:
+def team_to_out(team: Optional[models.Team]) -> Optional[schemas.TeamOut]:
     if team is None:
         return None
     return schemas.TeamOut.model_validate(team)
@@ -407,7 +407,7 @@ def get_bracket(
     user_id = current_user.id if current_user else None
 
     # Resolve bracket teams from standings
-    resolved = _resolve_bracket_teams(db, user_id)
+    resolved = resolve_bracket_teams(db, user_id)
 
     # Load all knockout matches
     knockout_matches = (

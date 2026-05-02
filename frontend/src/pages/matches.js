@@ -144,7 +144,34 @@ export async function matchesPage() {
                         `;
                     }
                 } else {
-                    grid.innerHTML = filtered.map(m => renderMatchCard(m)).join('');
+                    if (filterType === 'stage' && filterVal !== 'all') {
+                        // For knockout stages, use the bracket card style
+                        const { renderBracketMatch } = await import('./bracket.js');
+                        const transformToBracketMatch = (m) => ({
+                            match_id: m.id,
+                            match_number: m.match_number,
+                            match_date: m.match_date,
+                            venue: m.venue,
+                            home: { 
+                                team: m.home_team, 
+                                slot_label: m.home_slot, 
+                                is_predicted: m.is_home_predicted 
+                            },
+                            away: { 
+                                team: m.away_team, 
+                                slot_label: m.away_slot, 
+                                is_predicted: m.is_away_predicted 
+                            },
+                            is_finished: m.is_finished,
+                            home_score: m.home_score,
+                            away_score: m.away_score,
+                            user_prediction: m.user_prediction,
+                            is_invalid_prediction: m.is_invalid_prediction || (m.user_prediction && m.user_prediction.is_invalid)
+                        });
+                        grid.innerHTML = filtered.map(m => renderBracketMatch(transformToBracketMatch(m))).join('');
+                    } else {
+                        grid.innerHTML = filtered.map(m => renderMatchCard(m)).join('');
+                    }
                 }
             });
         },
