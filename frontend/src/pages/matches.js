@@ -67,18 +67,24 @@ export async function matchesPage() {
                     // Fetch and render standings
                     try {
                         const stds = await fetchAPI(`/matches/standings/${filterVal}`);
-                        let trs = stds.map((s, idx) => `
-                            <tr style="border-bottom:1px solid var(--border-light)">
-                                <td style="padding:12px 4px;text-align:center;font-weight:700;color:var(--text-muted)">${idx+1}</td>
-                                <td style="padding:12px 4px;"><img src="${getFlagURL(s.team_code)}" style="width:20px;vertical-align:middle;margin-right:8px">${s.team_name}</td>
-                                <td style="padding:12px 4px;text-align:center">${s.played}</td>
-                                <td style="padding:12px 4px;text-align:center">${s.won}</td>
-                                <td style="padding:12px 4px;text-align:center">${s.drawn}</td>
-                                <td style="padding:12px 4px;text-align:center">${s.lost}</td>
-                                <td style="padding:12px 4px;text-align:center">${s.goal_diff > 0 ? '+'+s.goal_diff : s.goal_diff}</td>
-                                <td style="padding:12px 4px;text-align:center;font-weight:800;color:var(--accent-gold)">${s.points}</td>
-                            </tr>
-                        `).join('');
+                        let trs = stds.map((s, idx) => {
+                            const isPredicted = s.is_predicted;
+                            const rowStyle = isPredicted ? 'color: var(--accent-purple-light); font-style: italic;' : '';
+                            const pointsStyle = isPredicted ? 'color: var(--accent-purple);' : 'color: var(--accent-gold);';
+                            
+                            return `
+                                <tr style="border-bottom:1px solid var(--border-light); ${rowStyle}">
+                                    <td style="padding:12px 4px;text-align:center;font-weight:700;color:var(--text-muted)">${idx+1}</td>
+                                    <td style="padding:12px 4px;"><img src="${getFlagURL(s.team_code)}" class="match-team-flag-svg" style="width:24px; height:16px; margin-right:8px">${s.team_name}${isPredicted ? ' *' : ''}</td>
+                                    <td style="padding:12px 4px;text-align:center">${s.played}</td>
+                                    <td style="padding:12px 4px;text-align:center">${s.won}</td>
+                                    <td style="padding:12px 4px;text-align:center">${s.drawn}</td>
+                                    <td style="padding:12px 4px;text-align:center">${s.lost}</td>
+                                    <td style="padding:12px 4px;text-align:center">${s.goal_diff > 0 ? '+'+s.goal_diff : s.goal_diff}</td>
+                                    <td style="padding:12px 4px;text-align:center;font-weight:800; ${pointsStyle}">${s.points}</td>
+                                </tr>
+                            `;
+                        }).join('');
 
                         standingsContainer.innerHTML = `
                             <div class="card" style="margin-bottom:var(--space-lg);overflow-x:auto;">
@@ -100,6 +106,16 @@ export async function matchesPage() {
                                         ${trs}
                                     </tbody>
                                 </table>
+                                <div style="margin-top:var(--space-md); font-size:0.75rem; color:var(--text-muted); display:flex; gap:var(--space-lg); justify-content: flex-end;">
+                                    <div style="display:flex; align-items:center; gap:4px">
+                                        <span style="width:8px; height:8px; border-radius:50%; background:var(--accent-gold)"></span>
+                                        ${t('matches_standings_legend_confirmed')}
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:4px">
+                                        <span style="width:8px; height:8px; border-radius:50%; background:var(--accent-purple)"></span>
+                                        ${t('matches_standings_legend_predicted')}
+                                    </div>
+                                </div>
                             </div>
                         `;
                     } catch (err) {

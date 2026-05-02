@@ -60,3 +60,31 @@ def update_me(
         total_points=0, # These won't be recalculated here for performance but usually 0 is fine for the response
         predictions_count=0
     )
+@router.delete("/me")
+def delete_me(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    from ..auth import clerk_client
+    
+    try:
+        # 1. Delete communities created by the user
+        # (This also removes other members from those communities via the secondary relationship)
+        db.query(models.Community).filter(models.Community.creator_id == current_user.id).delete()
+        
+        # 2. Delete the user (cascades to predictions)
+        db.delete(current_user)
+        db.commit()
+        
+        # 3. Delete from Clerk
+        try:
+            clerk_client.users.delete(user_id=current_user.clerk_id)
+        except Exception as e:
+            # We log but don't fail if Clerk fails, as the local data is already gone
+            print(f"DEBUG: Failed to delete user from Clerk: {str(e)}")
+            
+        return {"status": "success", "message": "Account deleted"}
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete account: {str(e)}")

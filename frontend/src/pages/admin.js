@@ -52,9 +52,22 @@ export async function adminPage() {
                 ${awayFlag}
             </span>
             <div class="admin-match-score-inputs">
-                <input type="number" class="admin-score-input" id="admin-home-${m.id}" min="0" max="20" placeholder="${t('admin_placeholder_h')}" value="${m.home_score ?? ''}" />
-                <span style="color:var(--text-muted);font-weight:700">—</span>
-                <input type="number" class="admin-score-input" id="admin-away-${m.id}" min="0" max="20" placeholder="${t('admin_placeholder_a')}" value="${m.away_score ?? ''}" />
+                <div style="display:flex; flex-direction:column; gap:4px">
+                    <div style="display:flex; align-items:center; gap:var(--space-xs)">
+                        <input type="number" class="admin-score-input" id="admin-home-${m.id}" min="0" max="20" placeholder="${t('admin_placeholder_h')}" value="${m.home_score ?? ''}" oninput="window.__toggleAdminPen(${m.id})" />
+                        <span style="color:var(--text-muted);font-weight:700">—</span>
+                        <input type="number" class="admin-score-input" id="admin-away-${m.id}" min="0" max="20" placeholder="${t('admin_placeholder_a')}" value="${m.away_score ?? ''}" oninput="window.__toggleAdminPen(${m.id})" />
+                    </div>
+                    ${m.stage !== 'Group Stage' ? `
+                    <div id="admin-pen-wrapper-${m.id}" style="display:${m.home_score === m.away_score && m.home_score !== null ? 'block' : 'none'}">
+                        <select id="admin-pen-${m.id}" class="form-input" style="font-size:0.75rem; padding:2px 4px; height:auto">
+                            <option value="">-- ${t('predict_penalty_winner')} --</option>
+                            <option value="${m.home_team_id}" ${m.penalty_winner_id === m.home_team_id ? 'selected' : ''}>${m.home_team?.code || 'Home'} wins PK</option>
+                            <option value="${m.away_team_id}" ${m.penalty_winner_id === m.away_team_id ? 'selected' : ''}>${m.away_team?.code || 'Away'} wins PK</option>
+                        </select>
+                    </div>
+                    ` : ''}
+                </div>
             </div>
             <button class="btn btn-sm ${m.is_finished ? 'btn-secondary' : 'btn-success'}" onclick="window.__setResult(${m.id})" id="admin-btn-${m.id}">
                 ${m.is_finished ? t('admin_btn_done') : t('admin_btn_set')}
@@ -122,26 +135,46 @@ export async function adminPage() {
     return {
         html,
         init: () => {
+            window.__toggleAdminPen = (matchId) => {
+                const h = document.getElementById(`admin-home-${matchId}`).value;
+                const a = document.getElementById(`admin-away-${matchId}`).value;
+                const wrapper = document.getElementById(`admin-pen-wrapper-${matchId}`);
+                if (wrapper) {
+                    wrapper.style.display = (h !== '' && a !== '' && h === a) ? 'block' : 'none';
+                }
+            };
+
             window.__setResult = async (matchId) => {
                 const homeInput = document.getElementById(`admin-home-${matchId}`);
                 const awayInput = document.getElementById(`admin-away-${matchId}`);
+                const penSelect = document.getElementById(`admin-pen-${matchId}`);
                 const btn = document.getElementById(`admin-btn-${matchId}`);
-
+ 
                 const homeScore = parseInt(homeInput.value);
                 const awayScore = parseInt(awayInput.value);
-
+                const penWinnerId = penSelect ? parseInt(penSelect.value) : null;
+ 
                 if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) {
                     showToast(t('toast_invalid_scores'), 'error');
                     return;
                 }
 
+                if (penSelect && homeScore === awayScore && !penWinnerId) {
+                    showToast(t('predict_penalty_desc'), 'warning');
+                    return;
+                }
+ 
                 btn.disabled = true;
                 btn.textContent = t('btn_saving');
-
+ 
                 try {
                     await fetchAPI(`/admin/matches/${matchId}/result`, {
                         method: 'PUT',
-                        body: JSON.stringify({ home_score: homeScore, away_score: awayScore }),
+                        body: JSON.stringify({ 
+                            home_score: homeScore, 
+                            away_score: awayScore,
+                            penalty_winner_id: penWinnerId 
+                        }),
                     });
                     showToast(t('toast_res_saved', { h: homeScore, a: awayScore }));
                     btn.textContent = t('admin_btn_done');
@@ -214,6 +247,7 @@ export async function adminPage() {
 
             return () => {
                 delete window.__setResult;
+                delete window.__toggleAdminPen;
             };
         },
     };

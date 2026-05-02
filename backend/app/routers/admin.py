@@ -15,40 +15,71 @@ def calculate_points(
     predicted_away: int,
     actual_home: int,
     actual_away: int,
+    predicted_pen_winner: Optional[int] = None,
+    actual_pen_winner: Optional[int] = None,
+    home_team_id: Optional[int] = None,
+    away_team_id: Optional[int] = None,
+    is_knockout: bool = False,
 ) -> int:
     """
-    Calculate points for a prediction:
+    Calculate points for a prediction.
+    
+    Group Stage:
     - Exact score: 5 points
     - Correct outcome + correct goal difference: 3 points
     - Correct outcome only: 1 point
     - Wrong: 0 points
+    
+    Knockout Stage:
+    - Correct outcome (advancing team): 1 point
+    - Correct outcome + correctly predicted penalties: 3 points
+    - Correct outcome + correctly predicted penalties + correct penalty winner: 5 points
     """
-    # Exact score match
-    if predicted_home == actual_home and predicted_away == actual_away:
-        return 5
+    
+    # Helper to determine who advances
+    def get_advancer(h_score, a_score, pen_winner, h_id, a_id):
+        if h_score > a_score: return h_id
+        if a_score > h_score: return a_id
+        return pen_winner
 
-    # Determine outcomes
-    def outcome(home, away):
-        if home > away:
-            return "home"
-        elif away > home:
-            return "away"
-        return "draw"
+    if not is_knockout:
+        # Group Stage Scoring
+        if predicted_home == actual_home and predicted_away == actual_away:
+            return 5
+            
+        def outcome(h, a):
+            if h > a: return "home"
+            if a > h: return "away"
+            return "draw"
+            
+        if outcome(predicted_home, predicted_away) == outcome(actual_home, actual_away):
+            if (predicted_home - predicted_away) == (actual_home - actual_away):
+                return 3
+            return 1
+        return 0
 
-    predicted_outcome = outcome(predicted_home, predicted_away)
-    actual_outcome = outcome(actual_home, actual_away)
-
-    if predicted_outcome != actual_outcome:
-        return 0  # Wrong outcome
-
-    # Correct outcome — check goal difference
-    predicted_diff = predicted_home - predicted_away
-    actual_diff = actual_home - actual_away
-
-    if predicted_diff == actual_diff:
-        return 3  # Correct outcome + goal difference
-
-    return 1  # Correct outcome only
+    else:
+        # Knockout Stage Scoring
+        p_advancer = get_advancer(predicted_home, predicted_away, predicted_pen_winner, home_team_id, away_team_id)
+        a_advancer = get_advancer(actual_home, actual_away, actual_pen_winner, home_team_id, away_team_id)
+        
+        if p_advancer != a_advancer or p_advancer is None:
+            return 0
+            
+        # Correct advancer (base 1 point)
+        points = 1
+        
+        # Did it go to penalties? (Draw in regular/extra time)
+        p_penalties = (predicted_home == predicted_away)
+        a_penalties = (actual_home == actual_away)
+        
+        if p_penalties and a_penalties:
+            points = 3
+            # Correct penalty winner?
+            if predicted_pen_winner == actual_pen_winner and actual_pen_winner is not None:
+                points = 5
+                
+        return points
 
 
 @router.put("/matches/{match_id}/result", response_model=schemas.MatchOut)
@@ -69,6 +100,7 @@ def set_match_result(
     # Set the result
     match.home_score = data.home_score
     match.away_score = data.away_score
+    match.penalty_winner_id = data.penalty_winner_id
     match.is_finished = True
 
     # Calculate points for all predictions on this match
@@ -78,13 +110,31 @@ def set_match_result(
         .all()
     )
 
+    is_knockout = match.stage != "Group Stage"
+
     for pred in predictions:
-        pred.points_awarded = calculate_points(
+        points = calculate_points(
             pred.predicted_home_score,
             pred.predicted_away_score,
             data.home_score,
             data.away_score,
+            predicted_pen_winner=pred.penalty_winner_id,
+            actual_pen_winner=data.penalty_winner_id,
+            home_team_id=match.home_team_id,
+            away_team_id=match.away_team_id,
+            is_knockout=is_knockout,
         )
+
+        # Add bracket points for knockout matches
+        if is_knockout:
+            # Use sets for "regardless of side" comparison
+            actual_teams = {match.home_team_id, match.away_team_id}
+            predicted_teams = {pred.predicted_home_team_id, pred.predicted_away_team_id}
+            
+            if actual_teams == predicted_teams and None not in actual_teams and None not in predicted_teams:
+                points += 5
+                
+        pred.points_awarded = points
 
     db.commit()
     db.refresh(match)

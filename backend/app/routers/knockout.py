@@ -228,6 +228,167 @@ def _resolve_bracket_teams(
     return resolved
 
 
+def resolve_bracket_slot(
+    match: models.Match,
+    side: str,
+    resolved: dict,
+    match_num_map: dict,
+    match_id_to_num: dict,
+    user_preds: dict,
+) -> schemas.BracketSlotTeam:
+    """Resolve a bracket slot (home or away) to a team or placeholder."""
+    slot = match.home_slot if side == "home" else match.away_slot
+    team_id = match.home_team_id if side == "home" else match.away_team_id
+    source_match_id = (
+        match.home_source_match_id if side == "home" else match.away_source_match_id
+    )
+
+    # If the real team is set on the match, use that
+    team_obj = match.home_team if side == "home" else match.away_team
+    if team_id and team_obj:
+        return schemas.BracketSlotTeam(
+            team=_team_to_out(team_obj),
+            slot_label=slot,
+            is_predicted=False,
+        )
+
+    # For R32: resolve from group standings
+    if slot and not slot.startswith("W") and not slot.startswith("L"):
+        if slot in resolved:
+            info = resolved[slot]
+            return schemas.BracketSlotTeam(
+                team=_team_to_out(info["team"]),
+                slot_label=SLOT_LABELS.get(slot, slot),
+                is_predicted=info["is_predicted"],
+            )
+        return schemas.BracketSlotTeam(
+            team=None,
+            slot_label=SLOT_LABELS.get(slot, slot),
+            is_predicted=False,
+        )
+
+    # For R16+: resolve from source match winner (predicted or real)
+    if source_match_id:
+        source_match_num = match_id_to_num.get(source_match_id)
+        source_match = match_num_map.get(source_match_num) if source_match_num else None
+
+        if source_match:
+            # If source match has a real result, use the real winner/loser
+            if source_match.is_finished and source_match.home_score is not None:
+                is_loser_slot = slot and slot.startswith("L")
+                if source_match.home_score > source_match.away_score:
+                    winner_team = source_match.home_team
+                    loser_team = source_match.away_team
+                elif source_match.away_score > source_match.home_score:
+                    winner_team = source_match.away_team
+                    loser_team = source_match.home_team
+                else:
+                    winner_team = source_match.home_team
+                    loser_team = source_match.away_team
+
+                chosen = loser_team if is_loser_slot else winner_team
+                if chosen:
+                    return schemas.BracketSlotTeam(
+                        team=_team_to_out(chosen),
+                        slot_label=slot,
+                        is_predicted=False,
+                    )
+
+            # If user has a prediction for the source match, use predicted winner
+            if source_match.id in user_preds:
+                pred = user_preds[source_match.id]
+                is_loser_slot = slot and slot.startswith("L")
+
+                source_home = resolve_bracket_slot(
+                    source_match, "home", resolved, match_num_map, match_id_to_num, user_preds
+                )
+                source_away = resolve_bracket_slot(
+                    source_match, "away", resolved, match_num_map, match_id_to_num, user_preds
+                )
+
+                if source_home.team and source_away.team:
+                    if pred.predicted_home_score > pred.predicted_away_score:
+                        winner = source_home.team
+                        loser = source_away.team
+                    elif pred.predicted_away_score > pred.predicted_home_score:
+                        winner = source_away.team
+                        loser = source_home.team
+                    else:
+                        winner = source_home.team
+                        loser = source_away.team
+
+                    chosen = loser if is_loser_slot else winner
+                    return schemas.BracketSlotTeam(
+                        team=chosen,
+                        slot_label=slot,
+                        is_predicted=True,
+                    )
+
+    # Fallback: unresolved slot
+    label = slot or "TBD"
+    if label.startswith("W"):
+        label = f"Winner Match {label[1:]}"
+    elif label.startswith("L"):
+        label = f"Loser Match {label[1:]}"
+    return schemas.BracketSlotTeam(
+        team=None,
+        slot_label=label,
+        is_predicted=False,
+    )
+
+
+def build_bracket_match_data(
+    match: models.Match,
+    user_preds: dict,
+    resolved: dict,
+    match_num_map: dict,
+    match_id_to_num: dict,
+) -> schemas.BracketMatchOut:
+    pred = user_preds.get(match.id)
+
+    home_slot = resolve_bracket_slot(
+        match, "home", resolved, match_num_map, match_id_to_num, user_preds
+    )
+    away_slot = resolve_bracket_slot(
+        match, "away", resolved, match_num_map, match_id_to_num, user_preds
+    )
+
+    is_invalid = False
+    if pred and match.stage != "Group Stage":
+        pred_home_id = pred.predicted_home_team_id
+        pred_away_id = pred.predicted_away_team_id
+        resolved_home_id = home_slot.team.id if home_slot.team else None
+        resolved_away_id = away_slot.team.id if away_slot.team else None
+
+        if resolved_home_id and resolved_away_id:
+            pred_set = {pred_home_id, pred_away_id}
+            res_set = {resolved_home_id, resolved_away_id}
+            if pred_set != res_set:
+                is_invalid = True
+
+    pred_out = None
+    if pred:
+        pred_out = schemas.PredictionOut.model_validate(pred)
+        pred_out.is_invalid = is_invalid
+
+    return schemas.BracketMatchOut(
+        match_id=match.id,
+        match_number=match.match_number,
+        stage=match.stage,
+        match_date=match.match_date,
+        venue=match.venue,
+        home=home_slot,
+        away=away_slot,
+        home_score=match.home_score,
+        away_score=match.away_score,
+        is_finished=match.is_finished,
+        user_prediction=pred_out,
+        is_invalid_prediction=is_invalid,
+        home_source_match_id=match.home_source_match_id,
+        away_source_match_id=match.away_source_match_id,
+    )
+
+
 def _team_to_out(team: Optional[models.Team]) -> Optional[schemas.TeamOut]:
     if team is None:
         return None
@@ -278,143 +439,43 @@ def get_bracket(
         )
         user_preds = {p.match_id: p for p in preds}
 
-    def resolve_slot(match: models.Match, side: str) -> schemas.BracketSlotTeam:
-        """Resolve a bracket slot (home or away) to a team or placeholder."""
-        slot = match.home_slot if side == "home" else match.away_slot
-        team_id = match.home_team_id if side == "home" else match.away_team_id
-        source_match_id = match.home_source_match_id if side == "home" else match.away_source_match_id
-
-        # If the real team is set on the match, use that
-        team_obj = match.home_team if side == "home" else match.away_team
-        if team_id and team_obj:
-            return schemas.BracketSlotTeam(
-                team=_team_to_out(team_obj),
-                slot_label=slot,
-                is_predicted=False,
-            )
-
-        # For R32: resolve from group standings
-        if slot and not slot.startswith("W") and not slot.startswith("L"):
-            if slot in resolved:
-                info = resolved[slot]
-                return schemas.BracketSlotTeam(
-                    team=_team_to_out(info["team"]),
-                    slot_label=SLOT_LABELS.get(slot, slot),
-                    is_predicted=info["is_predicted"],
-                )
-            return schemas.BracketSlotTeam(
-                team=None,
-                slot_label=SLOT_LABELS.get(slot, slot),
-                is_predicted=False,
-            )
-
-        # For R16+: resolve from source match winner (predicted or real)
-        if source_match_id:
-            source_match_num = match_id_to_num.get(source_match_id)
-            source_match = match_num_map.get(source_match_num) if source_match_num else None
-
-            if source_match:
-                # If source match has a real result, use the real winner/loser
-                if source_match.is_finished and source_match.home_score is not None:
-                    is_loser_slot = slot and slot.startswith("L")
-                    if source_match.home_score > source_match.away_score:
-                        winner_team = source_match.home_team
-                        loser_team = source_match.away_team
-                    elif source_match.away_score > source_match.home_score:
-                        winner_team = source_match.away_team
-                        loser_team = source_match.home_team
-                    else:
-                        # Draw in knockout — shouldn't happen after ET/pens, but handle gracefully
-                        winner_team = source_match.home_team
-                        loser_team = source_match.away_team
-
-                    chosen = loser_team if is_loser_slot else winner_team
-                    if chosen:
-                        return schemas.BracketSlotTeam(
-                            team=_team_to_out(chosen),
-                            slot_label=slot,
-                            is_predicted=False,
-                        )
-
-                # If user has a prediction for the source match, use predicted winner
-                if source_match.id in user_preds:
-                    pred = user_preds[source_match.id]
-                    is_loser_slot = slot and slot.startswith("L")
-
-                    # Determine which teams are in the source match
-                    source_home = resolve_slot(source_match, "home")
-                    source_away = resolve_slot(source_match, "away")
-
-                    if source_home.team and source_away.team:
-                        if pred.predicted_home_score > pred.predicted_away_score:
-                            winner = source_home.team
-                            loser = source_away.team
-                        elif pred.predicted_away_score > pred.predicted_home_score:
-                            winner = source_away.team
-                            loser = source_home.team
-                        else:
-                            # Predicted draw — default to home team (penalty scenario)
-                            winner = source_home.team
-                            loser = source_away.team
-
-                        chosen = loser if is_loser_slot else winner
-                        return schemas.BracketSlotTeam(
-                            team=chosen,
-                            slot_label=slot,
-                            is_predicted=True,
-                        )
-
-        # Fallback: unresolved slot
-        label = slot or "TBD"
-        if label.startswith("W"):
-            label = f"Winner Match {label[1:]}"
-        elif label.startswith("L"):
-            label = f"Loser Match {label[1:]}"
-        return schemas.BracketSlotTeam(
-            team=None,
-            slot_label=label,
-            is_predicted=False,
-        )
-
-    def build_bracket_match(match: models.Match) -> schemas.BracketMatchOut:
-        pred = user_preds.get(match.id)
-        pred_out = None
-        if pred:
-            pred_out = schemas.PredictionOut(
-                id=pred.id,
-                match_id=pred.match_id,
-                predicted_home_score=pred.predicted_home_score,
-                predicted_away_score=pred.predicted_away_score,
-                points_awarded=pred.points_awarded,
-                created_at=pred.created_at,
-                updated_at=pred.updated_at,
-                predicted_home_team_id=pred.predicted_home_team_id,
-                predicted_away_team_id=pred.predicted_away_team_id,
-            )
-
-        return schemas.BracketMatchOut(
-            match_id=match.id,
-            match_number=match.match_number,
-            stage=match.stage,
-            match_date=match.match_date,
-            venue=match.venue,
-            home=resolve_slot(match, "home"),
-            away=resolve_slot(match, "away"),
-            home_score=match.home_score,
-            away_score=match.away_score,
-            is_finished=match.is_finished,
-            user_prediction=pred_out,
-            home_source_match_id=match.home_source_match_id,
-            away_source_match_id=match.away_source_match_id,
-        )
-
     # Categorize matches by stage
-    r32 = [build_bracket_match(m) for m in knockout_matches if m.stage == "Round of 32"]
-    r16 = [build_bracket_match(m) for m in knockout_matches if m.stage == "Round of 16"]
-    qf = [build_bracket_match(m) for m in knockout_matches if m.stage == "Quarter-finals"]
-    sf = [build_bracket_match(m) for m in knockout_matches if m.stage == "Semi-finals"]
-    third = next((build_bracket_match(m) for m in knockout_matches if m.stage == "Third-place"), None)
-    final = next((build_bracket_match(m) for m in knockout_matches if m.stage == "Final"), None)
+    r32 = [
+        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num)
+        for m in knockout_matches
+        if m.stage == "Round of 32"
+    ]
+    r16 = [
+        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num)
+        for m in knockout_matches
+        if m.stage == "Round of 16"
+    ]
+    qf = [
+        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num)
+        for m in knockout_matches
+        if m.stage == "Quarter-finals"
+    ]
+    sf = [
+        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num)
+        for m in knockout_matches
+        if m.stage == "Semi-finals"
+    ]
+    third = next(
+        (
+            build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num)
+            for m in knockout_matches
+            if m.stage == "Third-place"
+        ),
+        None,
+    )
+    final = next(
+        (
+            build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num)
+            for m in knockout_matches
+            if m.stage == "Final"
+        ),
+        None,
+    )
 
     return schemas.BracketOut(
         round_of_32=r32,

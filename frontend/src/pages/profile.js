@@ -50,9 +50,9 @@ export async function profilePage() {
             <div class="admin-match-row" onclick="location.hash='#/predict/${match.id}'" style="cursor:pointer">
                 <span style="width:60px;color:var(--text-muted);font-size:0.8rem">${dateStr}</span>
                 <span class="admin-match-teams">
-                    <img src="${getFlagURL(match.home_team.code)}" class="match-team-flag-svg" style="width:18px;vertical-align:middle;margin-right:2px"> ${match.home_team.code}
+                    <img src="${getFlagURL(match.home_team.code)}" class="match-team-flag-svg" style="width:20px; height:14px; margin-right:4px"> ${match.home_team.code}
                     <span style="color:var(--text-muted);margin:0 var(--space-sm)">${isFinished ? match.home_score + ' — ' + match.away_score : 'vs'}</span>
-                    ${match.away_team.code} <img src="${getFlagURL(match.away_team.code)}" class="match-team-flag-svg" style="width:18px;vertical-align:middle;margin-left:2px">
+                    ${match.away_team.code} <img src="${getFlagURL(match.away_team.code)}" class="match-team-flag-svg" style="width:20px; height:14px; margin-left:4px">
                 </span>
                 <span style="font-weight:700;color:var(--text-secondary);min-width:50px;text-align:center">
                     ${pred.predicted_home_score} — ${pred.predicted_away_score}
@@ -74,11 +74,14 @@ export async function profilePage() {
             </div>
 
             <div id="edit-profile-form-container" style="display:${user.username.startsWith('user_') ? 'block' : 'none'}; margin-bottom:var(--space-xl); padding:var(--space-lg); background:var(--bg-glass); border-radius:var(--radius-lg); border:1px solid var(--border-light); animation: slideDown 0.3s ease-out">
-                <h3 style="margin-bottom:var(--space-md)">${t('profile_update_title')}</h3>
+                <h3 style="margin-bottom:var(--space-md)">${user.username.startsWith('user_') ? t('profile_setup_title') || 'Set Your Username' : t('profile_update_title')}</h3>
+                <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:var(--space-md); display:${user.username.startsWith('user_') ? 'block' : 'none'}">
+                    ${t('profile_onboarding_desc') || 'Welcome! Choose a unique username to identify yourself on the leaderboard.'}
+                </p>
                 <form id="edit-profile-form" style="display:grid; gap:var(--space-md)">
-                    <div>
+                    <div style="display:${user.username.startsWith('user_') ? 'none' : 'block'}">
                         <label class="form-label">${t('profile_label_display')}</label>
-                        <input type="text" id="edit-display-name" class="form-input" value="${user.display_name || ''}" placeholder="${t('profile_placeholder_display')}" required>
+                        <input type="text" id="edit-display-name" class="form-input" value="${user.display_name || ''}" placeholder="${t('profile_placeholder_display')}" ${user.username.startsWith('user_') ? '' : 'required'}>
                     </div>
                     <div>
                         <label class="form-label">${t('profile_label_username')}</label>
@@ -86,7 +89,7 @@ export async function profilePage() {
                         <small style="color:var(--text-muted); font-size:0.75rem">${t('profile_username_hint')}</small>
                     </div>
                     <div style="display:flex; gap:var(--space-md); margin-top:var(--space-sm)">
-                        <button type="submit" class="btn btn-primary btn-sm" id="save-profile-btn">${t('profile_btn_save')}</button>
+                        <button type="submit" class="btn btn-primary btn-sm" id="save-profile-btn">${user.username.startsWith('user_') ? t('profile_btn_complete') || 'Complete Setup' : t('profile_btn_save')}</button>
                         <button type="button" class="btn btn-secondary btn-sm" id="cancel-edit-btn" ${user.username.startsWith('user_') ? 'disabled style="display:none"' : ''}>${t('profile_btn_cancel')}</button>
                     </div>
                 </form>
@@ -109,6 +112,16 @@ export async function profilePage() {
                     <div class="profile-stat-value">${accuracy}%</div>
                     <div class="profile-stat-label">${t('profile_stat_accuracy')}</div>
                 </div>
+            </div>
+
+            <div class="card danger-zone" style="margin-top:var(--space-2xl); margin-bottom:var(--space-2xl); border: 1px solid rgba(239, 68, 68, 0.2); background:rgba(239, 68, 68, 0.05); padding:var(--space-lg); border-radius:var(--radius-lg)">
+                <h3 style="color:var(--accent-red); margin-top:0">${t('profile_delete_title')}</h3>
+                <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:var(--space-md)">
+                    ${t('profile_delete_desc')}
+                </p>
+                <button id="btn-delete-account" class="btn" style="background:var(--accent-red); color:white; border:none; padding:8px 16px; border-radius:var(--radius-md); font-weight:600; cursor:pointer">
+                    ${t('profile_delete_btn')}
+                </button>
             </div>
 
             <h3 class="page-title" style="font-size:1.3rem;margin-bottom:var(--space-lg)">${t('profile_preds_title')}</h3>
@@ -166,6 +179,21 @@ export async function profilePage() {
                     btn.disabled = false;
                 }
             });
+            const deleteBtn = document.getElementById('btn-delete-account');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async () => {
+                    if (confirm(t('profile_delete_confirm'))) {
+                        try {
+                            await fetchAPI('/me', { method: 'DELETE' });
+                            alert(t('profile_delete_success'));
+                            // Use window.location.href to fully reload and clear state
+                            window.location.href = '/'; 
+                        } catch (err) {
+                            alert(err.message);
+                        }
+                    }
+                });
+            }
         }
     };
 }

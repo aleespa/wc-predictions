@@ -35,7 +35,7 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    predictions = relationship("Prediction", back_populates="user")
+    predictions = relationship("Prediction", back_populates="user", cascade="all, delete-orphan")
     communities = relationship("Community", secondary=user_community, back_populates="members")
 
 
@@ -65,6 +65,7 @@ class Match(Base):
     venue = Column(String(200), nullable=True)
     home_score = Column(Integer, nullable=True)  # NULL until result entered
     away_score = Column(Integer, nullable=True)
+    penalty_winner_id = Column(Integer, ForeignKey("teams.id"))
     is_finished = Column(Boolean, default=False)
 
     # Knockout bracket slot identifiers (e.g. "1A" = Winner Group A, "2B" = Runner-up Group B, "3ABCDF" = best 3rd from those groups)
@@ -91,6 +92,7 @@ class Prediction(Base):
     match_id = Column(Integer, ForeignKey("matches.id"), nullable=False)
     predicted_home_score = Column(Integer, nullable=False)
     predicted_away_score = Column(Integer, nullable=False)
+    penalty_winner_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
     points_awarded = Column(Integer, nullable=True)  # NULL until match finished
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

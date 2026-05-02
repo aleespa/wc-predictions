@@ -83,16 +83,31 @@ def list_teams(db: Session = Depends(get_db)):
 
 
 @router.get("/standings/{group_letter}", response_model=list[schemas.StandingOut])
-def get_standings(group_letter: str, db: Session = Depends(get_db)):
+def get_standings(
+    group_letter: str, 
+    db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(get_optional_user)
+):
     teams = db.query(models.Team).filter(models.Team.group_letter == group_letter.upper()).all()
     if not teams:
         return []
 
+    # Get all group matches
     matches = (
         db.query(models.Match)
-        .filter(models.Match.group_letter == group_letter.upper(), models.Match.is_finished == True)
+        .filter(models.Match.group_letter == group_letter.upper())
         .all()
     )
+
+    # Get user predictions if authenticated
+    user_predictions = {}
+    if current_user:
+        preds = (
+            db.query(models.Prediction)
+            .filter(models.Prediction.user_id == current_user.id)
+            .all()
+        )
+        user_predictions = {p.match_id: p for p in preds}
 
     std_map = {
         t.id: {
@@ -101,29 +116,47 @@ def get_standings(group_letter: str, db: Session = Depends(get_db)):
             "team_code": t.code,
             "flag_emoji": t.flag_emoji,
             "played": 0, "won": 0, "drawn": 0, "lost": 0,
-            "goals_for": 0, "goals_against": 0, "goal_diff": 0, "points": 0
+            "goals_for": 0, "goals_against": 0, "goal_diff": 0, "points": 0,
+            "is_predicted": False
         }
         for t in teams
     }
 
     for m in matches:
-        if m.home_team_id in std_map and m.away_team_id in std_map:
-            home = std_map[m.home_team_id]
-            away = std_map[m.away_team_id]
+        if m.home_team_id not in std_map or m.away_team_id not in std_map:
+            continue
 
+        home = std_map[m.home_team_id]
+        away = std_map[m.away_team_id]
+
+        h_score, a_score = None, None
+        match_is_predicted = False
+
+        if m.is_finished:
+            h_score = m.home_score
+            a_score = m.away_score
+        elif m.id in user_predictions:
+            pred = user_predictions[m.id]
+            h_score = pred.predicted_home_score
+            a_score = pred.predicted_away_score
+            match_is_predicted = True
+            home["is_predicted"] = True
+            away["is_predicted"] = True
+
+        if h_score is not None and a_score is not None:
             home["played"] += 1
             away["played"] += 1
 
-            home["goals_for"] += m.home_score
-            home["goals_against"] += m.away_score
-            away["goals_for"] += m.away_score
-            away["goals_against"] += m.home_score
+            home["goals_for"] += h_score
+            home["goals_against"] += a_score
+            away["goals_for"] += a_score
+            away["goals_against"] += h_score
 
-            if m.home_score > m.away_score:
+            if h_score > a_score:
                 home["won"] += 1
                 home["points"] += 3
                 away["lost"] += 1
-            elif m.home_score < m.away_score:
+            elif h_score < a_score:
                 away["won"] += 1
                 away["points"] += 3
                 home["lost"] += 1
@@ -179,6 +212,7 @@ def get_match(
     )
 
     if current_user:
+        # Load user prediction
         pred = (
             db.query(models.Prediction)
             .filter(
@@ -188,14 +222,49 @@ def get_match(
             .first()
         )
         if pred:
-            match_data.user_prediction = schemas.PredictionOut(
-                id=pred.id,
-                match_id=pred.match_id,
-                predicted_home_score=pred.predicted_home_score,
-                predicted_away_score=pred.predicted_away_score,
-                points_awarded=pred.points_awarded,
-                created_at=pred.created_at,
-                updated_at=pred.updated_at,
-            )
+            match_data.user_prediction = schemas.PredictionOut.model_validate(pred)
+
+    # For knockout matches without official teams, resolve speculatively
+    if match.stage != "Group Stage" and (not match.home_team_id or not match.away_team_id):
+        from .knockout import _resolve_bracket_teams, resolve_bracket_slot
+        
+        user_id = current_user.id if current_user else None
+        resolved = _resolve_bracket_teams(db, user_id)
+        
+        # We need the match maps for resolution
+        ko_matches = db.query(models.Match).filter(models.Match.stage != "Group Stage").all()
+        match_num_map = {m.match_number: m for m in ko_matches}
+        match_id_to_num = {m.id: m.match_number for m in ko_matches}
+        
+        # User predictions for knockout matches
+        ko_preds = {}
+        if user_id:
+            ko_ids = [m.id for m in ko_matches]
+            preds = db.query(models.Prediction).filter(
+                models.Prediction.user_id == user_id,
+                models.Prediction.match_id.in_(ko_ids)
+            ).all()
+            ko_preds = {p.match_id: p for p in preds}
+
+        home_res = resolve_bracket_slot(match, "home", resolved, match_num_map, match_id_to_num, ko_preds)
+        away_res = resolve_bracket_slot(match, "away", resolved, match_num_map, match_id_to_num, ko_preds)
+        
+        if not match_data.home_team and home_res.team:
+            match_data.home_team = home_res.team
+        if not match_data.away_team and away_res.team:
+            match_data.away_team = away_res.team
+            
+        # Also detect if existing prediction is invalid (teams changed)
+        if match_data.user_prediction:
+            p_home = match_data.user_prediction.predicted_home_team_id
+            p_away = match_data.user_prediction.predicted_away_team_id
+            
+            r_home = home_res.team.id if home_res.team else None
+            r_away = away_res.team.id if away_res.team else None
+            
+            if r_home and r_away:
+                if {p_home, p_away} != {r_home, r_away}:
+                    match_data.user_prediction.is_invalid = True
+                    match_data.is_invalid_prediction = True
 
     return match_data

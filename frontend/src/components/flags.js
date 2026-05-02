@@ -15,6 +15,6 @@ export const isoMap = {
 
 export function getFlagURL(teamCode) {
     const code = isoMap[teamCode];
-    if (!code) return ''; // fallback if teamCode doesn't exist
-    return `https://flagcdn.com/w40/${code}.png`;
+    if (!code) return ''; 
+    return `https://flagcdn.com/${code}.svg`;
 }

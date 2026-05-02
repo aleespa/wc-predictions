@@ -472,6 +472,15 @@ a:hover {
 }
 
 /* ── Match Card ──────────────────────────────────── */
+.match-team-flag-svg {
+    width: 28px;
+    height: 20px;
+    object-fit: cover;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    vertical-align: middle;
+}
+
 .match-card {
     background: var(--bg-card);
     backdrop-filter: blur(12px);
@@ -656,13 +665,99 @@ a:hover {
     color: var(--accent-red);
 }
 
+.bracket-match-invalid,
+.tree-match-invalid {
+    border-color: var(--accent-red) !important;
+    background: rgba(239, 68, 68, 0.05) !important;
+}
+
+.bracket-score-invalid {
+    color: var(--accent-red) !important;
+    text-decoration: line-through;
+}
+
+.penalty-team-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    transition: all 0.2s ease;
+    padding: var(--space-md) var(--space-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.penalty-team-btn:hover:not(:disabled) {
+    border-color: var(--accent-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.penalty-team-btn.active {
+    background: var(--accent-primary);
+    color: white;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 15px rgba(100, 108, 255, 0.4);
+}
+
 /* ── Score Input ─────────────────────────────────── */
-.score-input-container {
+.score-input-container,
+.prediction-form-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xl);
+    padding: var(--space-xl) 0;
+}
+
+.prediction-teams-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: var(--space-xl);
+}
+
+.prediction-team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    flex: 1;
+    min-width: 0;
+}
+
+.prediction-team .match-team-flag-svg {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    box-shadow: var(--shadow-md);
+}
+
+.prediction-team .match-team-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.prediction-vs-label {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+}
+
+.prediction-inputs-row {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: var(--space-lg);
-    padding: var(--space-xl) 0;
+}
+
+.prediction-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .score-input-team {
@@ -1333,8 +1428,27 @@ select.form-input option {
         display: none;
     }
 
-    .score-input-container {
-        flex-direction: column;
+    .score-input-container,
+    .prediction-form-layout {
+        gap: var(--space-lg);
+        padding: var(--space-md) 0;
+    }
+
+    .prediction-teams-row {
+        gap: var(--space-md);
+    }
+
+    .prediction-team .match-team-flag-svg {
+        width: 48px;
+        height: 48px;
+    }
+
+    .prediction-team .match-team-name {
+        font-size: 0.9rem;
+    }
+
+    .prediction-vs-label {
+        font-size: 0.7rem;
     }
 
     .score-input-field {

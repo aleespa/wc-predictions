@@ -41,12 +41,13 @@ function renderBracketMatch(match, options = {}) {
     const bothTeamsKnown = match.home.team && match.away.team;
     const hasPrediction = match.user_prediction != null;
     const isFinished = match.is_finished;
+    const isInvalid = match.is_invalid_prediction;
 
     let scoreSection = '';
     if (isFinished && match.home_score !== null) {
         scoreSection = `<div class="bracket-score">${match.home_score} – ${match.away_score}</div>`;
     } else if (hasPrediction) {
-        scoreSection = `<div class="bracket-score bracket-score-predicted">${match.user_prediction.predicted_home_score} – ${match.user_prediction.predicted_away_score}</div>`;
+        scoreSection = `<div class="bracket-score bracket-score-predicted ${isInvalid ? 'bracket-score-invalid' : ''}">${match.user_prediction.predicted_home_score} – ${match.user_prediction.predicted_away_score}</div>`;
     }
 
     let statusClass = 'bracket-upcoming';
@@ -54,6 +55,9 @@ function renderBracketMatch(match, options = {}) {
     if (isFinished) {
         statusClass = 'bracket-finished';
         statusIcon = '✓';
+    } else if (isInvalid) {
+        statusClass = 'bracket-match-invalid';
+        statusIcon = '⚠️';
     } else if (hasPrediction) {
         statusClass = 'bracket-has-prediction';
         statusIcon = '⚡';
@@ -261,10 +265,12 @@ function renderTreeMatch(match) {
     const bothTeams = match.home.team && match.away.team;
     const isFinished = match.is_finished;
     const hasPred = match.user_prediction != null;
+    const isInvalid = match.is_invalid_prediction;
     const clickable = bothTeams && !isFinished;
 
     let statusClass = '';
     if (isFinished) statusClass = 'bracket-finished';
+    else if (isInvalid) statusClass = 'tree-match-invalid';
     else if (hasPred) statusClass = 'bracket-has-prediction';
     else if (bothTeams) statusClass = 'bracket-predictable';
 

@@ -18,8 +18,10 @@ export async function predictPage(params) {
     const now = new Date();
     const isLocked = matchDate <= now || match.is_finished;
     const teamsKnown = match.home_team && match.away_team;
+    const isKnockout = match.stage !== 'Group Stage';
 
     const existingPred = match.user_prediction;
+    const isInvalid = existingPred && (existingPred.is_invalid || match.is_invalid_prediction);
     const homeScore = existingPred ? existingPred.predicted_home_score : '';
     const awayScore = existingPred ? existingPred.predicted_away_score : '';
 
@@ -29,6 +31,38 @@ export async function predictPage(params) {
     const timeStr = matchDate.toLocaleTimeString('en-US', {
         hour: '2-digit', minute: '2-digit'
     });
+
+    // Teams Header Row (Flags + Names)
+    let teamsHeader = '';
+    if (teamsKnown) {
+        teamsHeader = `
+            <div class="prediction-teams-row" style="margin-top:var(--space-md); margin-bottom:var(--space-xl)">
+                <div class="prediction-team">
+                    <img src="${getFlagURL(match.home_team.code)}" class="match-team-flag-svg" />
+                    <span class="match-team-name">${match.home_team.name}</span>
+                </div>
+                <div class="prediction-vs-label">VS</div>
+                <div class="prediction-team">
+                    <img src="${getFlagURL(match.away_team.code)}" class="match-team-flag-svg" />
+                    <span class="match-team-name">${match.away_team.name}</span>
+                </div>
+            </div>
+        `;
+    } else {
+        const homeLabel = match.home_slot || 'TBD';
+        const awayLabel = match.away_slot || 'TBD';
+        teamsHeader = `
+            <div class="prediction-teams-row" style="margin-top:var(--space-md); margin-bottom:var(--space-xl)">
+                <div class="prediction-team">
+                    <span class="match-team-name" style="color:var(--text-muted);font-style:italic">${homeLabel}</span>
+                </div>
+                <div class="prediction-vs-label">VS</div>
+                <div class="prediction-team">
+                    <span class="match-team-name" style="color:var(--text-muted);font-style:italic">${awayLabel}</span>
+                </div>
+            </div>
+        `;
+    }
 
     let resultSection = '';
     if (match.is_finished) {
@@ -49,6 +83,7 @@ export async function predictPage(params) {
             `;
         }
         resultSection = `
+            ${teamsHeader}
             <div style="text-align:center;margin:var(--space-xl) 0">
                 <div style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-sm)">${t('predict_final_score')}</div>
                 <div style="font-size:2.5rem;font-weight:900">${match.home_score} — ${match.away_score}</div>
@@ -63,20 +98,8 @@ export async function predictPage(params) {
         formSection = resultSection;
     } else if (!teamsKnown) {
         // Knockout match where teams are not yet determined
-        const homeLabel = match.home_slot || 'TBD';
-        const awayLabel = match.away_slot || 'TBD';
         formSection = `
-            <div class="score-input-container">
-                <div class="score-input-team">
-                    <span class="match-team-name" style="color:var(--text-muted);font-style:italic">${homeLabel}</span>
-                </div>
-                <div class="match-vs">
-                    <span class="match-vs-label">VS</span>
-                </div>
-                <div class="score-input-team">
-                    <span class="match-team-name" style="color:var(--text-muted);font-style:italic">${awayLabel}</span>
-                </div>
-            </div>
+            ${teamsHeader}
             <div style="text-align:center;padding:var(--space-xl);margin-top:var(--space-md);background:var(--bg-glass);border-radius:var(--radius-lg);border:1px dashed var(--border-medium)">
                 <div style="font-size:1.5rem;margin-bottom:var(--space-sm)">🏆</div>
                 <div style="font-weight:600;margin-bottom:var(--space-sm)">${t('predict_tbd')}</div>
@@ -88,20 +111,7 @@ export async function predictPage(params) {
     } else if (!authed) {
         // Show login prompt for unauthenticated users
         formSection = `
-            <div class="score-input-container">
-                <div class="score-input-team">
-                    <img src="${getFlagURL(match.home_team.code)}" class="match-team-flag-svg" />
-                    <span class="match-team-name">${match.home_team.name}</span>
-                </div>
-                <div class="match-vs">
-                    <span class="match-vs-label">VS</span>
-                </div>
-                <div class="score-input-team">
-                    <img src="${getFlagURL(match.away_team.code)}" class="match-team-flag-svg" />
-                    <span class="match-team-name">${match.away_team.name}</span>
-                </div>
-            </div>
-
+            ${teamsHeader}
             <div style="text-align:center;padding:var(--space-xl);margin-top:var(--space-md);background:var(--bg-glass);border-radius:var(--radius-lg);border:1px dashed var(--border-medium)">
                 <div style="font-size:1.5rem;margin-bottom:var(--space-sm)">🔮</div>
                 <div style="font-weight:600;margin-bottom:var(--space-sm)">${t('predict_login_title')}</div>
@@ -116,20 +126,43 @@ export async function predictPage(params) {
         // Show prediction form for authenticated users
         formSection = `
             <form id="predict-form">
-                <div class="score-input-container">
-                    <div class="score-input-team">
-                        <img src="${getFlagURL(match.home_team.code)}" class="match-team-flag-svg" />
-                        <span class="match-team-name">${match.home_team.name}</span>
-                        <input type="number" class="score-input-field" id="home-score" min="0" max="20"
-                            value="${homeScore}" placeholder="0" ${isLocked ? 'disabled' : ''} required />
+                <div class="prediction-form-layout">
+                    ${teamsHeader}
+
+                    ${isInvalid ? `
+                        <div style="background:rgba(239, 68, 68, 0.1); border:1px solid var(--accent-red); color:var(--accent-red); padding:var(--space-md); border-radius:var(--radius-md); margin-bottom:var(--space-lg); font-size:0.85rem; text-align:center">
+                            ⚠️ ${t('predict_invalid_teams')}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="prediction-inputs-row">
+                        <div class="prediction-input-wrapper">
+                            <input type="number" class="score-input-field" id="home-score" min="0" max="20"
+                                value="${homeScore}" placeholder="0" ${isLocked ? 'disabled' : ''} required />
+                        </div>
+                        <span class="score-input-separator">—</span>
+                        <div class="prediction-input-wrapper">
+                            <input type="number" class="score-input-field" id="away-score" min="0" max="20"
+                                value="${awayScore}" placeholder="0" ${isLocked ? 'disabled' : ''} required />
+                        </div>
                     </div>
-                    <span class="score-input-separator">—</span>
-                    <div class="score-input-team">
-                        <img src="${getFlagURL(match.away_team.code)}" class="match-team-flag-svg" />
-                        <span class="match-team-name">${match.away_team.name}</span>
-                        <input type="number" class="score-input-field" id="away-score" min="0" max="20"
-                            value="${awayScore}" placeholder="0" ${isLocked ? 'disabled' : ''} required />
-                    </div>
+
+                    ${isKnockout ? `
+                        <div id="penalty-winner-section" style="margin-top:var(--space-xl); display: ${homeScore === awayScore && homeScore !== '' ? 'block' : 'none'}; text-align:center">
+                            <div style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:var(--space-md)">${t('predict_penalty_desc')}</div>
+                            <div style="display:flex; justify-content:center; gap:var(--space-md)">
+                                <button type="button" class="btn penalty-team-btn ${existingPred?.penalty_winner_id === match.home_team.id ? 'active' : ''}" 
+                                        data-team-id="${match.home_team.id}" id="pen-winner-home" ${isLocked ? 'disabled' : ''}>
+                                    <img src="${getFlagURL(match.home_team.code)}" style="width:20px; margin-right:8px"> ${match.home_team.code}
+                                </button>
+                                <button type="button" class="btn penalty-team-btn ${existingPred?.penalty_winner_id === match.away_team.id ? 'active' : ''}" 
+                                        data-team-id="${match.away_team.id}" id="pen-winner-away" ${isLocked ? 'disabled' : ''}>
+                                    ${match.away_team.code} <img src="${getFlagURL(match.away_team.code)}" style="width:20px; margin-left:8px">
+                                </button>
+                            </div>
+                            <input type="hidden" id="penalty-winner-id" value="${existingPred?.penalty_winner_id || ''}" />
+                        </div>
+                    ` : ''}
                 </div>
 
                 ${isLocked ? `
@@ -192,8 +225,47 @@ export async function predictPage(params) {
             if (!authed || isLocked || match.is_finished) return;
 
             const form = document.getElementById('predict-form');
+            const homeInput = document.getElementById('home-score');
+            const awayInput = document.getElementById('away-score');
+            const penaltySection = document.getElementById('penalty-winner-section');
+            const penWinnerInput = document.getElementById('penalty-winner-id');
+
+            const updatePenaltyUI = () => {
+                if (!isKnockout || !penaltySection) return;
+                const h = parseInt(homeInput.value);
+                const a = parseInt(awayInput.value);
+                if (!isNaN(h) && !isNaN(a) && h === a) {
+                    penaltySection.style.display = 'block';
+                } else {
+                    penaltySection.style.display = 'none';
+                    penWinnerInput.value = '';
+                    document.querySelectorAll('.penalty-team-btn').forEach(b => b.classList.remove('active'));
+                }
+            };
+
+            homeInput?.addEventListener('input', updatePenaltyUI);
+            awayInput?.addEventListener('input', updatePenaltyUI);
+
+            document.querySelectorAll('.penalty-team-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (isLocked) return;
+                    document.querySelectorAll('.penalty-team-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    penWinnerInput.value = btn.dataset.teamId;
+                });
+            });
+
             form?.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                
+                const h = parseInt(homeInput.value);
+                const a = parseInt(awayInput.value);
+                
+                if (isKnockout && h === a && !penWinnerInput.value) {
+                    showToast(t('predict_penalty_desc'), 'warning');
+                    return;
+                }
+
                 const submitBtn = document.getElementById('predict-submit');
                 submitBtn.disabled = true;
                 submitBtn.textContent = t('btn_saving');
@@ -203,8 +275,11 @@ export async function predictPage(params) {
                         method: 'POST',
                         body: JSON.stringify({
                             match_id: parseInt(matchId),
-                            predicted_home_score: parseInt(document.getElementById('home-score').value),
-                            predicted_away_score: parseInt(document.getElementById('away-score').value),
+                            predicted_home_score: h,
+                            predicted_away_score: a,
+                            predicted_home_team_id: match.home_team ? match.home_team.id : null,
+                            predicted_away_team_id: match.away_team ? match.away_team.id : null,
+                            penalty_winner_id: penWinnerInput ? parseInt(penWinnerInput.value) || null : null,
                         }),
                     });
                     showToast(t('toast_pred_saved'));

@@ -172,7 +172,7 @@ function renderStandingsTable(standings, groupLetter, label = 'Community Predict
     const trs = standings.map((s, idx) => `
         <tr style="border-bottom:1px solid var(--border-light)">
             <td style="padding:12px 4px;text-align:center;font-weight:700;color:var(--text-muted)">${idx + 1}</td>
-            <td style="padding:12px 4px;"><img src="${getFlagURL(s.team_code)}" style="width:20px;vertical-align:middle;margin-right:8px">${s.team_name}</td>
+            <td style="padding:12px 4px;"><img src="${getFlagURL(s.team_code)}" class="match-team-flag-svg" style="width:24px; height:16px; margin-right:8px">${s.team_name}</td>
             <td style="padding:12px 4px;text-align:center">${s.played}</td>
             <td style="padding:12px 4px;text-align:center">${s.won}</td>
             <td style="padding:12px 4px;text-align:center">${s.drawn}</td>
