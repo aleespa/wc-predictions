@@ -295,7 +295,35 @@ export async function predictPage(params) {
                         }),
                     });
                     showToast(t('toast_pred_saved'));
-                    location.hash = match.group_letter ? '#/matches' : '#/bracket';
+                    
+                    // Fetch all matches to find the next unpredicted one
+                    let nextMatchToPredict = null;
+                    try {
+                        const allMatches = await fetchAPI('/matches');
+                        const currentIndex = allMatches.findIndex(m => m.id === parseInt(matchId));
+                        
+                        if (currentIndex !== -1) {
+                            for (let i = currentIndex + 1; i < allMatches.length; i++) {
+                                const m = allMatches[i];
+                                const mDate = new Date(m.match_date);
+                                const isMLocked = mDate <= new Date() || m.is_finished || (user?.is_group_stage_locked && m.stage === 'Group Stage');
+                                const mTeamsKnown = m.home_team && m.away_team;
+                                
+                                if (!m.user_prediction && !isMLocked && mTeamsKnown) {
+                                    nextMatchToPredict = m;
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (fetchErr) {
+                        console.error("Could not fetch matches to determine next prediction:", fetchErr);
+                    }
+
+                    if (nextMatchToPredict) {
+                        location.hash = `#/predict/${nextMatchToPredict.id}`;
+                    } else {
+                        location.hash = match.group_letter ? '#/matches' : '#/bracket';
+                    }
                 } catch (err) {
                     showToast(err.message, 'error');
                     submitBtn.disabled = false;
