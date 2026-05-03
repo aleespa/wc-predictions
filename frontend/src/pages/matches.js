@@ -13,6 +13,13 @@ export async function matchesPage() {
         { label: t('matches_filter_sf'), type: 'stage', val: 'Semi-finals' },
         { label: t('matches_filter_final'), type: 'stage', val: 'Final' },
     ];
+    
+    const PREDICTION_FILTERS = [
+        { label: t('matches_pred_filter_all') || 'All', val: 'all' },
+        { label: t('matches_pred_filter_with') || 'With Prediction', val: 'with' },
+        { label: t('matches_pred_filter_without') || 'Without Prediction', val: 'without' }
+    ];
+
     let matches = [];
     try {
         matches = await fetchAPI('/matches');
@@ -23,20 +30,28 @@ export async function matchesPage() {
     const tabs = FILTERS.map((f, i) =>
         `<button class="group-tab ${i === 0 ? 'active' : ''}" data-type="${f.type}" data-val="${f.val}">${f.label}</button>`
     ).join('');
+    
+    const predTabs = PREDICTION_FILTERS.map((f, i) =>
+        `<button class="group-tab pred-tab ${i === 0 ? 'active' : ''}" data-val="${f.val}">${f.label}</button>`
+    ).join('');
 
     const html = `
         <div class="fade-in">
             <h1 class="page-title">${t('matches_title')}</h1>
             <p class="page-subtitle">${t('matches_subtitle')}</p>
 
-            <div class="group-tabs" id="group-tabs">
+            <div class="group-tabs" id="group-tabs" style="margin-bottom: var(--space-sm)">
                 ${tabs}
+            </div>
+            
+            <div class="group-tabs" id="pred-tabs" style="margin-bottom: var(--space-lg); padding: 4px; background: rgba(0,0,0,0.05); border-radius: var(--radius-lg); display: inline-flex;">
+                ${predTabs}
             </div>
 
             <div id="standings-container"></div>
 
             <div class="matches-grid" id="matches-grid">
-                ${matches.map(m => renderMatchCard(m)).join('')}
+                <!-- Matches will be rendered here by init() -->
             </div>
         </div>
     `;
@@ -46,27 +61,24 @@ export async function matchesPage() {
         init: () => {
             const grid = document.getElementById('matches-grid');
             const tabsContainer = document.getElementById('group-tabs');
+            const predTabsContainer = document.getElementById('pred-tabs');
+            
+            let currentFilterType = 'all';
+            let currentFilterVal = 'All';
+            let currentPredFilter = 'all';
 
-            tabsContainer.addEventListener('click', async (e) => {
-                const tab = e.target.closest('.group-tab');
-                if (!tab) return;
-
-                // Update active tab
-                tabsContainer.querySelectorAll('.group-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-
-                const filterType = tab.dataset.type;
-                const filterVal = tab.dataset.val;
-
+            const renderMatches = async () => {
                 const standingsContainer = document.getElementById('standings-container');
                 standingsContainer.innerHTML = '';
 
                 let filtered = matches;
-                if (filterType === 'group') {
-                    filtered = matches.filter(m => m.group_letter === filterVal);
+                
+                // 1. Apply Group/Stage filter
+                if (currentFilterType === 'group') {
+                    filtered = matches.filter(m => m.group_letter === currentFilterVal);
                     // Fetch and render standings
                     try {
-                        const stds = await fetchAPI(`/matches/standings/${filterVal}`);
+                        const stds = await fetchAPI(`/matches/standings/${currentFilterVal}`);
                         let trs = stds.map((s, idx) => {
                             const isPredicted = s.is_predicted;
                             const rowStyle = isPredicted ? 'color: var(--accent-purple-light); font-style: italic;' : '';
@@ -88,7 +100,7 @@ export async function matchesPage() {
 
                         standingsContainer.innerHTML = `
                             <div class="card" style="margin-bottom:var(--space-lg);overflow-x:auto;">
-                                <h3 style="margin-top:0;margin-bottom:var(--space-md)">${t('matches_standings_title', { group: filterVal })}</h3>
+                                <h3 style="margin-top:0;margin-bottom:var(--space-md)">${t('matches_standings_title', { group: currentFilterVal })}</h3>
                                 <table style="width:100%;border-collapse:collapse;font-size:0.95rem;white-space:nowrap;">
                                     <thead>
                                         <tr style="border-bottom:2px solid var(--border-medium);color:var(--text-muted)">
@@ -121,13 +133,32 @@ export async function matchesPage() {
                     } catch (err) {
                         console.error('Failed to load standings', err);
                     }
-                } else if (filterType === 'stage') {
-                    filtered = matches.filter(m => m.stage === filterVal);
+                } else if (currentFilterType === 'stage') {
+                    filtered = matches.filter(m => m.stage === currentFilterVal);
                 }
+                
+                // 2. Apply Prediction filter
+                if (currentPredFilter === 'with') {
+                    filtered = filtered.filter(m => m.user_prediction != null);
+                } else if (currentPredFilter === 'without') {
+                    filtered = filtered.filter(m => m.user_prediction == null);
+                }
+                
+                // 3. Sort: Move predicted matches to the bottom
+                // If it's a specific stage, it might be better to keep the bracket order, 
+                // but based on request we will sort all views.
+                filtered.sort((a, b) => {
+                    const aHasPred = a.user_prediction != null;
+                    const bHasPred = b.user_prediction != null;
+                    if (aHasPred && !bHasPred) return 1;
+                    if (!aHasPred && bHasPred) return -1;
+                    // If both have or both don't have predictions, keep original order (which is usually chronological/match_number)
+                    return a.id - b.id; 
+                });
 
                 if (filtered.length === 0) {
-                    if (filterType === 'stage') {
-                        let stg = filterVal === 'Round of 32' ? t('stage_r32') : filterVal === 'Round of 16' ? t('stage_r16') : filterVal === 'Quarter-finals' ? t('stage_qf') : filterVal === 'Semi-finals' ? t('stage_sf') : filterVal === 'Final' ? t('stage_final') : filterVal;
+                    if (currentFilterType === 'stage') {
+                        let stg = currentFilterVal === 'Round of 32' ? t('stage_r32') : currentFilterVal === 'Round of 16' ? t('stage_r16') : currentFilterVal === 'Quarter-finals' ? t('stage_qf') : currentFilterVal === 'Semi-finals' ? t('stage_sf') : currentFilterVal === 'Final' ? t('stage_final') : currentFilterVal;
                         grid.innerHTML = `
                             <div class="empty-state" style="grid-column:1/-1">
                                 <div class="empty-state-icon">🏆</div>
@@ -144,36 +175,65 @@ export async function matchesPage() {
                         `;
                     }
                 } else {
-                    if (filterType === 'stage' && filterVal !== 'all') {
+                    if (currentFilterType === 'stage' && currentFilterVal !== 'all') {
                         // For knockout stages, use the bracket card style
-                        const { renderBracketMatch } = await import('./bracket.js');
-                        const transformToBracketMatch = (m) => ({
-                            match_id: m.id,
-                            match_number: m.match_number,
-                            match_date: m.match_date,
-                            venue: m.venue,
-                            home: { 
-                                team: m.home_team, 
-                                slot_label: m.home_slot, 
-                                is_predicted: m.is_home_predicted 
-                            },
-                            away: { 
-                                team: m.away_team, 
-                                slot_label: m.away_slot, 
-                                is_predicted: m.is_away_predicted 
-                            },
-                            is_finished: m.is_finished,
-                            home_score: m.home_score,
-                            away_score: m.away_score,
-                            user_prediction: m.user_prediction,
-                            is_invalid_prediction: m.is_invalid_prediction || (m.user_prediction && m.user_prediction.is_invalid)
+                        import('./bracket.js').then(({ renderBracketMatch }) => {
+                            const transformToBracketMatch = (m) => ({
+                                match_id: m.id,
+                                match_number: m.match_number,
+                                match_date: m.match_date,
+                                venue: m.venue,
+                                home: { 
+                                    team: m.home_team, 
+                                    slot_label: m.home_slot, 
+                                    is_predicted: m.is_home_predicted 
+                                },
+                                away: { 
+                                    team: m.away_team, 
+                                    slot_label: m.away_slot, 
+                                    is_predicted: m.is_away_predicted 
+                                },
+                                is_finished: m.is_finished,
+                                home_score: m.home_score,
+                                away_score: m.away_score,
+                                user_prediction: m.user_prediction,
+                                is_invalid_prediction: m.is_invalid_prediction || (m.user_prediction && m.user_prediction.is_invalid)
+                            });
+                            grid.innerHTML = filtered.map(m => renderBracketMatch(transformToBracketMatch(m))).join('');
                         });
-                        grid.innerHTML = filtered.map(m => renderBracketMatch(transformToBracketMatch(m))).join('');
                     } else {
                         grid.innerHTML = filtered.map(m => renderMatchCard(m)).join('');
                     }
                 }
+            };
+
+            tabsContainer.addEventListener('click', (e) => {
+                const tab = e.target.closest('.group-tab');
+                if (!tab) return;
+
+                tabsContainer.querySelectorAll('.group-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                currentFilterType = tab.dataset.type;
+                currentFilterVal = tab.dataset.val;
+                
+                renderMatches();
             });
+            
+            predTabsContainer.addEventListener('click', (e) => {
+                const tab = e.target.closest('.pred-tab');
+                if (!tab) return;
+
+                predTabsContainer.querySelectorAll('.pred-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                currentPredFilter = tab.dataset.val;
+                
+                renderMatches();
+            });
+            
+            // Initial render
+            renderMatches();
         },
     };
 }
