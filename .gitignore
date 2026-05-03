@@ -16,7 +16,7 @@ venv_clerk/
 
 # Environment files
 .env
-.env.*
+.env.prod
 !.env.example
 
 # Databases
