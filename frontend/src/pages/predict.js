@@ -23,6 +23,7 @@ export async function predictPage(params) {
     const isLocked = matchDate <= now || match.is_finished || isGroupLocked;
     const teamsKnown = match.home_team && match.away_team;
     const isKnockout = match.stage !== 'Group Stage';
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     const existingPred = match.user_prediction;
     const isInvalid = existingPred && (existingPred.is_invalid || match.is_invalid_prediction);
@@ -140,15 +141,35 @@ export async function predictPage(params) {
                     ` : ''}
                     
                     <div class="prediction-inputs-row">
-                        <div class="prediction-input-wrapper">
-                            <input type="number" class="score-input-field" id="home-score" min="0" max="20"
-                                value="${homeScore}" placeholder="0" ${isLocked ? 'disabled' : ''} required />
-                        </div>
+                        ${isTouch && !isLocked ? `
+                            <div class="wheel-picker-container" id="home-score-wheel" data-value="${homeScore || 0}">
+                                <div class="wheel-picker-center-highlight"></div>
+                                <div class="wheel-picker-scroll">
+                                    ${Array.from({length: 21}, (_, i) => `<div class="wheel-picker-item" data-val="${i}">${i}</div>`).join('')}
+                                </div>
+                                <input type="hidden" id="home-score" value="${homeScore !== '' ? homeScore : 0}" />
+                            </div>
+                        ` : `
+                            <div class="prediction-input-wrapper">
+                                <input type="number" class="score-input-field" id="home-score" min="0" max="20"
+                                    value="${homeScore}" placeholder="0" ${isLocked ? 'disabled' : ''} required />
+                            </div>
+                        `}
                         <span class="score-input-separator">—</span>
-                        <div class="prediction-input-wrapper">
-                            <input type="number" class="score-input-field" id="away-score" min="0" max="20"
-                                value="${awayScore}" placeholder="0" ${isLocked ? 'disabled' : ''} required />
-                        </div>
+                        ${isTouch && !isLocked ? `
+                            <div class="wheel-picker-container" id="away-score-wheel" data-value="${awayScore || 0}">
+                                <div class="wheel-picker-center-highlight"></div>
+                                <div class="wheel-picker-scroll">
+                                    ${Array.from({length: 21}, (_, i) => `<div class="wheel-picker-item" data-val="${i}">${i}</div>`).join('')}
+                                </div>
+                                <input type="hidden" id="away-score" value="${awayScore !== '' ? awayScore : 0}" />
+                            </div>
+                        ` : `
+                            <div class="prediction-input-wrapper">
+                                <input type="number" class="score-input-field" id="away-score" min="0" max="20"
+                                    value="${awayScore}" placeholder="0" ${isLocked ? 'disabled' : ''} required />
+                            </div>
+                        `}
                     </div>
 
                     ${isKnockout ? `
@@ -157,11 +178,11 @@ export async function predictPage(params) {
                             <div style="display:flex; justify-content:center; gap:var(--space-md)">
                                 <button type="button" class="btn penalty-team-btn ${existingPred?.penalty_winner_id === match.home_team.id ? 'active' : ''}" 
                                         data-team-id="${match.home_team.id}" id="pen-winner-home" ${isLocked ? 'disabled' : ''}>
-                                    <img src="${getFlagURL(match.home_team.code)}" style="width:20px; margin-right:8px"> ${match.home_team.code}
+                                    <img src="${getFlagURL(match.home_team.code)}" class="match-team-flag-svg" style="width:24px; height:auto; margin-right:8px"> ${match.home_team.code}
                                 </button>
                                 <button type="button" class="btn penalty-team-btn ${existingPred?.penalty_winner_id === match.away_team.id ? 'active' : ''}" 
                                         data-team-id="${match.away_team.id}" id="pen-winner-away" ${isLocked ? 'disabled' : ''}>
-                                    ${match.away_team.code} <img src="${getFlagURL(match.away_team.code)}" style="width:20px; margin-left:8px">
+                                    ${match.away_team.code} <img src="${getFlagURL(match.away_team.code)}" class="match-team-flag-svg" style="width:24px; height:auto; margin-left:8px">
                                 </button>
                             </div>
                             <input type="hidden" id="penalty-winner-id" value="${existingPred?.penalty_winner_id || ''}" />
@@ -176,7 +197,11 @@ export async function predictPage(params) {
                         </div>
                     </div>
                 ` : `
-                    <div class="points-preview">
+                    <button class="btn btn-primary btn-lg" type="submit" style="width:100%;margin-top:var(--space-lg)" id="predict-submit">
+                        ${existingPred ? t('predict_btn_update') : t('predict_btn_submit')}
+                    </button>
+
+                    <div class="points-preview" style="margin-top:var(--space-lg)">
                         <div class="points-preview-title">${t('predict_pts_earn')}</div>
                         <div class="points-preview-grid">
                             <div class="points-preview-item">
@@ -193,10 +218,6 @@ export async function predictPage(params) {
                             </div>
                         </div>
                     </div>
-
-                    <button class="btn btn-primary btn-lg" type="submit" style="width:100%;margin-top:var(--space-lg)" id="predict-submit">
-                        ${existingPred ? t('predict_btn_update') : t('predict_btn_submit')}
-                    </button>
                 `}
             </form>
         `;
@@ -249,8 +270,67 @@ export async function predictPage(params) {
                 }
             };
 
-            homeInput?.addEventListener('input', updatePenaltyUI);
-            awayInput?.addEventListener('input', updatePenaltyUI);
+            const initWheel = (containerId, inputId) => {
+                const container = document.getElementById(containerId);
+                const input = document.getElementById(inputId);
+                const scroll = container?.querySelector('.wheel-picker-scroll');
+                const items = container?.querySelectorAll('.wheel-picker-item');
+                if (!container || !scroll) return;
+
+                let startY, currentTranslate = 0, prevTranslate = 0;
+                const itemHeight = 40;
+                
+                const updateSelection = (y) => {
+                    const index = Math.round(-y / itemHeight);
+                    const clampedIndex = Math.max(0, Math.min(20, index));
+                    const finalY = -clampedIndex * itemHeight;
+                    
+                    scroll.style.transform = `translateY(${finalY}px)`;
+                    currentTranslate = finalY;
+                    prevTranslate = finalY;
+                    input.value = clampedIndex;
+                    
+                    items.forEach((item, idx) => {
+                        item.classList.toggle('active', idx === clampedIndex);
+                    });
+                    updatePenaltyUI();
+                };
+
+                // Set initial position
+                const initialVal = parseInt(container.dataset.value) || 0;
+                updateSelection(-initialVal * itemHeight);
+
+                container.addEventListener('touchstart', (e) => {
+                    startY = e.touches[0].clientY;
+                    scroll.style.transition = 'none';
+                    container.classList.add('focused');
+                });
+
+                container.addEventListener('touchmove', (e) => {
+                    const y = e.touches[0].clientY;
+                    const diff = y - startY;
+                    currentTranslate = prevTranslate + diff;
+                    // Dampen resistance at edges
+                    if (currentTranslate > 20) currentTranslate = 20 + (currentTranslate - 20) * 0.3;
+                    if (currentTranslate < -20 * itemHeight - 20) currentTranslate = -20 * itemHeight - 20 + (currentTranslate + 20 * itemHeight + 20) * 0.3;
+                    
+                    scroll.style.transform = `translateY(${currentTranslate}px)`;
+                });
+
+                container.addEventListener('touchend', () => {
+                    scroll.style.transition = 'transform 0.15s cubic-bezier(0.2, 0, 0.2, 1)';
+                    updateSelection(currentTranslate);
+                    container.classList.remove('focused');
+                });
+            };
+
+            if (isTouch) {
+                initWheel('home-score-wheel', 'home-score');
+                initWheel('away-score-wheel', 'away-score');
+            } else {
+                homeInput?.addEventListener('input', updatePenaltyUI);
+                awayInput?.addEventListener('input', updatePenaltyUI);
+            }
 
             document.querySelectorAll('.penalty-team-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
