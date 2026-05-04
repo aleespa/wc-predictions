@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, case
 from ..database import get_db
 from .. import models, schemas
+from ..cache import timed_lru_cache
 from typing import Optional
 
 router = APIRouter(prefix="/api/leaderboard", tags=["leaderboard"])
@@ -54,73 +55,85 @@ def _compute_community_points(db: Session, community_id: Optional[int] = None) -
 
 
 
+@timed_lru_cache(seconds=60)
+def _get_cached_leaderboard(community_id: Optional[int] = None):
+    # This function will be called by the route
+    # We use a fresh DB session inside if needed, or pass one
+    from ..database import SessionLocal
+    db = SessionLocal()
+    try:
+        # Aggregate user stats from predictions
+        query = (
+            db.query(
+                models.User.id,
+                models.User.username,
+                models.User.display_name,
+                func.coalesce(func.sum(models.Prediction.points_awarded), 0).label("total_points"),
+                func.count(models.Prediction.id).label("predictions_count"),
+                func.sum(
+                    case((models.Prediction.points_awarded == 5, 1), else_=0)
+                ).label("exact_scores"),
+                func.sum(
+                    case((models.Prediction.points_awarded >= 1, 1), else_=0)
+                ).label("correct_outcomes"),
+            )
+            .outerjoin(models.Prediction, models.User.id == models.Prediction.user_id)
+            .filter(models.User.is_admin == False)  # noqa: E712
+        )
+
+        if community_id is not None:
+            query = query.join(models.user_community, models.User.id == models.user_community.c.user_id)\
+                         .filter(models.user_community.c.community_id == community_id)
+
+        results = (
+            query.group_by(models.User.id, models.User.username, models.User.display_name)
+            .order_by(func.coalesce(func.sum(models.Prediction.points_awarded), 0).desc())
+            .all()
+        )
+
+        entries = []
+        for row in results:
+            entries.append({
+                "user_id": row.id,
+                "username": row.username,
+                "display_name": row.display_name,
+                "total_points": row.total_points or 0,
+                "predictions_count": row.predictions_count or 0,
+                "exact_scores": row.exact_scores or 0,
+                "correct_outcomes": row.correct_outcomes or 0,
+                "is_community": False,
+            })
+
+        # Add community virtual user
+        community_stats = _compute_community_points(db, community_id)
+        if community_stats["predictions_count"] > 0:
+            entries.append({
+                "user_id": -1,
+                "username": "community",
+                "display_name": "👥 The Community",
+                "total_points": community_stats["total_points"],
+                "predictions_count": community_stats["predictions_count"],
+                "exact_scores": community_stats["exact_scores"],
+                "correct_outcomes": community_stats["correct_outcomes"],
+                "is_community": True,
+            })
+
+        # Sort by total_points descending and assign ranks
+        entries.sort(key=lambda x: x["total_points"], reverse=True)
+
+        leaderboard_data = []
+        for rank, entry in enumerate(entries, 1):
+            leaderboard_data.append({
+                "rank": rank,
+                **entry,
+            })
+
+        return leaderboard_data
+    finally:
+        db.close()
+
 @router.get("", response_model=list[schemas.LeaderboardEntry])
 def get_leaderboard(community_id: Optional[int] = None, db: Session = Depends(get_db)):
-    # Aggregate user stats from predictions
-    query = (
-        db.query(
-            models.User.id,
-            models.User.username,
-            models.User.display_name,
-            func.coalesce(func.sum(models.Prediction.points_awarded), 0).label("total_points"),
-            func.count(models.Prediction.id).label("predictions_count"),
-            func.sum(
-                case((models.Prediction.points_awarded == 5, 1), else_=0)
-            ).label("exact_scores"),
-            func.sum(
-                case((models.Prediction.points_awarded >= 1, 1), else_=0)
-            ).label("correct_outcomes"),
-        )
-        .outerjoin(models.Prediction, models.User.id == models.Prediction.user_id)
-        .filter(models.User.is_admin == False)  # noqa: E712
-    )
-
-    if community_id is not None:
-        query = query.join(models.user_community, models.User.id == models.user_community.c.user_id)\
-                     .filter(models.user_community.c.community_id == community_id)
-
-    results = (
-        query.group_by(models.User.id, models.User.username, models.User.display_name)
-        .order_by(func.coalesce(func.sum(models.Prediction.points_awarded), 0).desc())
-        .all()
-    )
-
-    entries = []
-    for row in results:
-        entries.append({
-            "user_id": row.id,
-            "username": row.username,
-            "display_name": row.display_name,
-            "total_points": row.total_points or 0,
-            "predictions_count": row.predictions_count or 0,
-            "exact_scores": row.exact_scores or 0,
-            "correct_outcomes": row.correct_outcomes or 0,
-            "is_community": False,
-        })
-
-    # Add community virtual user
-    community = _compute_community_points(db, community_id)
-    if community["predictions_count"] > 0:
-        entries.append({
-            "user_id": -1,
-            "username": "community",
-            "display_name": "👥 The Community",
-            "total_points": community["total_points"],
-            "predictions_count": community["predictions_count"],
-            "exact_scores": community["exact_scores"],
-            "correct_outcomes": community["correct_outcomes"],
-            "is_community": True,
-        })
-
-    # Sort by total_points descending and assign ranks
-    entries.sort(key=lambda x: x["total_points"], reverse=True)
-
-    leaderboard = []
-    for rank, entry in enumerate(entries, 1):
-        leaderboard.append(schemas.LeaderboardEntry(
-            rank=rank,
-            **entry,
-        ))
-
-    return leaderboard
+    # Use cached function
+    return _get_cached_leaderboard(community_id)
 

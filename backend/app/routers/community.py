@@ -9,6 +9,7 @@ from sqlalchemy import func, case
 from ..database import get_db
 from .. import models, schemas
 from ..auth import get_current_user
+from ..cache import timed_lru_cache
 import secrets
 
 router = APIRouter(prefix="/api/community", tags=["community"])
@@ -138,49 +139,54 @@ def _compute_match_stats(db: Session, match_ids: list[int], community_id: Option
 
 # ── Group stage community stats + implied standings ──
 
+@timed_lru_cache(seconds=60)
+def _get_cached_community_matches(community_id: Optional[int] = None):
+    from ..database import SessionLocal
+    db = SessionLocal()
+    try:
+        matches = (
+            db.query(models.Match)
+            .options(joinedload(models.Match.home_team), joinedload(models.Match.away_team))
+            .order_by(models.Match.match_date, models.Match.id)
+            .all()
+        )
+
+        match_ids = [m.id for m in matches]
+        stats = _compute_match_stats(db, match_ids, community_id)
+
+        result = []
+        for m in matches:
+            s = stats.get(m.id, {})
+            result.append({
+                "match_id": m.id,
+                "group_letter": m.group_letter,
+                "stage": m.stage,
+                "match_number": m.match_number,
+                "match_date": m.match_date.isoformat(),
+                "venue": m.venue,
+                "home_team": schemas.TeamOut.model_validate(m.home_team).model_dump() if m.home_team else None,
+                "away_team": schemas.TeamOut.model_validate(m.away_team).model_dump() if m.away_team else None,
+                "home_score": m.home_score,
+                "away_score": m.away_score,
+                "is_finished": m.is_finished,
+                "home_slot": m.home_slot,
+                "away_slot": m.away_slot,
+                "home_source_match_id": m.home_source_match_id,
+                "away_source_match_id": m.away_source_match_id,
+                "prediction_count": s.get("count", 0),
+                "avg_home_score": s.get("avg_home"),
+                "avg_away_score": s.get("avg_away"),
+                "home_win_pct": s.get("home_win_pct"),
+                "draw_pct": s.get("draw_pct"),
+                "away_win_pct": s.get("away_win_pct"),
+            })
+        return result
+    finally:
+        db.close()
+
 @router.get("/matches", response_model=list[CommunityMatchStats])
 def get_community_matches(community_id: Optional[int] = None, db: Session = Depends(get_db)):
-    """
-    Get all group-stage matches with community prediction statistics.
-    """
-    matches = (
-        db.query(models.Match)
-        .options(joinedload(models.Match.home_team), joinedload(models.Match.away_team))
-        .order_by(models.Match.match_date, models.Match.id)
-        .all()
-    )
-
-    match_ids = [m.id for m in matches]
-    stats = _compute_match_stats(db, match_ids, community_id)
-
-    result = []
-    for m in matches:
-        s = stats.get(m.id, {})
-        result.append(CommunityMatchStats(
-            match_id=m.id,
-            group_letter=m.group_letter,
-            stage=m.stage,
-            match_number=m.match_number,
-            match_date=m.match_date,
-            venue=m.venue,
-            home_team=schemas.TeamOut.model_validate(m.home_team) if m.home_team else None,
-            away_team=schemas.TeamOut.model_validate(m.away_team) if m.away_team else None,
-            home_score=m.home_score,
-            away_score=m.away_score,
-            is_finished=m.is_finished,
-            home_slot=m.home_slot,
-            away_slot=m.away_slot,
-            home_source_match_id=m.home_source_match_id,
-            away_source_match_id=m.away_source_match_id,
-            prediction_count=s.get("count", 0),
-            avg_home_score=s.get("avg_home"),
-            avg_away_score=s.get("avg_away"),
-            home_win_pct=s.get("home_win_pct"),
-            draw_pct=s.get("draw_pct"),
-            away_win_pct=s.get("away_win_pct"),
-        ))
-
-    return result
+    return _get_cached_community_matches(community_id)
 
 
 @router.get("/standings/{group_letter}", response_model=list[schemas.StandingOut])

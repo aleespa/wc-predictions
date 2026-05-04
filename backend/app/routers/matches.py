@@ -4,6 +4,7 @@ from typing import Optional
 from ..database import get_db
 from ..auth import get_optional_user
 from .. import models, schemas
+from ..cache import timed_lru_cache
 
 router = APIRouter(prefix="/api/matches", tags=["matches"])
 
@@ -79,10 +80,20 @@ def list_matches(
     return result
 
 
+@timed_lru_cache(seconds=600)
+def _get_cached_teams():
+    from ..database import SessionLocal
+    db = SessionLocal()
+    try:
+        teams = db.query(models.Team).order_by(models.Team.name).all()
+        # Return serializable data
+        return [schemas.TeamOut.model_validate(t).model_dump() for t in teams]
+    finally:
+        db.close()
+
 @router.get("/teams", response_model=list[schemas.TeamOut])
 def list_teams(db: Session = Depends(get_db)):
-    teams = db.query(models.Team).order_by(models.Team.name).all()
-    return teams
+    return _get_cached_teams()
 
 
 @router.get("/standings/{group_letter}", response_model=list[schemas.StandingOut])
