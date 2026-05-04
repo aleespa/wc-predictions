@@ -4,7 +4,7 @@ from typing import Optional
 from ..database import get_db
 from ..auth import get_optional_user
 from .. import models, schemas
-from ..cache import timed_lru_cache
+from ..cache import timed_lru_cache, user_cache
 
 router = APIRouter(prefix="/api/matches", tags=["matches"])
 
@@ -17,6 +17,13 @@ def list_matches(
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_user),
 ):
+    # Try user-specific cache first
+    cache_key = f"matches_list:{group}:{stage}:{finished}"
+    if current_user:
+        cached = user_cache.get(current_user.id, cache_key)
+        if cached:
+            return cached
+
     query = (
         db.query(models.Match)
         .options(joinedload(models.Match.home_team), joinedload(models.Match.away_team))
@@ -76,6 +83,12 @@ def list_matches(
                 match_data.is_away_predicted = away_res.is_predicted
                     
         result.append(match_data)
+
+    # Cache for 30 seconds
+    if current_user:
+        # Store as serializable list of dicts
+        serializable_result = [m.model_dump(mode='json') for m in result]
+        user_cache.set(current_user.id, cache_key, serializable_result)
 
     return result
 

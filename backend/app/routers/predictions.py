@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from ..database import get_db
 from ..auth import get_current_user
 from .. import models, schemas
+from ..cache import user_cache
 
 router = APIRouter(prefix="/api/predictions", tags=["predictions"])
 logger = logging.getLogger("app.predictions")
@@ -114,6 +115,10 @@ def submit_prediction(
         t6 = time.time()
         db.commit()
         db.refresh(existing)
+        
+        # Invalidate matches list cache for this user
+        user_cache.invalidate(current_user.id)
+        
         logger.debug(f"Commit/Refresh took: {time.time() - t6:.4f}s")
         logger.info(f"Prediction updated for user {current_user.id}, match {data.match_id}. Total logic time: {time.time() - start_total:.4f}s")
         return existing
@@ -136,6 +141,10 @@ def submit_prediction(
         t6 = time.time()
         db.commit()
         db.refresh(prediction)
+        
+        # Invalidate matches list cache for this user
+        user_cache.invalidate(current_user.id)
+        
         logger.debug(f"Commit/Refresh took: {time.time() - t6:.4f}s")
         logger.info(f"Prediction created for user {current_user.id}, match {data.match_id}. Total logic time: {time.time() - start_total:.4f}s")
         return prediction
