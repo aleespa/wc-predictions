@@ -5,7 +5,7 @@ and knockout bracket progression.
 """
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
+from sqlalchemy import func, case
 from ..database import get_db
 from .. import models, schemas
 from ..auth import get_current_user
@@ -101,11 +101,14 @@ def _compute_match_stats(db: Session, match_ids: list[int], community_id: Option
     if not match_ids:
         return {}
 
+    # Single aggregate query for all stats
     query = db.query(
         models.Prediction.match_id,
         func.count(models.Prediction.id).label("cnt"),
         func.avg(models.Prediction.predicted_home_score).label("avg_h"),
         func.avg(models.Prediction.predicted_away_score).label("avg_a"),
+        func.sum(case((models.Prediction.predicted_home_score > models.Prediction.predicted_away_score, 1), else_=0)).label("h_wins"),
+        func.sum(case((models.Prediction.predicted_home_score == models.Prediction.predicted_away_score, 1), else_=0)).label("draws"),
     ).filter(models.Prediction.match_id.in_(match_ids))
 
     if community_id is not None:
@@ -115,38 +118,20 @@ def _compute_match_stats(db: Session, match_ids: list[int], community_id: Option
 
     rows = query.group_by(models.Prediction.match_id).all()
 
-    # Build base stats
     stats = {}
     for row in rows:
-        stats[row.match_id] = {
-            "count": row.cnt,
-            "avg_home": round(float(row.avg_h), 1) if row.avg_h is not None else None,
-            "avg_away": round(float(row.avg_a), 1) if row.avg_a is not None else None,
-        }
-
-    # Compute outcome percentages per match
-    for mid in stats:
-        preds_query = db.query(
-            models.Prediction.predicted_home_score,
-            models.Prediction.predicted_away_score,
-        ).filter(models.Prediction.match_id == mid)
-
-        if community_id is not None:
-            preds_query = preds_query.join(models.User, models.Prediction.user_id == models.User.id)\
-                                     .join(models.user_community, models.User.id == models.user_community.c.user_id)\
-                                     .filter(models.user_community.c.community_id == community_id)
-
-        preds = preds_query.all()
-        total = len(preds)
+        total = row.cnt
         if total == 0:
             continue
-        home_wins = sum(1 for p in preds if p.predicted_home_score > p.predicted_away_score)
-        draws = sum(1 for p in preds if p.predicted_home_score == p.predicted_away_score)
-        away_wins = total - home_wins - draws
-
-        stats[mid]["home_win_pct"] = round(home_wins / total * 100, 1)
-        stats[mid]["draw_pct"] = round(draws / total * 100, 1)
-        stats[mid]["away_win_pct"] = round(away_wins / total * 100, 1)
+            
+        stats[row.match_id] = {
+            "count": total,
+            "avg_home": round(float(row.avg_h), 1) if row.avg_h is not None else None,
+            "avg_away": round(float(row.avg_a), 1) if row.avg_a is not None else None,
+            "home_win_pct": round((row.h_wins or 0) / total * 100, 1),
+            "draw_pct": round((row.draws or 0) / total * 100, 1),
+            "away_win_pct": round((total - (row.h_wins or 0) - (row.draws or 0)) / total * 100, 1),
+        }
 
     return stats
 
@@ -729,7 +714,12 @@ def get_my_communities(
     db: Session = Depends(get_db),
     user: schemas.UserOut = Depends(get_current_user),
 ):
-    db_user = db.query(models.User).filter(models.User.id == user.id).first()
+    db_user = (
+        db.query(models.User)
+        .options(joinedload(models.User.communities).joinedload(models.Community.members))
+        .filter(models.User.id == user.id)
+        .first()
+    )
     res = []
     for c in db_user.communities:
         res.append(schemas.CommunityOut(

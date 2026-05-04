@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from ..database import get_db
 from ..auth import get_current_admin
 from .. import models, schemas
@@ -91,6 +91,7 @@ def set_match_result(
 ):
     match = (
         db.query(models.Match)
+        .options(joinedload(models.Match.home_team), joinedload(models.Match.away_team))
         .filter(models.Match.id == match_id)
         .first()
     )
@@ -139,17 +140,13 @@ def set_match_result(
     db.commit()
     db.refresh(match)
 
-    # Load relationships for response
-    home_team = db.query(models.Team).filter(models.Team.id == match.home_team_id).first()
-    away_team = db.query(models.Team).filter(models.Team.id == match.away_team_id).first()
-
     return schemas.MatchOut(
         id=match.id,
         group_letter=match.group_letter,
         stage=match.stage,
         match_number=match.match_number,
-        home_team=schemas.TeamOut.model_validate(home_team) if home_team else None,
-        away_team=schemas.TeamOut.model_validate(away_team) if away_team else None,
+        home_team=schemas.TeamOut.model_validate(match.home_team) if match.home_team else None,
+        away_team=schemas.TeamOut.model_validate(match.away_team) if match.away_team else None,
         match_date=match.match_date,
         venue=match.venue,
         home_score=match.home_score,

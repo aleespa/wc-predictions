@@ -9,17 +9,16 @@ router = APIRouter(prefix="/api", tags=["users"])
 
 @router.get("/me", response_model=schemas.UserOut)
 def get_me(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Calculate stats
-    total_points = (
-        db.query(func.coalesce(func.sum(models.Prediction.points_awarded), 0))
+    # Combined query for user stats
+    stats = (
+        db.query(
+            func.coalesce(func.sum(models.Prediction.points_awarded), 0),
+            func.count(models.Prediction.id)
+        )
         .filter(models.Prediction.user_id == current_user.id)
-        .scalar()
+        .first()
     )
-    predictions_count = (
-        db.query(func.count(models.Prediction.id))
-        .filter(models.Prediction.user_id == current_user.id)
-        .scalar()
-    )
+    total_points, predictions_count = stats if stats else (0, 0)
     return schemas.UserOut(
         id=current_user.id,
         username=current_user.username,
