@@ -6,6 +6,7 @@ import { t } from '../i18n.js';
 export async function matchesPage() {
     const FILTERS = [
         { label: t('matches_filter_all'), type: 'all', val: 'All' },
+        { label: t('matches_filter_thirds'), type: 'thirds', val: 'thirds' },
         ...['A','B','C','D','E','F','G','H','I','J','K','L'].map(g => ({ label: t('matches_filter_grp', { group: g }), type: 'group', val: g })),
         { label: t('matches_filter_r32'), type: 'stage', val: 'Round of 32' },
         { label: t('matches_filter_r16'), type: 'stage', val: 'Round of 16' },
@@ -74,7 +75,85 @@ export async function matchesPage() {
                 let filtered = matches;
                 
                 // 1. Apply Group/Stage filter
-                if (currentFilterType === 'group') {
+                if (currentFilterType === 'thirds') {
+                    filtered = []; // No matches for "thirds" view itself
+                    grid.innerHTML = '<div class="loading" style="grid-column: 1/-1; text-align: center; padding: 2rem;">⌛ Loading Best Thirds...</div>';
+                    try {
+                        const stds = await fetchAPI('/matches/thirds');
+                        grid.innerHTML = ''; // Clear loading message
+                        if (stds.length === 0) {
+                             grid.innerHTML = `
+                                <div class="empty-state" style="grid-column:1/-1">
+                                    <div class="empty-state-icon">📭</div>
+                                    <div class="empty-state-text">${t('matches_no_matches')}</div>
+                                </div>
+                            `;
+                            return;
+                        }
+                        let trs = stds.map((s, idx) => {
+                            const isPredicted = s.is_predicted;
+                            const rowStyle = isPredicted ? 'color: var(--accent-purple-light); font-style: italic;' : '';
+                            const pointsStyle = isPredicted ? 'color: var(--accent-purple);' : 'color: var(--accent-gold);';
+                            const qualStyle = idx < 8 ? 'background: rgba(255,215,0,0.05);' : '';
+
+                            return `
+                                <tr style="border-bottom:1px solid var(--border-light); ${rowStyle} ${qualStyle}">
+                                    <td style="padding:12px 4px;text-align:center;font-weight:700;color:var(--text-muted)">${idx+1}</td>
+                                    <td style="padding:12px 4px;"><img src="${getFlagURL(s.team_code)}" class="match-team-flag-svg" style="width:24px; height:16px; margin-right:8px">${s.team_name}${isPredicted ? ' *' : ''}</td>
+                                    <td style="padding:12px 4px;text-align:center;font-weight:600;color:var(--accent-gold)">${s.group_letter}</td>
+                                    <td style="padding:12px 4px;text-align:center">${s.played}</td>
+                                    <td style="padding:12px 4px;text-align:center">${s.won}</td>
+                                    <td style="padding:12px 4px;text-align:center">${s.drawn}</td>
+                                    <td style="padding:12px 4px;text-align:center">${s.lost}</td>
+                                    <td style="padding:12px 4px;text-align:center">${s.goal_diff > 0 ? '+'+s.goal_diff : s.goal_diff}</td>
+                                    <td style="padding:12px 4px;text-align:center;font-weight:800; ${pointsStyle}">${s.points}</td>
+                                </tr>
+                            `;
+                        }).join('');
+
+                        standingsContainer.innerHTML = `
+                            <div class="card" style="margin-bottom:var(--space-lg);overflow-x:auto;">
+                                <h3 style="margin-top:0;margin-bottom:var(--space-md)">${t('matches_standings_thirds_title')}</h3>
+                                <table style="width:100%;border-collapse:collapse;font-size:0.95rem;white-space:nowrap;">
+                                    <thead>
+                                        <tr style="border-bottom:2px solid var(--border-medium);color:var(--text-muted)">
+                                            <th style="padding:8px 4px;text-align:center">#</th>
+                                            <th style="padding:8px 4px;text-align:left">${t('matches_standings_team')}</th>
+                                            <th style="padding:8px 4px;text-align:center">${t('matches_filter_grp', { group: '' }).replace(':','').trim()}</th>
+                                            <th style="padding:8px 4px;text-align:center">${t('matches_standings_mp')}</th>
+                                            <th style="padding:8px 4px;text-align:center">${t('matches_standings_w')}</th>
+                                            <th style="padding:8px 4px;text-align:center">${t('matches_standings_d')}</th>
+                                            <th style="padding:8px 4px;text-align:center">${t('matches_standings_l')}</th>
+                                            <th style="padding:8px 4px;text-align:center">${t('matches_standings_gd')}</th>
+                                            <th style="padding:8px 4px;text-align:center">${t('matches_standings_pts')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${trs}
+                                    </tbody>
+                                </table>
+                                <div style="margin-top:var(--space-md); font-size:0.75rem; color:var(--text-muted); display:flex; gap:var(--space-lg); justify-content: flex-end;">
+                                    <div style="display:flex; align-items:center; gap:4px">
+                                        <span style="width:8px; height:8px; border-radius:50%; background:var(--accent-gold)"></span>
+                                        ${t('matches_standings_legend_confirmed')}
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:4px">
+                                        <span style="width:8px; height:8px; border-radius:50%; background:var(--accent-purple)"></span>
+                                        ${t('matches_standings_legend_predicted')}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } catch (err) {
+                        console.error('Failed to load thirds standings', err);
+                        grid.innerHTML = `
+                            <div class="empty-state" style="grid-column:1/-1">
+                                <div class="empty-state-icon">⚠️</div>
+                                <div class="empty-state-text">Failed to load Best Thirds: ${err.message}</div>
+                            </div>
+                        `;
+                    }
+                } else if (currentFilterType === 'group') {
                     filtered = matches.filter(m => m.group_letter === currentFilterVal);
                     // Fetch and render standings
                     try {
@@ -217,6 +296,13 @@ export async function matchesPage() {
                 currentFilterType = tab.dataset.type;
                 currentFilterVal = tab.dataset.val;
                 
+                // Hide prediction filters for 'thirds' view as they don't apply to the standings table
+                if (currentFilterType === 'thirds') {
+                    predTabsContainer.style.display = 'none';
+                } else {
+                    predTabsContainer.style.display = 'inline-flex';
+                }
+
                 renderMatches();
             });
             

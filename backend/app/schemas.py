@@ -65,6 +65,7 @@ class StandingOut(BaseModel):
     team_name: str
     team_code: str
     flag_emoji: str
+    group_letter: Optional[str] = None
     played: int = 0
     won: int = 0
     drawn: int = 0
