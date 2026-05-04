@@ -10,15 +10,6 @@ services:
     networks:
       - internal
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY}
-    networks:
-      - internal
-
   nginx:
     build:
       context: ./nginx
@@ -32,7 +23,6 @@ services:
       - ./nginx/privkey.pem:/etc/nginx/certs/privkey.pem:ro
     depends_on:
       - backend
-      - frontend
     networks:
       - internal
 
