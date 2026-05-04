@@ -122,108 +122,98 @@ def resolve_bracket_teams(
     Resolve all bracket slot positions to team data.
     Returns dict mapping slot_label -> { team: TeamOut | None, is_predicted: bool }
     """
-    # Compute blended standings for every group
+    # 1. Bulk fetch all teams, group stage matches, and user predictions
+    teams = db.query(models.Team).all()
+    group_matches = db.query(models.Match).filter(models.Match.stage == "Group Stage").all()
+    
+    user_preds = {}
+    if user_id:
+        preds = db.query(models.Prediction).filter(models.Prediction.user_id == user_id).all()
+        user_preds = {p.match_id: p for p in preds}
+
+    # Map teams by ID and group
+    teams_by_id = {t.id: t for t in teams}
+    teams_by_group = {}
+    for t in teams:
+        teams_by_group.setdefault(t.group_letter, []).append(t)
+
+    matches_by_group = {}
+    for m in group_matches:
+        matches_by_group.setdefault(m.group_letter, []).append(m)
+
+    # 2. Compute standings for all groups in memory
     all_standings = {}
     for gl in "ABCDEFGHIJKL":
-        all_standings[gl] = compute_blended_standings(db, gl, user_id)
+        group_teams = teams_by_group.get(gl, [])
+        group_matches_list = matches_by_group.get(gl, [])
+        
+        std_map = {
+            t.id: {
+                "team_id": t.id, "team_name": t.name, "team_code": t.code, "flag_emoji": t.flag_emoji,
+                "played": 0, "won": 0, "drawn": 0, "lost": 0,
+                "goals_for": 0, "goals_against": 0, "goal_diff": 0, "points": 0,
+            }
+            for t in group_teams
+        }
 
+        for m in group_matches_list:
+            if m.home_team_id not in std_map or m.away_team_id not in std_map:
+                continue
+            
+            # Real result if finished, else user prediction
+            if m.is_finished and m.home_score is not None:
+                h_score, a_score = m.home_score, m.away_score
+            elif m.id in user_preds:
+                p = user_preds[m.id]
+                h_score, a_score = p.predicted_home_score, p.predicted_away_score
+            else:
+                continue
+
+            home, away = std_map[m.home_team_id], std_map[m.away_team_id]
+            home["played"] += 1; away["played"] += 1
+            home["goals_for"] += h_score; home["goals_against"] += a_score
+            away["goals_for"] += a_score; away["goals_against"] += h_score
+
+            if h_score > a_score:
+                home["won"] += 1; home["points"] += 3; away["lost"] += 1
+            elif h_score < a_score:
+                away["won"] += 1; away["points"] += 3; home["lost"] += 1
+            else:
+                home["drawn"] += 1; home["points"] += 1; away["drawn"] += 1; away["points"] += 1
+
+        standings = list(std_map.values())
+        standings.sort(key=lambda x: (x["points"], x["goal_diff"], x["goals_for"]), reverse=True)
+        all_standings[gl] = standings
+
+    # 3. Resolve slots
     resolved = {}
-
-    # Resolve 1X and 2X slots
     for gl, standings in all_standings.items():
-        if len(standings) >= 1:
-            team = db.query(models.Team).filter(models.Team.id == standings[0]["team_id"]).first()
-            if team:
-                # Check if this is from real results or predictions
-                group_matches = (
-                    db.query(models.Match)
-                    .filter(
-                        models.Match.group_letter == gl,
-                        models.Match.stage == "Group Stage",
-                    )
-                    .all()
-                )
-                all_finished = all(m.is_finished for m in group_matches)
-                resolved[f"1{gl}"] = {
-                    "team": team,
+        group_matches_list = matches_by_group.get(gl, [])
+        all_finished = all(m.is_finished for m in group_matches_list)
+        
+        for i, prefix in enumerate(["1", "2", "3"]):
+            if len(standings) > i:
+                team_id = standings[i]["team_id"]
+                resolved[f"{prefix}{gl}"] = {
+                    "team": teams_by_id[team_id],
                     "is_predicted": not all_finished,
+                    "standing": standings[i] if i == 2 else None
                 }
 
-        if len(standings) >= 2:
-            team = db.query(models.Team).filter(models.Team.id == standings[1]["team_id"]).first()
-            if team:
-                group_matches = (
-                    db.query(models.Match)
-                    .filter(
-                        models.Match.group_letter == gl,
-                        models.Match.stage == "Group Stage",
-                    )
-                    .all()
-                )
-                all_finished = all(m.is_finished for m in group_matches)
-                resolved[f"2{gl}"] = {
-                    "team": team,
-                    "is_predicted": not all_finished,
-                }
-
-        # Also track 3rd place teams for later
-        if len(standings) >= 3:
-            team = db.query(models.Team).filter(models.Team.id == standings[2]["team_id"]).first()
-            if team:
-                group_matches = (
-                    db.query(models.Match)
-                    .filter(
-                        models.Match.group_letter == gl,
-                        models.Match.stage == "Group Stage",
-                    )
-                    .all()
-                )
-                all_finished = all(m.is_finished for m in group_matches)
-                resolved[f"3{gl}"] = {
-                    "team": team,
-                    "standing": standings[2],
-                    "is_predicted": not all_finished,
-                }
-
-    # Resolve 3rd-place slots (e.g. "3ABCDF" — best 3rd from those groups)
-    third_place_teams = []
-    for gl in "ABCDEFGHIJKL":
-        if f"3{gl}" in resolved:
-            entry = resolved[f"3{gl}"]
-            third_place_teams.append({
-                "group": gl,
-                "team": entry["team"],
-                "standing": entry["standing"],
-                "is_predicted": entry["is_predicted"],
-            })
-
-    # Sort 3rd-place teams by points, goal diff, goals for
-    third_place_teams.sort(
-        key=lambda x: (x["standing"]["points"], x["standing"]["goal_diff"], x["standing"]["goals_for"]),
-        reverse=True,
-    )
-
-    # Top 8 third-place teams advance
+    # 4. Resolve Best 3rd place slots
+    third_place_teams = [
+        {"group": gl, "team": v["team"], "standing": v["standing"], "is_predicted": v["is_predicted"]}
+        for gl, v in resolved.items() if gl.startswith("3") and v.get("standing")
+    ]
+    third_place_teams.sort(key=lambda x: (x["standing"]["points"], x["standing"]["goal_diff"], x["standing"]["goals_for"]), reverse=True)
     qualifying_thirds = third_place_teams[:8]
-    qualifying_groups = set(t["group"] for t in qualifying_thirds)
 
-    # For each 3rd-place slot (e.g. "3ABCDF"), find the best qualifying 3rd-place
-    # team from those specific groups
     third_slots = [s for s in SLOT_LABELS.keys() if s.startswith("3") and len(s) > 2]
     for slot in third_slots:
-        eligible_groups = set(slot[1:])  # e.g. "3ABCDF" -> {'A','B','C','D','F'}
-        # Find qualifying 3rd-place team from eligible groups
-        best_match = None
-        for qt in qualifying_thirds:
-            if qt["group"] in eligible_groups:
-                if best_match is None:
-                    best_match = qt
-                    break  # Take the highest-ranked one
+        eligible_groups = set(slot[1:])
+        best_match = next((qt for qt in qualifying_thirds if qt["group"] in eligible_groups), None)
         if best_match:
-            resolved[slot] = {
-                "team": best_match["team"],
-                "is_predicted": best_match["is_predicted"],
-            }
+            resolved[slot] = {"team": best_match["team"], "is_predicted": best_match["is_predicted"]}
 
     return resolved
 
