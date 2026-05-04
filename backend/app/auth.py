@@ -52,8 +52,8 @@ def verify_token(token: str):
         print(f"DEBUG: Manual token verification failed: {e}")
         return None
 
-# User ID Cache (clerk_id -> user_id)
-_user_id_cache = {}
+# User Data Cache (clerk_id -> user_dict)
+_user_data_cache = {}
 USER_CACHE_TTL = 3600 # 1 hour
 
 def get_current_user(
@@ -80,19 +80,23 @@ def get_current_user(
     if not user_id_str:
         raise credentials_exception
 
-    # Try cache for the internal database ID
+    # Extreme Cache: Try to return a cached user object to avoid DB hit
     now = time.time()
-    cached = _user_id_cache.get(user_id_str)
+    cached = _user_data_cache.get(user_id_str)
     if cached and (now - cached["time"]) < USER_CACHE_TTL:
-        user = db.query(models.User).filter(models.User.id == cached["id"]).first()
-        if user:
+        # We create a "detached" model instance from cached data
+        # This works for most GET requests that just read user.id or user.username
+        user = models.User(**cached["data"])
+        # Important: If this request is a POST/PUT/DELETE, we might need a live DB object.
+        # But for /api/me and /api/matches, this is a massive win.
+        if request.method == "GET":
             return user
 
-    # Fallback to lookup by clerk_id
+    # Fallback to DB
     user = db.query(models.User).filter(models.User.clerk_id == user_id_str).first()
     
-    # Auto-create user if they don't exist
     if user is None:
+        # ... (Auto-create logic remains the same)
         is_admin = False
         display_name = None
         clerk_username = None
@@ -100,31 +104,19 @@ def get_current_user(
             clerk_user = clerk_client.users.get(user_id=user_id_str)
             user_emails = [e.email_address.lower() for e in clerk_user.email_addresses]
             clerk_username = clerk_user.username
-            
             admin_emails_env = os.environ.get("ADMIN_EMAILS", "")
             admin_emails = [e.strip().lower() for e in admin_emails_env.split(",") if e.strip()]
-            
-            if any(e in admin_emails for e in user_emails):
-                is_admin = True
-
-            # Get display name from Clerk
-            if clerk_user.first_name and clerk_user.last_name:
-                display_name = f"{clerk_user.first_name} {clerk_user.last_name}"
-            elif clerk_user.first_name:
-                display_name = clerk_user.first_name
-            elif clerk_user.username:
-                display_name = clerk_user.username
-            elif user_emails:
-                display_name = user_emails[0].split('@')[0]
+            if any(e in admin_emails for e in user_emails): is_admin = True
+            if clerk_user.first_name and clerk_user.last_name: display_name = f"{clerk_user.first_name} {clerk_user.last_name}"
+            elif clerk_user.first_name: display_name = clerk_user.first_name
+            elif clerk_user.username: display_name = clerk_user.username
+            elif user_emails: display_name = user_emails[0].split('@')[0]
         except Exception as e:
             print(f"DEBUG: Failed to fetch clerk user details: {str(e)}")
 
-        # If Clerk didn't provide a username, use a fallback
-        final_username = clerk_username or f"user_{user_id_str[-6:]}"
-
         user = models.User(
             clerk_id=user_id_str,
-            username=final_username, 
+            username=clerk_username or f"user_{user_id_str[-6:]}", 
             display_name=display_name,
             is_admin=is_admin
         )
@@ -132,8 +124,19 @@ def get_current_user(
         db.commit()
         db.refresh(user)
         
-    # Update cache
-    _user_id_cache[user_id_str] = {"id": user.id, "time": now}
+    # Update cache with serializable data
+    _user_data_cache[user_id_str] = {
+        "time": now,
+        "data": {
+            "id": user.id,
+            "clerk_id": user.clerk_id,
+            "username": user.username,
+            "display_name": user.display_name,
+            "is_admin": user.is_admin,
+            "is_group_stage_locked": user.is_group_stage_locked,
+            "created_at": user.created_at
+        }
+    }
     return user
 
 
@@ -163,14 +166,24 @@ def get_optional_user(
         
         # Try cache
         now = time.time()
-        cached = _user_id_cache.get(user_id_str)
+        cached = _user_data_cache.get(user_id_str)
         if cached and (now - cached["time"]) < USER_CACHE_TTL:
-            user = db.query(models.User).filter(models.User.id == cached["id"]).first()
-            if user: return user
+            return models.User(**cached["data"])
             
         user = db.query(models.User).filter(models.User.clerk_id == user_id_str).first()
         if user:
-            _user_id_cache[user_id_str] = {"id": user.id, "time": now}
+            _user_data_cache[user_id_str] = {
+                "time": now,
+                "data": {
+                    "id": user.id,
+                    "clerk_id": user.clerk_id,
+                    "username": user.username,
+                    "display_name": user.display_name,
+                    "is_admin": user.is_admin,
+                    "is_group_stage_locked": user.is_group_stage_locked,
+                    "created_at": user.created_at
+                }
+            }
         return user
     except Exception:
         return None

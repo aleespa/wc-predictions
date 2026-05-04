@@ -3,16 +3,25 @@ import { clerk } from '../auth.js';
 import { t, getLanguage, setLanguage } from '../i18n.js';
 
 let cachedUser = null;
+let userPromise = null;
 
 export async function getCurrentUser() {
     if (!isAuthenticated()) return null;
     if (cachedUser) return cachedUser;
-    try {
-        cachedUser = await fetchAPI('/me');
-        return cachedUser;
-    } catch {
+    
+    // If a request is already in progress, wait for it
+    if (userPromise) return userPromise;
+    
+    userPromise = fetchAPI('/me').then(user => {
+        cachedUser = user;
+        userPromise = null;
+        return user;
+    }).catch(err => {
+        userPromise = null;
         return null;
-    }
+    });
+    
+    return userPromise;
 }
 
 export function clearUserCache() {
