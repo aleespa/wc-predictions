@@ -19,10 +19,15 @@ export async function fetchAPI(endpoint, options = {}) {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const startTime = performance.now();
     const response = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
         headers,
     });
+    const duration = performance.now() - startTime;
+    const serverTime = response.headers.get('X-Process-Time');
+    const serverTimeStr = serverTime ? ` (Server: ${parseFloat(serverTime).toFixed(4)}s)` : '';
+    console.log(`API Call to ${endpoint} took ${duration.toFixed(2)}ms${serverTimeStr}`);
 
     if (response.status === 401) {
         window.location.hash = '#/login';

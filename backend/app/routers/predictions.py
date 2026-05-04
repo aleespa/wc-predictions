@@ -1,3 +1,5 @@
+import time
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from datetime import datetime, timezone
@@ -6,6 +8,7 @@ from ..auth import get_current_user
 from .. import models, schemas
 
 router = APIRouter(prefix="/api/predictions", tags=["predictions"])
+logger = logging.getLogger("app.predictions")
 
 
 @router.post("", response_model=schemas.PredictionOut)
@@ -14,8 +17,12 @@ def submit_prediction(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    start_total = time.time()
+    
     # Verify match exists
+    t0 = time.time()
     match = db.query(models.Match).filter(models.Match.id == data.match_id).first()
+    logger.debug(f"Match query took: {time.time() - t0:.4f}s")
     if not match:
         raise HTTPException(status_code=404, detail="Match not found")
 
@@ -42,28 +49,33 @@ def submit_prediction(
         )
 
     # Enforce Knockout Gating
-    if match.stage != "Group Stage":
-        # Check if already unlocked
-        group_matches = db.query(models.Match).filter(models.Match.stage == "Group Stage").all()
-        all_finished = all(m.is_finished for m in group_matches)
+    if match.stage != "Group Stage" and not current_user.is_group_stage_locked:
+        t4 = time.time()
+        # Efficiently check if any group matches are NOT finished
+        unfinished_exists = db.query(models.Match).filter(
+            models.Match.stage == "Group Stage", 
+            models.Match.is_finished == False
+        ).first() is not None
         
-        user_predicted_all = False
-        group_match_ids = [m.id for m in group_matches]
-        group_preds_count = (
-            db.query(models.Prediction)
-            .filter(
-                models.Prediction.user_id == current_user.id,
-                models.Prediction.match_id.in_(group_match_ids)
+        if unfinished_exists:
+            # If not all finished, check if user has predicted all
+            group_matches_count = db.query(models.Match).filter(models.Match.stage == "Group Stage").count()
+            user_preds_count = (
+                db.query(models.Prediction)
+                .join(models.Match)
+                .filter(
+                    models.Prediction.user_id == current_user.id,
+                    models.Match.stage == "Group Stage"
+                )
+                .count()
             )
-            .count()
-        )
-        user_predicted_all = group_preds_count >= len(group_matches)
-
-        if not (all_finished or user_predicted_all):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You must complete all group-stage predictions to unlock the knockout bracket."
-            )
+            
+            if user_preds_count < group_matches_count:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You must complete all group-stage predictions to unlock the knockout bracket."
+                )
+        logger.debug(f"Optimized knockout gating checks took: {time.time() - t4:.4f}s")
 
     # For knockout matches, ensure we have teams (either official or speculative)
     p_home_id = data.predicted_home_team_id or match.home_team_id
@@ -76,6 +88,7 @@ def submit_prediction(
         )
 
     # Check for existing prediction (upsert)
+    t5 = time.time()
     existing = (
         db.query(models.Prediction)
         .filter(
@@ -84,6 +97,7 @@ def submit_prediction(
         )
         .first()
     )
+    logger.debug(f"Existing prediction query took: {time.time() - t5:.4f}s")
 
     if existing:
         existing.predicted_home_score = data.predicted_home_score
@@ -97,8 +111,11 @@ def submit_prediction(
         if match.stage != "Group Stage" and not current_user.is_group_stage_locked:
             current_user.is_group_stage_locked = True
 
+        t6 = time.time()
         db.commit()
         db.refresh(existing)
+        logger.debug(f"Commit/Refresh took: {time.time() - t6:.4f}s")
+        logger.info(f"Prediction updated for user {current_user.id}, match {data.match_id}. Total logic time: {time.time() - start_total:.4f}s")
         return existing
     else:
         prediction = models.Prediction(
@@ -116,8 +133,11 @@ def submit_prediction(
         if match.stage != "Group Stage" and not current_user.is_group_stage_locked:
             current_user.is_group_stage_locked = True
             
+        t6 = time.time()
         db.commit()
         db.refresh(prediction)
+        logger.debug(f"Commit/Refresh took: {time.time() - t6:.4f}s")
+        logger.info(f"Prediction created for user {current_user.id}, match {data.match_id}. Total logic time: {time.time() - start_total:.4f}s")
         return prediction
 
 

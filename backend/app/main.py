@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+import time
+import logging
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, SessionLocal, Base
 from .routers import users, matches, predictions, leaderboard, admin, knockout, community
@@ -9,6 +11,22 @@ app = FastAPI(
     description="Predict FIFA World Cup 2026 match results and compete on the leaderboard!",
     version="1.0.0",
 )
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger("app")
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    logger.info(f"Method: {request.method} Path: {request.url.path} Completed in: {process_time:.4f}s Status: {response.status_code}")
+    response.headers["X-Process-Time"] = str(process_time)
+    return response
 
 import os
 
@@ -28,6 +46,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Process-Time"],
 )
 
 
