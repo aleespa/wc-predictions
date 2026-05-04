@@ -29,10 +29,15 @@ async function start() {
     renderNavbar();
     initRouter();
 
-    // Re-render everything if the user auth state changes (e.g. login/logout)
+    // Re-render everything only if the user actually changes (login/logout)
+    let lastUserId = clerk.user?.id;
     clerk.addListener(({ user }) => {
-        renderNavbar();
-        handleRoute(); 
+        if (user?.id !== lastUserId) {
+            lastUserId = user?.id;
+            console.log("Auth state changed, re-rendering...");
+            renderNavbar();
+            handleRoute(); 
+        }
     });
 }
 
