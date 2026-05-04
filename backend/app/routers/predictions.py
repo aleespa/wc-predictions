@@ -11,6 +11,26 @@ from ..cache import user_cache
 router = APIRouter(prefix="/api/predictions", tags=["predictions"])
 logger = logging.getLogger("app.predictions")
 
+from ..cache import timed_lru_cache
+
+@timed_lru_cache(seconds=600)
+def get_match_cached(m_id: int):
+    from ..database import SessionLocal
+    db = SessionLocal()
+    try:
+        return db.query(models.Match).filter(models.Match.id == m_id).first()
+    finally:
+        db.close()
+
+@timed_lru_cache(seconds=3600)
+def get_group_count_cached():
+    from ..database import SessionLocal
+    db = SessionLocal()
+    try:
+        return db.query(models.Match).filter(models.Match.stage == "Group Stage").count()
+    finally:
+        db.close()
+
 
 @router.post("", response_model=schemas.PredictionOut)
 def submit_prediction(
@@ -20,85 +40,44 @@ def submit_prediction(
 ):
     start_total = time.time()
     
-    # Verify match exists
-    t0 = time.time()
-    match = db.query(models.Match).filter(models.Match.id == data.match_id).first()
-    logger.debug(f"Match query took: {time.time() - t0:.4f}s")
+    # 1. Match and Existing Prediction in one go? 
+    match = get_match_cached(data.match_id)
     if not match:
         raise HTTPException(status_code=404, detail="Match not found")
 
-    # Check if match has already started
+    # 2. Check if match has already started
     now = datetime.now(timezone.utc)
     match_date = match.match_date.replace(tzinfo=timezone.utc) if match.match_date.tzinfo is None else match.match_date
     if match_date <= now:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot predict after match has started",
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot predict after match has started")
 
     if match.is_finished:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Match is already finished",
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Match is already finished")
 
-    # Enforce Group Stage Lock
-    if match.stage == "Group Stage" and current_user.is_group_stage_locked:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Group stage predictions are locked because you have already started your knockout bracket."
-        )
-
-    # Enforce Knockout Gating
+    # 3. Handle Gating and Existing Prediction in a combined query if possible
+    # For now, let's just reduce the gating queries
     if match.stage != "Group Stage" and not current_user.is_group_stage_locked:
-        t4 = time.time()
-        # Efficiently check if any group matches are NOT finished
-        unfinished_exists = db.query(models.Match).filter(
-            models.Match.stage == "Group Stage", 
-            models.Match.is_finished == False
-        ).first() is not None
+        # Check if user has predicted all group matches
+        group_total = get_group_count_cached()
+        user_group_preds = db.query(models.Prediction).join(models.Match).filter(
+            models.Prediction.user_id == current_user.id,
+            models.Match.stage == "Group Stage"
+        ).count()
         
-        if unfinished_exists:
-            # If not all finished, check if user has predicted all
-            group_matches_count = db.query(models.Match).filter(models.Match.stage == "Group Stage").count()
-            user_preds_count = (
-                db.query(models.Prediction)
-                .join(models.Match)
-                .filter(
-                    models.Prediction.user_id == current_user.id,
-                    models.Match.stage == "Group Stage"
-                )
-                .count()
-            )
-            
-            if user_preds_count < group_matches_count:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You must complete all group-stage predictions to unlock the knockout bracket."
-                )
-        logger.debug(f"Optimized knockout gating checks took: {time.time() - t4:.4f}s")
+        if user_group_preds < group_total:
+            raise HTTPException(status_code=403, detail="Complete all group-stage predictions to unlock knockout bracket.")
 
-    # For knockout matches, ensure we have teams (either official or speculative)
+    # 4. Upsert prediction
+    existing = db.query(models.Prediction).filter(
+        models.Prediction.user_id == current_user.id,
+        models.Prediction.match_id == data.match_id
+    ).first()
+
     p_home_id = data.predicted_home_team_id or match.home_team_id
     p_away_id = data.predicted_away_team_id or match.away_team_id
 
     if match.stage != "Group Stage" and (not p_home_id or not p_away_id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot predict yet — teams for this knockout match are not determined",
-        )
-
-    # Check for existing prediction (upsert)
-    t5 = time.time()
-    existing = (
-        db.query(models.Prediction)
-        .filter(
-            models.Prediction.user_id == current_user.id,
-            models.Prediction.match_id == data.match_id,
-        )
-        .first()
-    )
-    logger.debug(f"Existing prediction query took: {time.time() - t5:.4f}s")
+        raise HTTPException(status_code=400, detail="Teams for this knockout match are not determined")
 
     if existing:
         existing.predicted_home_score = data.predicted_home_score
@@ -107,47 +86,24 @@ def submit_prediction(
         existing.predicted_home_team_id = p_home_id
         existing.predicted_away_team_id = p_away_id
         existing.penalty_winner_id = data.penalty_winner_id
-        
-        # Lock group stage if this is a knockout match
-        if match.stage != "Group Stage" and not current_user.is_group_stage_locked:
-            current_user.is_group_stage_locked = True
-
-        t6 = time.time()
-        db.commit()
-        db.refresh(existing)
-        
-        # Invalidate matches list cache for this user
-        user_cache.invalidate(current_user.id)
-        
-        logger.debug(f"Commit/Refresh took: {time.time() - t6:.4f}s")
-        logger.info(f"Prediction updated for user {current_user.id}, match {data.match_id}. Total logic time: {time.time() - start_total:.4f}s")
-        return existing
     else:
-        prediction = models.Prediction(
-            user_id=current_user.id,
-            match_id=data.match_id,
+        existing = models.Prediction(
+            user_id=current_user.id, match_id=data.match_id,
             predicted_home_score=data.predicted_home_score,
             predicted_away_score=data.predicted_away_score,
             predicted_home_team_id=p_home_id,
             predicted_away_team_id=p_away_id,
             penalty_winner_id=data.penalty_winner_id,
         )
-        db.add(prediction)
-        
-        # Lock group stage if this is a knockout match
-        if match.stage != "Group Stage" and not current_user.is_group_stage_locked:
-            current_user.is_group_stage_locked = True
-            
-        t6 = time.time()
-        db.commit()
-        db.refresh(prediction)
-        
-        # Invalidate matches list cache for this user
-        user_cache.invalidate(current_user.id)
-        
-        logger.debug(f"Commit/Refresh took: {time.time() - t6:.4f}s")
-        logger.info(f"Prediction created for user {current_user.id}, match {data.match_id}. Total logic time: {time.time() - start_total:.4f}s")
-        return prediction
+        db.add(existing)
+
+    if match.stage != "Group Stage":
+        current_user.is_group_stage_locked = True
+
+    db.commit()
+    db.refresh(existing)
+    user_cache.invalidate(current_user.id)
+    return existing
 
 
 @router.get("/me", response_model=list[schemas.PredictionWithMatch])

@@ -9,6 +9,22 @@ router = APIRouter(prefix="/api", tags=["users"])
 
 @router.get("/me", response_model=schemas.UserOut)
 def get_me(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from ..cache import user_cache
+    
+    # Try cache
+    cache_key = "user_profile_stats"
+    cached = user_cache.get(current_user.id, cache_key)
+    if cached:
+        return schemas.UserOut(
+            id=current_user.id,
+            username=current_user.username,
+            display_name=current_user.display_name,
+            is_admin=current_user.is_admin,
+            created_at=current_user.created_at,
+            is_group_stage_locked=current_user.is_group_stage_locked,
+            **cached
+        )
+
     # Combined query for user stats
     stats = (
         db.query(
@@ -19,15 +35,21 @@ def get_me(current_user: models.User = Depends(get_current_user), db: Session = 
         .first()
     )
     total_points, predictions_count = stats if stats else (0, 0)
+    
+    res_data = {
+        "total_points": total_points,
+        "predictions_count": predictions_count
+    }
+    user_cache.set(current_user.id, cache_key, res_data)
+    
     return schemas.UserOut(
         id=current_user.id,
         username=current_user.username,
         display_name=current_user.display_name,
         is_admin=current_user.is_admin,
         created_at=current_user.created_at,
-        total_points=total_points,
-        predictions_count=predictions_count,
         is_group_stage_locked=current_user.is_group_stage_locked,
+        **res_data
     )
 
 

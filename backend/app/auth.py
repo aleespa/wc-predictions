@@ -52,6 +52,10 @@ def verify_token(token: str):
         print(f"DEBUG: Manual token verification failed: {e}")
         return None
 
+# User ID Cache (clerk_id -> user_id)
+_user_id_cache = {}
+USER_CACHE_TTL = 3600 # 1 hour
+
 def get_current_user(
     request: Request,
     db: Session = Depends(get_db),
@@ -76,6 +80,15 @@ def get_current_user(
     if not user_id_str:
         raise credentials_exception
 
+    # Try cache for the internal database ID
+    now = time.time()
+    cached = _user_id_cache.get(user_id_str)
+    if cached and (now - cached["time"]) < USER_CACHE_TTL:
+        user = db.query(models.User).filter(models.User.id == cached["id"]).first()
+        if user:
+            return user
+
+    # Fallback to lookup by clerk_id
     user = db.query(models.User).filter(models.User.clerk_id == user_id_str).first()
     
     # Auto-create user if they don't exist
@@ -119,6 +132,8 @@ def get_current_user(
         db.commit()
         db.refresh(user)
         
+    # Update cache
+    _user_id_cache[user_id_str] = {"id": user.id, "time": now}
     return user
 
 
@@ -145,6 +160,17 @@ def get_optional_user(
             return None
             
         user_id_str = payload.get("sub")
-        return db.query(models.User).filter(models.User.clerk_id == user_id_str).first()
+        
+        # Try cache
+        now = time.time()
+        cached = _user_id_cache.get(user_id_str)
+        if cached and (now - cached["time"]) < USER_CACHE_TTL:
+            user = db.query(models.User).filter(models.User.id == cached["id"]).first()
+            if user: return user
+            
+        user = db.query(models.User).filter(models.User.clerk_id == user_id_str).first()
+        if user:
+            _user_id_cache[user_id_str] = {"id": user.id, "time": now}
+        return user
     except Exception:
         return None
