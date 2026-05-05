@@ -140,21 +140,7 @@ def set_match_result(
     db.commit()
     db.refresh(match)
 
-    return schemas.MatchOut(
-        id=match.id,
-        group_letter=match.group_letter,
-        stage=match.stage,
-        match_number=match.match_number,
-        home_team=schemas.TeamOut.model_validate(match.home_team) if match.home_team else None,
-        away_team=schemas.TeamOut.model_validate(match.away_team) if match.away_team else None,
-        match_date=match.match_date,
-        venue=match.venue,
-        home_score=match.home_score,
-        away_score=match.away_score,
-        is_finished=match.is_finished,
-        home_slot=match.home_slot,
-        away_slot=match.away_slot,
-    )
+    return schemas.MatchOut.model_validate(match)
 
 
 @router.post("/matches", response_model=schemas.MatchOut)
@@ -182,21 +168,7 @@ def create_match(
     db.commit()
     db.refresh(match)
 
-    return schemas.MatchOut(
-        id=match.id,
-        group_letter=match.group_letter,
-        stage=match.stage,
-        match_number=match.match_number,
-        home_team=schemas.TeamOut.model_validate(home_team) if home_team else None,
-        away_team=schemas.TeamOut.model_validate(away_team) if away_team else None,
-        match_date=match.match_date,
-        venue=match.venue,
-        home_score=match.home_score,
-        away_score=match.away_score,
-        is_finished=match.is_finished,
-        home_slot=match.home_slot,
-        away_slot=match.away_slot,
-    )
+    return schemas.MatchOut.model_validate(match)
 
 
 @router.get("/matches", response_model=list[schemas.MatchOut])
@@ -214,21 +186,7 @@ def admin_list_matches(
     )
 
     return [
-        schemas.MatchOut(
-            id=m.id,
-            group_letter=m.group_letter,
-            stage=m.stage,
-            match_number=m.match_number,
-            home_team=schemas.TeamOut.model_validate(m.home_team) if m.home_team else None,
-            away_team=schemas.TeamOut.model_validate(m.away_team) if m.away_team else None,
-            match_date=m.match_date,
-            venue=m.venue,
-            home_score=m.home_score,
-            away_score=m.away_score,
-            is_finished=m.is_finished,
-            home_slot=m.home_slot,
-            away_slot=m.away_slot,
-        )
+        schemas.MatchOut.model_validate(m)
         for m in matches
     ]
 

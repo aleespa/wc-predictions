@@ -311,24 +311,7 @@ def get_match(
         from fastapi import HTTPException, status
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
 
-    match_data = schemas.MatchOut(
-        id=match.id,
-        group_letter=match.group_letter,
-        stage=match.stage,
-        match_number=match.match_number,
-        home_team=schemas.TeamOut.model_validate(match.home_team) if match.home_team else None,
-        away_team=schemas.TeamOut.model_validate(match.away_team) if match.away_team else None,
-        match_date=match.match_date,
-        venue=match.venue,
-        home_score=match.home_score,
-        away_score=match.away_score,
-        is_finished=match.is_finished,
-        user_prediction=None,
-        home_slot=match.home_slot,
-        away_slot=match.away_slot,
-        home_source_match_id=match.home_source_match_id,
-        away_source_match_id=match.away_source_match_id,
-    )
+    match_data = schemas.MatchOut.model_validate(match)
 
     if current_user:
         # Load user prediction
@@ -383,9 +366,13 @@ def get_match(
             r_home = home_res.team.id if home_res.team else None
             r_away = away_res.team.id if away_res.team else None
             
-            if r_home and r_away:
+            if r_home and r_away and p_home and p_away:
                 if {p_home, p_away} != {r_home, r_away}:
                     match_data.user_prediction.is_invalid = True
                     match_data.is_invalid_prediction = True
+            elif match_data.user_prediction and (not r_home or not r_away):
+                # If prediction exists but teams are no longer resolved, it's definitely invalid
+                match_data.user_prediction.is_invalid = True
+                match_data.is_invalid_prediction = True
 
     return match_data

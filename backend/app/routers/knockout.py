@@ -320,8 +320,13 @@ def resolve_bracket_slot(
                     winner_team = source_match.away_team
                     loser_team = source_match.home_team
                 else:
-                    winner_team = source_match.home_team
-                    loser_team = source_match.away_team
+                    # Draw - check penalty winner
+                    if source_match.penalty_winner_id == source_match.home_team_id:
+                        winner_team = source_match.home_team
+                        loser_team = source_match.away_team
+                    else:
+                        winner_team = source_match.away_team
+                        loser_team = source_match.home_team
 
                 chosen = loser_team if is_loser_slot else winner_team
                 if chosen:
@@ -351,8 +356,13 @@ def resolve_bracket_slot(
                         winner = source_away.team
                         loser = source_home.team
                     else:
-                        winner = source_home.team
-                        loser = source_away.team
+                        # Draw - check penalty winner
+                        if source_away.team and pred.penalty_winner_id == source_away.team.id:
+                            winner = source_away.team
+                            loser = source_home.team
+                        else:
+                            winner = source_home.team
+                            loser = source_away.team
 
                     chosen = loser if is_loser_slot else winner
                     return schemas.BracketSlotTeam(

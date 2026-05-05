@@ -168,6 +168,7 @@ def _get_cached_community_matches(community_id: Optional[int] = None):
                 "away_team": schemas.TeamOut.model_validate(m.away_team).model_dump() if m.away_team else None,
                 "home_score": m.home_score,
                 "away_score": m.away_score,
+                "penalty_winner_id": m.penalty_winner_id,
                 "is_finished": m.is_finished,
                 "home_slot": m.home_slot,
                 "away_slot": m.away_slot,
