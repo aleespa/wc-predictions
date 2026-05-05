@@ -704,11 +704,11 @@ async function loadCommunityBracket(container, suffix) {
                     </div>
                 </div>
                 <div class="bracket-container">
-                    ${renderBracketRound(t('stage_r32'), bracket.round_of_32)}
-                    ${renderBracketRound(t('stage_r16'), bracket.round_of_16)}
-                    ${renderBracketRound(t('stage_qf'), bracket.quarter_finals)}
-                    ${renderBracketRound(t('stage_sf'), bracket.semi_finals)}
-                    ${bracket.third_place ? renderBracketRound(t('stage_3rd'), [bracket.third_place]) : ''}
+                    ${renderBracketRound(t('stage_roundof32'), bracket.round_of_32)}
+                    ${renderBracketRound(t('stage_roundof16'), bracket.round_of_16)}
+                    ${renderBracketRound(t('stage_quarterfinals'), bracket.quarter_finals)}
+                    ${renderBracketRound(t('stage_semifinals'), bracket.semi_finals)}
+                    ${bracket.third_place ? renderBracketRound(t('stage_thirdplace'), [bracket.third_place]) : ''}
                     ${bracket.final ? renderBracketRound(t('stage_final'), [bracket.final]) : ''}
                 </div>
             </div>

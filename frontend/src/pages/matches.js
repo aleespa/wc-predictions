@@ -237,7 +237,7 @@ export async function matchesPage() {
 
                 if (filtered.length === 0) {
                     if (currentFilterType === 'stage') {
-                        let stg = currentFilterVal === 'Round of 32' ? t('stage_r32') : currentFilterVal === 'Round of 16' ? t('stage_r16') : currentFilterVal === 'Quarter-finals' ? t('stage_qf') : currentFilterVal === 'Semi-finals' ? t('stage_sf') : currentFilterVal === 'Final' ? t('stage_final') : currentFilterVal;
+                        let stg = t('stage_' + currentFilterVal.toLowerCase().replace(/[^a-z0-9]/g, '')) || currentFilterVal;
                         grid.innerHTML = `
                             <div class="empty-state" style="grid-column:1/-1">
                                 <div class="empty-state-icon">🏆</div>

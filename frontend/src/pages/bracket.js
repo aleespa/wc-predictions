@@ -184,11 +184,11 @@ export async function bracketPage() {
 
             <div id="bracket-content">
                 <div id="bracket-rounds-view" class="bracket-container ${!bracket.is_unlocked ? 'bracket-container-locked' : ''}">
-                    ${renderRound(t('stage_r32'), bracket.round_of_32, { isLocked: !bracket.is_unlocked })}
-                    ${renderRound(t('stage_r16'), bracket.round_of_16, { compact: true, isLocked: !bracket.is_unlocked })}
-                    ${renderRound(t('stage_qf'), bracket.quarter_finals, { compact: true, isLocked: !bracket.is_unlocked })}
-                    ${renderRound(t('stage_sf'), bracket.semi_finals, { compact: true, isLocked: !bracket.is_unlocked })}
-                    ${bracket.third_place ? renderRound(t('stage_3rd'), [bracket.third_place], { compact: true, isLocked: !bracket.is_unlocked }) : ''}
+                    ${renderRound(t('stage_roundof32'), bracket.round_of_32, { isLocked: !bracket.is_unlocked })}
+                    ${renderRound(t('stage_roundof16'), bracket.round_of_16, { compact: true, isLocked: !bracket.is_unlocked })}
+                    ${renderRound(t('stage_quarterfinals'), bracket.quarter_finals, { compact: true, isLocked: !bracket.is_unlocked })}
+                    ${renderRound(t('stage_semifinals'), bracket.semi_finals, { compact: true, isLocked: !bracket.is_unlocked })}
+                    ${bracket.third_place ? renderRound(t('stage_thirdplace'), [bracket.third_place], { compact: true, isLocked: !bracket.is_unlocked }) : ''}
                     ${bracket.final ? renderRound(t('stage_final'), [bracket.final], { isLocked: !bracket.is_unlocked }) : ''}
                 </div>
             </div>
