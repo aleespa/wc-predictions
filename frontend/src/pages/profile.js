@@ -33,7 +33,7 @@ export async function profilePage() {
         const match = pred.match;
         const isFinished = match.is_finished;
         const matchDate = new Date(match.match_date);
-        const dateStr = matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const dateStr = matchDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
         let pointsBadge = '';
         if (isFinished && pred.points_awarded != null) {
@@ -73,7 +73,7 @@ export async function profilePage() {
                 <div class="profile-avatar">${initial}</div>
                 <div class="profile-info">
                     <h2>${user.display_name || user.username}</h2>
-                    <p>@${user.username} · ${t('profile_joined', { date: new Date(user.created_at).toLocaleDateString(t('locale') || 'en-US', { month: 'long', year: 'numeric' }) })}</p>
+                    <p>@${user.username} · ${t('profile_joined', { date: new Date(user.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) })}</p>
                 </div>
                 <button class="btn btn-secondary btn-sm" id="edit-profile-btn" style="margin-left:auto">${t('profile_edit_btn')}</button>
             </div>

@@ -7,10 +7,10 @@ export function renderMatchCard(match, options = {}) {
     const hasPrediction = match.user_prediction != null;
     const matchDate = new Date(match.match_date);
 
-    const dateStr = matchDate.toLocaleDateString('en-US', {
+    const dateStr = matchDate.toLocaleDateString(undefined, {
         month: 'short', day: 'numeric', year: 'numeric'
     });
-    const timeStr = matchDate.toLocaleTimeString('en-US', {
+    const timeStr = matchDate.toLocaleTimeString(undefined, {
         hour: '2-digit', minute: '2-digit'
     });
 

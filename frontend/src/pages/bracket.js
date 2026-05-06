@@ -35,8 +35,8 @@ export function renderSlotTeam(slot, side) {
 export function renderBracketMatch(match, options = {}) {
     const { compact = false } = options;
     const matchDate = new Date(match.match_date);
-    const dateStr = matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const timeStr = matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = matchDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const timeStr = matchDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 
     const bothTeamsKnown = match.home.team && match.away.team;
     const hasPrediction = match.user_prediction != null;

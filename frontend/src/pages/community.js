@@ -20,10 +20,10 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
     const hasPredictions = match.prediction_count > 0;
     const matchDate = new Date(match.match_date);
 
-    const dateStr = matchDate.toLocaleDateString('en-US', {
+    const dateStr = matchDate.toLocaleDateString(undefined, {
         month: 'short', day: 'numeric', year: 'numeric'
     });
-    const timeStr = matchDate.toLocaleTimeString('en-US', {
+    const timeStr = matchDate.toLocaleTimeString(undefined, {
         hour: '2-digit', minute: '2-digit'
     });
 
@@ -217,8 +217,8 @@ function renderStandingsTable(standings, groupLetter, label = 'Community Predict
  */
 function renderCommunityBracketMatch(match) {
     const matchDate = new Date(match.match_date);
-    const dateStr = matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const timeStr = matchDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = matchDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const timeStr = matchDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
     const hasPredictions = match.prediction_count > 0;
     const isFinished = match.is_finished;
 

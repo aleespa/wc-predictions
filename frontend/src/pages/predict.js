@@ -30,10 +30,10 @@ export async function predictPage(params) {
     const homeScore = existingPred ? existingPred.predicted_home_score : '';
     const awayScore = existingPred ? existingPred.predicted_away_score : '';
 
-    const dateStr = matchDate.toLocaleDateString('en-US', {
+    const dateStr = matchDate.toLocaleDateString(undefined, {
         weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
     });
-    const timeStr = matchDate.toLocaleTimeString('en-US', {
+    const timeStr = matchDate.toLocaleTimeString(undefined, {
         hour: '2-digit', minute: '2-digit'
     });
 
