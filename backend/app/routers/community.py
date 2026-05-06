@@ -214,63 +214,15 @@ def get_community_standings(group_letter: str, community_id: Optional[int] = Non
     match_ids = [m.id for m in matches]
     stats = _compute_match_stats(db, match_ids, community_id)
 
-    std_map = {
-        t.id: {
-            "team_id": t.id,
-            "team_name": t.name,
-            "team_code": t.code,
-            "flag_emoji": t.flag_emoji,
-            "played": 0, "won": 0, "drawn": 0, "lost": 0,
-            "goals_for": 0, "goals_against": 0, "goal_diff": 0, "points": 0,
-        }
-        for t in teams
-    }
+    from ..utils import compute_standings
 
-    for m in matches:
-        if m.home_team_id not in std_map or m.away_team_id not in std_map:
-            continue
-
+    def get_avg_scores(m):
         s = stats.get(m.id)
         if not s or s.get("avg_home") is None:
-            continue
+            return None
+        return (round(s["avg_home"]), round(s["avg_away"]), True)
 
-        # Round avg scores to derive implied result
-        h_score = round(s["avg_home"])
-        a_score = round(s["avg_away"])
-
-        home = std_map[m.home_team_id]
-        away = std_map[m.away_team_id]
-
-        home["played"] += 1
-        away["played"] += 1
-        home["goals_for"] += h_score
-        home["goals_against"] += a_score
-        away["goals_for"] += a_score
-        away["goals_against"] += h_score
-
-        if h_score > a_score:
-            home["won"] += 1
-            home["points"] += 3
-            away["lost"] += 1
-        elif h_score < a_score:
-            away["won"] += 1
-            away["points"] += 3
-            home["lost"] += 1
-        else:
-            home["drawn"] += 1
-            away["drawn"] += 1
-            home["points"] += 1
-            away["points"] += 1
-
-    for data in std_map.values():
-        data["goal_diff"] = data["goals_for"] - data["goals_against"]
-
-    standings = list(std_map.values())
-    standings.sort(
-        key=lambda x: (x["points"], x["goal_diff"], x["goals_for"]),
-        reverse=True,
-    )
-    return standings
+    return compute_standings(teams, matches, get_avg_scores)
 
 
 # ── Community points (virtual user scoring) ──────────
@@ -292,42 +244,7 @@ class CommunityPointsOut(BaseModel):
     match_details: list[CommunityMatchPoints] = []
 
 
-def _calculate_points(
-    predicted_home: int,
-    predicted_away: int,
-    actual_home: int,
-    actual_away: int,
-) -> int:
-    """
-    Calculate points for a prediction (same logic as admin.calculate_points):
-    - Exact score: 5 points
-    - Correct outcome + correct goal difference: 3 points
-    - Correct outcome only: 1 point
-    - Wrong: 0 points
-    """
-    if predicted_home == actual_home and predicted_away == actual_away:
-        return 5
-
-    def outcome(home, away):
-        if home > away:
-            return "home"
-        elif away > home:
-            return "away"
-        return "draw"
-
-    predicted_outcome = outcome(predicted_home, predicted_away)
-    actual_outcome = outcome(actual_home, actual_away)
-
-    if predicted_outcome != actual_outcome:
-        return 0
-
-    predicted_diff = predicted_home - predicted_away
-    actual_diff = actual_home - actual_away
-
-    if predicted_diff == actual_diff:
-        return 3
-
-    return 1
+from ..utils import calculate_points
 
 
 @router.get("/points", response_model=CommunityPointsOut)
@@ -362,7 +279,7 @@ def get_community_points(community_id: Optional[int] = None, db: Session = Depen
         pred_home = round(s["avg_home"])
         pred_away = round(s["avg_away"])
 
-        pts = _calculate_points(pred_home, pred_away, m.home_score, m.away_score)
+        pts = calculate_points(pred_home, pred_away, m.home_score, m.away_score)
         total_points += pts
         predictions_count += 1
 

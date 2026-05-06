@@ -77,76 +77,7 @@ def invalidate_user_brackets(db: Session):
     db.commit()
 
 
-def calculate_points(
-    predicted_home: int,
-    predicted_away: int,
-    actual_home: int,
-    actual_away: int,
-    predicted_pen_winner: Optional[int] = None,
-    actual_pen_winner: Optional[int] = None,
-    home_team_id: Optional[int] = None,
-    away_team_id: Optional[int] = None,
-    is_knockout: bool = False,
-) -> int:
-    """
-    Calculate points for a prediction.
-    
-    Group Stage:
-    - Exact score: 5 points
-    - Correct outcome + correct goal difference: 3 points
-    - Correct outcome only: 1 point
-    - Wrong: 0 points
-    
-    Knockout Stage:
-    - Correct outcome (advancing team): 1 point
-    - Correct outcome + correctly predicted penalties: 3 points
-    - Correct outcome + correctly predicted penalties + correct penalty winner: 5 points
-    """
-    
-    # Helper to determine who advances
-    def get_advancer(h_score, a_score, pen_winner, h_id, a_id):
-        if h_score > a_score: return h_id
-        if a_score > h_score: return a_id
-        return pen_winner
-
-    if not is_knockout:
-        # Group Stage Scoring
-        if predicted_home == actual_home and predicted_away == actual_away:
-            return 5
-            
-        def outcome(h, a):
-            if h > a: return "home"
-            if a > h: return "away"
-            return "draw"
-            
-        if outcome(predicted_home, predicted_away) == outcome(actual_home, actual_away):
-            if (predicted_home - predicted_away) == (actual_home - actual_away):
-                return 3
-            return 1
-        return 0
-
-    else:
-        # Knockout Stage Scoring
-        p_advancer = get_advancer(predicted_home, predicted_away, predicted_pen_winner, home_team_id, away_team_id)
-        a_advancer = get_advancer(actual_home, actual_away, actual_pen_winner, home_team_id, away_team_id)
-        
-        if p_advancer != a_advancer or p_advancer is None:
-            return 0
-            
-        # Correct advancer (base 1 point)
-        points = 1
-        
-        # Did it go to penalties? (Draw in regular/extra time)
-        p_penalties = (predicted_home == predicted_away)
-        a_penalties = (actual_home == actual_away)
-        
-        if p_penalties and a_penalties:
-            points = 3
-            # Correct penalty winner?
-            if predicted_pen_winner == actual_pen_winner and actual_pen_winner is not None:
-                points = 5
-                
-        return points
+from ..utils import calculate_points
 
 
 @router.put("/matches/{match_id}/result", response_model=schemas.MatchOut)

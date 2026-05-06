@@ -66,66 +66,17 @@ def compute_blended_standings(
         )
         user_preds = {p.match_id: p for p in preds}
 
-    std_map = {
-        t.id: {
-            "team_id": t.id,
-            "team_name": t.name,
-            "team_code": t.code,
-            "flag_emoji": t.flag_emoji,
-            "played": 0, "won": 0, "drawn": 0, "lost": 0,
-            "goals_for": 0, "goals_against": 0, "goal_diff": 0, "points": 0,
-        }
-        for t in teams
-    }
+    from ..utils import compute_standings
 
-    for m in matches:
-        if m.home_team_id not in std_map or m.away_team_id not in std_map:
-            continue
-
-        home = std_map[m.home_team_id]
-        away = std_map[m.away_team_id]
-
-        # Use real result if finished, otherwise user prediction
+    def get_scores(m):
         if m.is_finished and m.home_score is not None:
-            h_score = m.home_score
-            a_score = m.away_score
-        elif m.id in user_preds:
-            pred = user_preds[m.id]
-            h_score = pred.predicted_home_score
-            a_score = pred.predicted_away_score
-        else:
-            continue  # No data for this match
+            return (m.home_score, m.away_score, False)
+        if m.id in user_preds:
+            p = user_preds[m.id]
+            return (p.predicted_home_score, p.predicted_away_score, True)
+        return None
 
-        home["played"] += 1
-        away["played"] += 1
-        home["goals_for"] += h_score
-        home["goals_against"] += a_score
-        away["goals_for"] += a_score
-        away["goals_against"] += h_score
-
-        if h_score > a_score:
-            home["won"] += 1
-            home["points"] += 3
-            away["lost"] += 1
-        elif h_score < a_score:
-            away["won"] += 1
-            away["points"] += 3
-            home["lost"] += 1
-        else:
-            home["drawn"] += 1
-            away["drawn"] += 1
-            home["points"] += 1
-            away["points"] += 1
-
-    for data in std_map.values():
-        data["goal_diff"] = data["goals_for"] - data["goals_against"]
-
-    standings = list(std_map.values())
-    standings.sort(
-        key=lambda x: (x["points"], x["goal_diff"], x["goals_for"]),
-        reverse=True,
-    )
-    return standings
+    return compute_standings(teams, matches, get_scores)
 
 
 def resolve_bracket_teams(
@@ -161,43 +112,17 @@ def resolve_bracket_teams(
         group_teams = teams_by_group.get(gl, [])
         group_matches_list = matches_by_group.get(gl, [])
         
-        std_map = {
-            t.id: {
-                "team_id": t.id, "team_name": t.name, "team_code": t.code, "flag_emoji": t.flag_emoji,
-                "played": 0, "won": 0, "drawn": 0, "lost": 0,
-                "goals_for": 0, "goals_against": 0, "goal_diff": 0, "points": 0,
-            }
-            for t in group_teams
-        }
-
-        for m in group_matches_list:
-            if m.home_team_id not in std_map or m.away_team_id not in std_map:
-                continue
-            
-            # Real result if finished, else user prediction
+        from ..utils import compute_standings
+        
+        def get_scores(m):
             if m.is_finished and m.home_score is not None:
-                h_score, a_score = m.home_score, m.away_score
-            elif m.id in user_preds:
+                return (m.home_score, m.away_score, False)
+            if m.id in user_preds:
                 p = user_preds[m.id]
-                h_score, a_score = p.predicted_home_score, p.predicted_away_score
-            else:
-                continue
-
-            home, away = std_map[m.home_team_id], std_map[m.away_team_id]
-            home["played"] += 1; away["played"] += 1
-            home["goals_for"] += h_score; home["goals_against"] += a_score
-            away["goals_for"] += a_score; away["goals_against"] += h_score
-
-            if h_score > a_score:
-                home["won"] += 1; home["points"] += 3; away["lost"] += 1
-            elif h_score < a_score:
-                away["won"] += 1; away["points"] += 3; home["lost"] += 1
-            else:
-                home["drawn"] += 1; home["points"] += 1; away["drawn"] += 1; away["points"] += 1
-
-        standings = list(std_map.values())
-        standings.sort(key=lambda x: (x["points"], x["goal_diff"], x["goals_for"]), reverse=True)
-        all_standings[gl] = standings
+                return (p.predicted_home_score, p.predicted_away_score, True)
+            return None
+            
+        all_standings[gl] = compute_standings(group_teams, group_matches_list, get_scores)
 
     # 3. Resolve slots
     resolved = {}

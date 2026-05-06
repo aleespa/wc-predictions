@@ -14,7 +14,8 @@ def _compute_community_points(db: Session, community_id: Optional[int] = None) -
     Compute the community virtual user's points by rounding average predictions
     and scoring them against actual results for all finished matches.
     """
-    from .community import _compute_match_stats, _calculate_points
+    from .community import _compute_match_stats
+    from ..utils import calculate_points
 
     finished_matches = (
         db.query(models.Match)
@@ -38,7 +39,7 @@ def _compute_community_points(db: Session, community_id: Optional[int] = None) -
         pred_home = round(s["avg_home"])
         pred_away = round(s["avg_away"])
 
-        pts = _calculate_points(pred_home, pred_away, m.home_score, m.away_score)
+        pts = calculate_points(pred_home, pred_away, m.home_score, m.away_score)
         total_points += pts
         predictions_count += 1
         if pts == 5:
