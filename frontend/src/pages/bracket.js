@@ -133,6 +133,16 @@ export async function bracketPage() {
         ...(bracket.final ? [bracket.final] : []),
     ].filter(m => m.user_prediction).length;
 
+    const allMatches = [
+        ...(bracket.round_of_32 || []),
+        ...(bracket.round_of_16 || []),
+        ...(bracket.quarter_finals || []),
+        ...(bracket.semi_finals || []),
+        ...(bracket.third_place ? [bracket.third_place] : []),
+        ...(bracket.final ? [bracket.final] : []),
+    ];
+    const invalidMatches = allMatches.filter(m => m.is_invalid_prediction);
+
     const html = `
         <div class="bracket-page fade-in">
             <div class="bracket-hero">
@@ -166,6 +176,27 @@ export async function bracketPage() {
                     </div>
                 ` : ''}
             </div>
+            
+            ${invalidMatches.length > 0 ? `
+                <div class="card" style="border:1px solid var(--accent-red); background:rgba(239, 68, 68, 0.05); margin-bottom:var(--space-lg); border-radius:var(--radius-lg)">
+                    <div style="display:flex; gap:var(--space-md); align-items:flex-start">
+                        <div style="font-size:1.5rem">⚠️</div>
+                        <div>
+                            <h4 style="margin:0; color:var(--accent-red)">${t('bracket_invalid_title')}</h4>
+                            <p style="margin:var(--space-xs) 0 var(--space-md); font-size:0.9rem; color:var(--text-muted)">
+                                ${t('bracket_invalid_subtitle')}
+                            </p>
+                            <div style="display:flex; flex-wrap:wrap; gap:var(--space-sm)">
+                                ${invalidMatches.map(m => `
+                                    <a href="#/predict/${m.match_id}" class="btn btn-secondary btn-sm" style="border-color:var(--accent-red); color:var(--accent-red)">
+                                        M${m.match_number}: ${m.home.team ? m.home.team.code : '?'} vs ${m.away.team ? m.away.team.code : '?'}
+                                    </a>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
 
             <div class="bracket-legend">
                 <div class="bracket-legend-item">

@@ -10,6 +10,73 @@ from .. import models, schemas
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
+def invalidate_user_brackets(db: Session):
+    """
+    One-time invalidation pass: compares real R32 seeding with user predictions.
+    Called when all group matches are finished.
+    """
+    from .knockout import resolve_bracket_teams, resolve_bracket_slot
+    
+    # 1. Resolve official R32 seeding
+    real_resolved = resolve_bracket_teams(db, user_id=None)
+    
+    # 2. Get all knockout matches and maps
+    ko_matches = db.query(models.Match).filter(models.Match.stage != "Group Stage").order_by(models.Match.match_number).all()
+    match_num_map = {m.match_number: m for m in ko_matches}
+    match_id_to_num = {m.id: m.match_number for m in ko_matches}
+    ko_ids = [m.id for m in ko_matches]
+    
+    # 3. Process all users
+    users = db.query(models.User).all()
+    for user in users:
+        preds = db.query(models.Prediction).filter(
+            models.Prediction.user_id == user.id,
+            models.Prediction.match_id.in_(ko_ids)
+        ).all()
+        
+        if not preds:
+            continue
+        
+        preds_map = {p.match_id: p for p in preds}
+        
+        # Reset is_invalid first to start clean
+        for pred in preds:
+            pred.is_invalid = False
+            
+        # Process matches in order (R32 -> R16 -> ...) so recursive invalidation propagates
+        for m in ko_matches:
+            if m.id in preds_map:
+                pred = preds_map[m.id]
+                
+                if m.stage == "Round of 32":
+                    # Compare R32 seeding
+                    off_h = resolve_bracket_slot(m, "home", real_resolved, match_num_map, match_id_to_num, {})
+                    off_a = resolve_bracket_slot(m, "away", real_resolved, match_num_map, match_id_to_num, {})
+                    
+                    off_h_id = off_h.team.id if off_h.team else None
+                    off_a_id = off_a.team.id if off_a.team else None
+                    
+                    p_h_id = pred.predicted_home_team_id
+                    p_a_id = pred.predicted_away_team_id
+                    
+                    if {off_h_id, off_a_id} != {p_h_id, p_a_id}:
+                        pred.is_invalid = True
+                else:
+                    # For R16+, invalid if any source match prediction is invalid
+                    sources_invalid = False
+                    if m.home_source_match_id and m.home_source_match_id in preds_map:
+                        if preds_map[m.home_source_match_id].is_invalid:
+                            sources_invalid = True
+                    if m.away_source_match_id and m.away_source_match_id in preds_map:
+                        if preds_map[m.away_source_match_id].is_invalid:
+                            sources_invalid = True
+                    
+                    if sources_invalid:
+                        pred.is_invalid = True
+    
+    db.commit()
+
+
 def calculate_points(
     predicted_home: int,
     predicted_away: int,
@@ -140,6 +207,18 @@ def set_match_result(
     db.commit()
     db.refresh(match)
 
+    # If this was a group stage match, check if all group matches are finished
+    if match.stage == "Group Stage":
+        group_total = db.query(models.Match).filter(models.Match.stage == "Group Stage").count()
+        group_finished = db.query(models.Match).filter(
+            models.Match.stage == "Group Stage",
+            models.Match.is_finished == True
+        ).count()
+        
+        if group_total == group_finished:
+            # TRIGGER FINAL INVALIDATION PASS
+            invalidate_user_brackets(db)
+
     return schemas.MatchOut.model_validate(match)
 
 
@@ -247,10 +326,7 @@ def update_match(
                 if pred.predicted_away_team_id != data.away_team_id:
                     teams_match = False
             if not teams_match:
-                # Clear the prediction so user can re-predict
-                pred.predicted_home_score = 0
-                pred.predicted_away_score = 0
-                pred.points_awarded = None
+                pred.is_invalid = True
 
     db.commit()
     return {"status": "ok", "match_id": match_id}

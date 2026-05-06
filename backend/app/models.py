@@ -101,6 +101,7 @@ class Prediction(Base):
     # For knockout: track which teams the prediction was made for
     predicted_home_team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
     predicted_away_team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
+    is_invalid = Column(Boolean, default=False)
 
     user = relationship("User", back_populates="predictions")
     match = relationship("Match", back_populates="predictions")

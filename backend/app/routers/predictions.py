@@ -114,6 +114,7 @@ def submit_prediction(
         existing.predicted_home_team_id = p_home_id
         existing.predicted_away_team_id = p_away_id
         existing.penalty_winner_id = data.penalty_winner_id
+        existing.is_invalid = False
     else:
         existing = models.Prediction(
             user_id=current_user.id, match_id=data.match_id,
@@ -126,20 +127,10 @@ def submit_prediction(
         db.add(existing)
         outcome_changed = True # New prediction always "changes" the outcome from None
 
-    # 6. Recursive Invalidation
-    if outcome_changed:
-        if match.stage == "Group Stage":
-            # If a group stage match changes, it ripples through the whole bracket.
-            # Easiest and safest is to clear all knockout predictions.
-            ko_matches = db.query(models.Match).filter(models.Match.stage != "Group Stage").all()
-            ko_ids = [m.id for m in ko_matches]
-            db.query(models.Prediction).filter(
-                models.Prediction.user_id == current_user.id,
-                models.Prediction.match_id.in_(ko_ids)
-            ).delete(synchronize_session=False)
-        else:
-            # Knockout round change: invalidate recursively down the tree
-            invalidate_dependent_predictions(db, current_user.id, match.id)
+    # 6. Recursive Invalidation (Knockout only)
+    if outcome_changed and match.stage != "Group Stage":
+        # Knockout round change: invalidate recursively down the tree
+        invalidate_dependent_predictions(db, current_user.id, match.id)
 
     if match.stage != "Group Stage":
         current_user.is_group_stage_locked = True

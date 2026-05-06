@@ -412,6 +412,10 @@ def build_bracket_match_data(
             res_set = {resolved_home_id, resolved_away_id}
             if pred_set != res_set:
                 is_invalid = True
+        
+        # Also check the persisted flag
+        if pred.is_invalid:
+            is_invalid = True
 
     pred_out = None
     if pred:
