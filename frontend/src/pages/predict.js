@@ -19,8 +19,7 @@ export async function predictPage(params) {
 
     const matchDate = new Date(match.match_date);
     const now = new Date();
-    const isGroupLocked = user?.is_group_stage_locked && match.stage === 'Group Stage';
-    const isLocked = matchDate <= now || match.is_finished || isGroupLocked;
+    const isLocked = matchDate <= now || match.is_finished;
     const teamsKnown = match.home_team && match.away_team;
     const isKnockout = match.stage !== 'Group Stage';
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -193,7 +192,7 @@ export async function predictPage(params) {
                 ${isLocked ? `
                     <div class="empty-state" style="padding:var(--space-lg)">
                         <div style="color:var(--accent-red);font-weight:600">
-                            ${isGroupLocked ? t('predict_group_locked') : t('predict_locked')}
+                            ${t('predict_locked')}
                         </div>
                     </div>
                 ` : `
@@ -352,9 +351,9 @@ export async function predictPage(params) {
                     return;
                 }
 
-                // Confirmation for first knockout prediction
-                if (isKnockout && !user?.is_group_stage_locked) {
-                    const confirmed = confirm(t('predict_knockout_lock_confirm'));
+                // Confirmation for editing a group stage match if KO predictions exist
+                if (!isKnockout && user?.has_knockout_predictions) {
+                    const confirmed = confirm(t('predict_group_edit_warning') || "WARNING: Editing a group-stage prediction will completely wipe and invalidate all of your knockout bracket predictions. You will need to re-predict the knockout bracket from scratch.\\n\\nDo you want to proceed?");
                     if (!confirmed) return;
                 }
 
@@ -386,7 +385,7 @@ export async function predictPage(params) {
                             for (let i = currentIndex + 1; i < allMatches.length; i++) {
                                 const m = allMatches[i];
                                 const mDate = new Date(m.match_date);
-                                const isMLocked = mDate <= new Date() || m.is_finished || (user?.is_group_stage_locked && m.stage === 'Group Stage');
+                                const isMLocked = mDate <= new Date() || m.is_finished;
                                 const mTeamsKnown = m.home_team && m.away_team;
                                 
                                 if (!m.user_prediction && !isMLocked && mTeamsKnown) {

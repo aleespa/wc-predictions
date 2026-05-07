@@ -21,7 +21,7 @@ def get_me(current_user: models.User = Depends(get_current_user), db: Session = 
             display_name=current_user.display_name,
             is_admin=current_user.is_admin,
             created_at=current_user.created_at,
-            is_group_stage_locked=current_user.is_group_stage_locked,
+            is_group_stage_locked=False,
             **cached
         )
 
@@ -35,10 +35,15 @@ def get_me(current_user: models.User = Depends(get_current_user), db: Session = 
         .first()
     )
     total_points, predictions_count = stats if stats else (0, 0)
+    has_ko = db.query(models.Prediction).join(models.Match).filter(
+        models.Prediction.user_id == current_user.id,
+        models.Match.stage != "Group Stage"
+    ).first() is not None
     
     res_data = {
         "total_points": total_points,
-        "predictions_count": predictions_count
+        "predictions_count": predictions_count,
+        "has_knockout_predictions": has_ko
     }
     user_cache.set(current_user.id, cache_key, res_data)
     
@@ -48,7 +53,7 @@ def get_me(current_user: models.User = Depends(get_current_user), db: Session = 
         display_name=current_user.display_name,
         is_admin=current_user.is_admin,
         created_at=current_user.created_at,
-        is_group_stage_locked=current_user.is_group_stage_locked,
+        is_group_stage_locked=False,
         **res_data
     )
 
@@ -81,7 +86,8 @@ def update_me(
         created_at=current_user.created_at,
         total_points=0, # These won't be recalculated here for performance but usually 0 is fine for the response
         predictions_count=0,
-        is_group_stage_locked=current_user.is_group_stage_locked
+        is_group_stage_locked=False,
+        has_knockout_predictions=False
     )
 @router.delete("/me")
 def delete_me(

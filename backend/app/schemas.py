@@ -14,6 +14,7 @@ class UserOut(BaseModel):
     total_points: Optional[int] = 0
     predictions_count: Optional[int] = 0
     is_group_stage_locked: bool = False
+    has_knockout_predictions: bool = False
 
     class Config:
         from_attributes = True
