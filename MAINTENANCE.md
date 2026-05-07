@@ -24,8 +24,7 @@ There is no auto-deploy on Oracle — you pull and rebuild manually after pushin
 
 ```bash
 cd ~/wc-predictions
-git pull
-docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+./update.sh
 ```
 
 This rebuilds only changed layers so subsequent deploys are fast. The app will be briefly unavailable during the restart (~10–30 seconds).
@@ -39,10 +38,9 @@ This rebuilds only changed layers so subsequent deploys are fast. The app will b
 docker compose -f docker-compose.prod.yml --env-file .env ps
 ```
 
-All three services should show `Up`:
+Both services should show `Up`:
 ```
 wc-predictions-backend-1    Up
-wc-predictions-frontend-1   Up
 wc-predictions-nginx-1      Up    0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
 ```
 
@@ -55,21 +53,15 @@ curl -k https://localhost
 
 ## Viewing Logs
 
-**All services:**
+**All services (real-time):**
 ```bash
-docker compose -f docker-compose.prod.yml --env-file .env logs
+./logs.sh
 ```
 
-**Specific service:**
+**Specific service (real-time):**
 ```bash
-docker compose -f docker-compose.prod.yml --env-file .env logs backend
-docker compose -f docker-compose.prod.yml --env-file .env logs nginx
-docker compose -f docker-compose.prod.yml --env-file .env logs frontend
-```
-
-**Follow logs in real time:**
-```bash
-docker compose -f docker-compose.prod.yml --env-file .env logs -f backend
+./logs.sh backend
+./logs.sh nginx
 ```
 
 ---
@@ -246,9 +238,9 @@ Managed via Oracle Cloud Console → Networking → Virtual Cloud Networks → S
 | Task | Command |
 |---|---|
 | SSH into server | `ssh -i key.key ubuntu@132.145.44.176` |
-| Deploy update | `git pull && docker compose -f docker-compose.prod.yml --env-file .env up -d --build` |
+| Deploy update | `./update.sh` |
 | Check status | `docker compose -f docker-compose.prod.yml --env-file .env ps` |
-| View logs | `docker compose -f docker-compose.prod.yml --env-file .env logs -f` |
+| View logs | `./logs.sh` |
 | Stop app | `docker compose -f docker-compose.prod.yml --env-file .env down` |
 | Start app | `docker compose -f docker-compose.prod.yml --env-file .env up -d` |
 | Renew SSL | `sudo certbot renew` (stop Docker first) |

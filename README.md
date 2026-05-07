@@ -100,13 +100,13 @@ Admin privileges are granted via the `is_admin` flag in the local database.
 
 The production application is split across three services:
 
-- **Frontend** — Cloudflare Pages (`https://wc-predictions.pages.dev`)
-- **Backend** — Render (`https://wc-predictions.onrender.com`)
+- **Frontend** — Cloudflare Pages
+- **Backend** — Oracle Cloud Free Tier (VM)
 - **Database** — Neon (managed PostgreSQL)
 
 ### Environment Variables
 
-**Backend (Render):**
+**Backend (Oracle Cloud):**
 ```
 DATABASE_URL        # PostgreSQL connection string from Neon
 CLERK_SECRET_KEY    # Clerk backend secret key
@@ -117,17 +117,20 @@ FRONTEND_URL        # Cloudflare Pages URL (for CORS)
 **Frontend (Cloudflare Pages):**
 ```
 VITE_CLERK_PUBLISHABLE_KEY    # Clerk publishable key
-VITE_API_URL                  # Render backend URL
+VITE_API_URL                  # Oracle backend URL
 ```
 
 ### Deploying Changes
 
-Both Render and Cloudflare Pages are connected to this repository and deploy automatically on every push to `main`.
+Cloudflare Pages deploys automatically on every push to `main`.
+For the backend on Oracle Cloud, deployment is manual:
+1. SSH into the server.
+2. Run `./update.sh` to pull the latest changes and rebuild the Docker containers.
 
 | Service | Deploy time | Downtime |
 |---|---|---|
-| Render (backend) | ~2-3 min | Brief restart |
-| Cloudflare Pages (frontend) | ~1 min | None |
+| Oracle Cloud (backend) | ~1-2 min (manual) | Brief restart |
+| Cloudflare Pages (frontend) | ~1 min (auto) | None |
 | Neon (database) | Not affected | — |
 
 Database migrations run automatically on every backend deploy via `alembic upgrade head`.
