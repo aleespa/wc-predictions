@@ -382,6 +382,8 @@ export async function communityPage() {
         </div>
     `;
 
+    let currentData = null;
+
     return {
         html,
         init: () => {
@@ -401,10 +403,36 @@ export async function communityPage() {
                         fetchAPI('/community/points' + suffix),
                         fetchAPI('/leaderboard' + suffix)
                     ]);
-                    contentArea.innerHTML = renderCommunityContent(matches, communityPoints, leaderboard, currentUser, suffix);
-                    initCommunityContent(matches, communityPoints, suffix);
+                    currentData = { matches, communityPoints, leaderboard, suffix };
+                    currentLeaderboardPage = 1;
+                    render();
                 } catch (e) {
                     contentArea.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${e.message}</div></div>`;
+                }
+            };
+
+            const render = () => {
+                if (!currentData) return;
+                const { matches, communityPoints, leaderboard, suffix } = currentData;
+                contentArea.innerHTML = renderCommunityContent(matches, communityPoints, leaderboard, currentUser, suffix);
+                initCommunityContent(matches, communityPoints, suffix);
+                
+                // Pagination listeners
+                const prevBtn = document.getElementById('prev-page');
+                const nextBtn = document.getElementById('next-page');
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => {
+                        currentLeaderboardPage--;
+                        render();
+                        document.querySelector('h2').scrollIntoView({ behavior: 'smooth' });
+                    });
+                }
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        currentLeaderboardPage++;
+                        render();
+                        document.querySelector('h2').scrollIntoView({ behavior: 'smooth' });
+                    });
                 }
             };
 
@@ -476,29 +504,22 @@ export async function communityPage() {
     };
 }
 
-function renderLeaderboardTable(leaderboard, currentUser) {
-    const top3 = leaderboard.slice(0, 3);
-    const podiumOrder = top3.length >= 3 ? [top3[1], top3[0], top3[2]] : top3;
-    const podiumHtml = podiumOrder.map((entry) => {
-        const isCommunity = entry.is_community;
-        const initial = isCommunity ? '👥' : (entry.display_name || entry.username || '?').charAt(0).toUpperCase();
-        const nameHtml = isCommunity
-            ? `<div class="podium-name podium-name-community">${entry.display_name || entry.username}</div>`
-            : `<a href="#/user/${encodeURIComponent(entry.username)}" class="podium-name leaderboard-user-link" style="display:block">${entry.display_name || entry.username}</a>`;
-        return `
-            <div class="podium-item ${isCommunity ? 'podium-community' : ''}">
-                <div class="podium-avatar ${isCommunity ? 'podium-avatar-community' : ''}">${initial}</div>
-                ${nameHtml}
-                <div class="podium-points">${entry.total_points} ${t('common_pts')}</div>
-                <div class="podium-bar"></div>
-            </div>
-        `;
-    }).join('');
+let currentLeaderboardPage = 1;
 
-    const tableRows = leaderboard.map(entry => {
+function renderLeaderboardTable(leaderboard, currentUser, page = 1) {
+    const pageSize = 10;
+    const totalPages = Math.ceil(leaderboard.length / pageSize);
+    const startIndex = (page - 1) * pageSize;
+    const paginatedItems = leaderboard.slice(startIndex, startIndex + pageSize);
+
+    const userEntry = currentUser ? leaderboard.find(e => e.user_id === currentUser.id) : null;
+    const userInCurrentPage = paginatedItems.some(e => e.user_id === (currentUser ? currentUser.id : null));
+
+    const renderRow = (entry, isSticky = false) => {
         const isMe = currentUser && currentUser.id === entry.user_id;
         const isCommunity = entry.is_community;
         const rowClass = isCommunity ? 'leaderboard-community-row' : '';
+        const stickyClass = isSticky ? 'leaderboard-row-sticky' : '';
         let nameDisplay;
         if (isCommunity) {
             nameDisplay = `<span class="leaderboard-community-name">${entry.display_name || entry.username}</span>`;
@@ -507,7 +528,7 @@ function renderLeaderboardTable(leaderboard, currentUser) {
             nameDisplay = `<a href="#/user/${encodeURIComponent(entry.username)}" class="leaderboard-user-link" title="View ${entry.display_name || entry.username}'s predictions">${displayText}</a>`;
         }
         return `
-            <tr class="${rowClass}">
+            <tr class="${rowClass} ${stickyClass}">
                 <td class="leaderboard-rank ${entry.rank <= 3 ? 'top-' + entry.rank : ''}">${entry.rank <= 3 ? ['🥇','🥈','🥉'][entry.rank-1] : entry.rank}</td>
                 <td class="leaderboard-user ${isMe ? 'is-me' : ''}">${nameDisplay}</td>
                 <td class="leaderboard-points ${isCommunity ? 'leaderboard-community-points' : ''}">${entry.total_points}</td>
@@ -516,11 +537,29 @@ function renderLeaderboardTable(leaderboard, currentUser) {
                 <td class="leaderboard-stat">${entry.predictions_count}</td>
             </tr>
         `;
-    }).join('');
+    };
+
+    let tableRows = paginatedItems.map(entry => renderRow(entry)).join('');
+
+    if (userEntry && !userInCurrentPage) {
+        tableRows += `
+            <tr class="leaderboard-separator">
+                <td colspan="6" style="text-align:center; padding: 4px; font-size: 0.8rem; color: var(--text-muted); opacity: 0.5;">•••</td>
+            </tr>
+            ${renderRow(userEntry, true)}
+        `;
+    }
+
+    const paginationHtml = totalPages > 1 ? `
+        <div class="leaderboard-pagination">
+            <button class="btn btn-secondary btn-sm" id="prev-page" ${page === 1 ? 'disabled' : ''}>← ${t('pagination_prev')}</button>
+            <span style="font-size:0.9rem; font-weight:600; color:var(--text-muted)">${page} / ${totalPages}</span>
+            <button class="btn btn-secondary btn-sm" id="next-page" ${page === totalPages ? 'disabled' : ''}>${t('pagination_next')} →</button>
+        </div>
+    ` : '';
 
     return `
         <div style="margin-bottom: var(--space-2xl);">
-            ${top3.length >= 3 ? `<div class="podium">${podiumHtml}</div>` : ''}
             ${leaderboard.length === 0 ? `
                 <div class="empty-state">
                     <div class="empty-state-icon">🏜️</div>
@@ -542,6 +581,7 @@ function renderLeaderboardTable(leaderboard, currentUser) {
                         <tbody>${tableRows}</tbody>
                     </table>
                 </div>
+                ${paginationHtml}
             `}
         </div>
     `;
@@ -609,7 +649,7 @@ function renderCommunityContent(matches, communityPoints, leaderboard, currentUs
         </div>
 
         <h2 style="margin-bottom: var(--space-md);">Leaderboard</h2>
-        ${renderLeaderboardTable(leaderboard, currentUser)}
+        ${renderLeaderboardTable(leaderboard, currentUser, currentLeaderboardPage)}
 
         <h2 style="margin-bottom: var(--space-md);">Average Predictions</h2>
         <div class="group-tabs" id="community-tabs">

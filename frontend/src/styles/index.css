@@ -1142,6 +1142,28 @@ select.form-input option {
     color: var(--accent-gold);
 }
 
+.leaderboard-row-sticky td {
+    background: rgba(139, 92, 246, 0.1) !important;
+    border-color: rgba(139, 92, 246, 0.3) !important;
+    font-weight: 700;
+}
+
+.leaderboard-separator td {
+    padding: 0 !important;
+    height: 30px;
+    background: transparent !important;
+    border: none !important;
+}
+
+.leaderboard-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-md);
+    margin-top: var(--space-lg);
+    padding: var(--space-md);
+}
+
 .leaderboard-points {
     font-weight: 800;
     font-size: 1.1rem;

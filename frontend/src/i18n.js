@@ -205,6 +205,8 @@ export const translations = {
         // common terms
         common_pts: "pts",
         common_pt: "pt",
+        pagination_prev: "Previous",
+        pagination_next: "Next",
         stage_group: "Group {group}",
         stage_roundof32: "Round of 32",
         stage_roundof16: "Round of 16",
@@ -432,6 +434,8 @@ export const translations = {
         // common terms
         common_pts: "pts",
         common_pt: "pt",
+        pagination_prev: "Anterior",
+        pagination_next: "Siguiente",
         stage_group: "Grupo {group}",
         stage_roundof32: "Dieciseisavos de Final",
         stage_roundof16: "Octavos de Final",
