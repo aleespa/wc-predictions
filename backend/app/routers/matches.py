@@ -14,11 +14,12 @@ def list_matches(
     group: Optional[str] = Query(None, description="Filter by group letter (A-L)"),
     stage: Optional[str] = Query(None, description="Filter by stage"),
     finished: Optional[bool] = Query(None, description="Filter finished/upcoming"),
+    username: Optional[str] = Query(None, description="Fetch predictions for a specific user"),
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_user),
 ):
     # Try user-specific cache first
-    cache_key = f"matches_list:{group}:{stage}:{finished}"
+    cache_key = f"matches_list:{group}:{stage}:{finished}:{username}"
     if current_user:
         cached = user_cache.get(current_user.id, cache_key)
         if cached:
@@ -43,17 +44,25 @@ def list_matches(
     resolved_bracket = {}
     match_num_map = {}
     match_id_to_num = {}
-    if current_user:
+    
+    target_user_id = None
+    if username:
+        target_user = db.query(models.User).filter(models.User.username == username).first()
+        if target_user: target_user_id = target_user.id
+    elif current_user:
+        target_user_id = current_user.id
+
+    if target_user_id:
         preds = (
             db.query(models.Prediction)
-            .filter(models.Prediction.user_id == current_user.id)
+            .filter(models.Prediction.user_id == target_user_id)
             .all()
         )
         user_predictions = {p.match_id: p for p in preds}
         
         # Resolve bracket teams for speculative display in knockout
         from .knockout import resolve_bracket_teams, resolve_bracket_slot
-        resolved_bracket = resolve_bracket_teams(db, current_user.id)
+        resolved_bracket = resolve_bracket_teams(db, target_user_id)
         
         # We need the match maps for full resolution (R16+)
         ko_matches = db.query(models.Match).filter(models.Match.stage != "Group Stage").all()
@@ -69,7 +78,7 @@ def list_matches(
             match_data.user_prediction = schemas.PredictionOut.model_validate(user_predictions[match.id])
             
         # Speculative resolution for knockout matches
-        if match.stage != "Group Stage" and (not match.home_team_id or not match.away_team_id) and current_user:
+        if match.stage != "Group Stage" and (not match.home_team_id or not match.away_team_id) and target_user_id:
             from .knockout import resolve_bracket_slot
             home_res = resolve_bracket_slot(match, "home", resolved_bracket, match_num_map, match_id_to_num, user_predictions)
             away_res = resolve_bracket_slot(match, "away", resolved_bracket, match_num_map, match_id_to_num, user_predictions)
@@ -111,7 +120,8 @@ def list_teams(db: Session = Depends(get_db)):
 
 @router.get("/standings/{group_letter}", response_model=list[schemas.StandingOut])
 def get_standings(
-    group_letter: str, 
+    group_letter: str,
+    username: Optional[str] = Query(None, description="Fetch predictions for a specific user"),
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_user)
 ):
@@ -128,10 +138,17 @@ def get_standings(
 
     # Get user predictions if authenticated
     user_predictions = {}
-    if current_user:
+    target_user_id = None
+    if username:
+        target_user = db.query(models.User).filter(models.User.username == username).first()
+        if target_user: target_user_id = target_user.id
+    elif current_user:
+        target_user_id = current_user.id
+
+    if target_user_id:
         preds = (
             db.query(models.Prediction)
-            .filter(models.Prediction.user_id == current_user.id)
+            .filter(models.Prediction.user_id == target_user_id)
             .all()
         )
         user_predictions = {p.match_id: p for p in preds}
@@ -151,6 +168,7 @@ def get_standings(
 
 @router.get("/thirds", response_model=list[schemas.StandingOut])
 def get_thirds_standings(
+    username: Optional[str] = Query(None, description="Fetch predictions for a specific user"),
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_user)
 ):
@@ -161,8 +179,15 @@ def get_thirds_standings(
     group_matches = db.query(models.Match).filter(models.Match.stage == "Group Stage").all()
     
     user_preds = {}
-    if current_user:
-        preds = db.query(models.Prediction).filter(models.Prediction.user_id == current_user.id).all()
+    target_user_id = None
+    if username:
+        target_user = db.query(models.User).filter(models.User.username == username).first()
+        if target_user: target_user_id = target_user.id
+    elif current_user:
+        target_user_id = current_user.id
+
+    if target_user_id:
+        preds = db.query(models.Prediction).filter(models.Prediction.user_id == target_user_id).all()
         user_preds = {p.match_id: p for p in preds}
 
     # Map teams by ID and group

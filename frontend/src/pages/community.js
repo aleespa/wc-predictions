@@ -482,10 +482,13 @@ function renderLeaderboardTable(leaderboard, currentUser) {
     const podiumHtml = podiumOrder.map((entry) => {
         const isCommunity = entry.is_community;
         const initial = isCommunity ? '👥' : (entry.display_name || entry.username || '?').charAt(0).toUpperCase();
+        const nameHtml = isCommunity
+            ? `<div class="podium-name podium-name-community">${entry.display_name || entry.username}</div>`
+            : `<a href="#/user/${encodeURIComponent(entry.username)}" class="podium-name leaderboard-user-link" style="display:block">${entry.display_name || entry.username}</a>`;
         return `
             <div class="podium-item ${isCommunity ? 'podium-community' : ''}">
                 <div class="podium-avatar ${isCommunity ? 'podium-avatar-community' : ''}">${initial}</div>
-                <div class="podium-name ${isCommunity ? 'podium-name-community' : ''}">${entry.display_name || entry.username}</div>
+                ${nameHtml}
                 <div class="podium-points">${entry.total_points} ${t('common_pts')}</div>
                 <div class="podium-bar"></div>
             </div>
@@ -496,9 +499,13 @@ function renderLeaderboardTable(leaderboard, currentUser) {
         const isMe = currentUser && currentUser.id === entry.user_id;
         const isCommunity = entry.is_community;
         const rowClass = isCommunity ? 'leaderboard-community-row' : '';
-        const nameDisplay = isCommunity
-            ? `<span class="leaderboard-community-name">${entry.display_name || entry.username}</span>`
-            : `${entry.display_name || entry.username}${isMe ? t('leaderboard_you') : ''}`;
+        let nameDisplay;
+        if (isCommunity) {
+            nameDisplay = `<span class="leaderboard-community-name">${entry.display_name || entry.username}</span>`;
+        } else {
+            const displayText = `${entry.display_name || entry.username}${isMe ? t('leaderboard_you') : ''}`;
+            nameDisplay = `<a href="#/user/${encodeURIComponent(entry.username)}" class="leaderboard-user-link" title="View ${entry.display_name || entry.username}'s predictions">${displayText}</a>`;
+        }
         return `
             <tr class="${rowClass}">
                 <td class="leaderboard-rank ${entry.rank <= 3 ? 'top-' + entry.rank : ''}">${entry.rank <= 3 ? ['🥇','🥈','🥉'][entry.rank-1] : entry.rank}</td>

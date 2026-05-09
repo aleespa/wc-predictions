@@ -6,16 +6,19 @@ import { t } from '../i18n.js';
 /**
  * Renders a single team slot in the bracket.
  */
-export function renderSlotTeam(slot, side) {
+export function renderSlotTeam(slot, side, profileName) {
     if (!slot) return `<div class="bracket-team bracket-tbd"><span class="bracket-team-name">${t('bracket_tbd')}</span></div>`;
 
     if (slot.team) {
         const predictedClass = slot.is_predicted ? 'bracket-predicted' : '';
+        const legendKey = profileName ? 'bracket_legend_user_pred' : 'bracket_legend_pred';
+        const titleText = profileName ? t(legendKey, { name: profileName }) : t(legendKey);
+
         return `
             <div class="bracket-team ${predictedClass}" data-side="${side}">
                 <img src="${getFlagURL(slot.team.code)}" alt="${slot.team.code}" class="bracket-team-flag" />
                 <span class="bracket-team-name">${slot.team.name}</span>
-                ${slot.is_predicted ? `<span class="bracket-predicted-badge" title="${t('bracket_legend_pred')}">⟡</span>` : ''}
+                ${slot.is_predicted ? `<span class="bracket-predicted-badge" title="${titleText}">⟡</span>` : ''}
             </div>
         `;
     }
@@ -82,9 +85,9 @@ export function renderBracketMatch(match, options = {}) {
                 ${statusIcon ? `<span class="bracket-status-icon">${statusIcon}</span>` : ''}
             </div>
             <div class="bracket-matchup">
-                ${renderSlotTeam(match.home, 'home')}
+                ${renderSlotTeam(match.home, 'home', options.profileName)}
                 ${scoreSection}
-                ${renderSlotTeam(match.away, 'away')}
+                ${renderSlotTeam(match.away, 'away', options.profileName)}
             </div>
             ${!compact && match.venue ? `<div class="bracket-venue">📍 ${match.venue}</div>` : ''}
         </div>
@@ -94,7 +97,7 @@ export function renderBracketMatch(match, options = {}) {
 /**
  * Renders a round column in the bracket.
  */
-function renderRound(title, matches, options = {}) {
+export function renderRound(title, matches, options = {}) {
     if (!matches || matches.length === 0) return '';
     return `
         <div class="bracket-round">

@@ -315,6 +315,7 @@ def build_bracket_match_data(
     resolved: dict,
     match_num_map: dict,
     match_id_to_num: dict,
+    username: Optional[str] = None,
 ) -> schemas.BracketMatchOut:
     pred = user_preds.get(match.id)
 
@@ -373,6 +374,7 @@ def team_to_out(team: Optional[models.Team]) -> Optional[schemas.TeamOut]:
 
 @router.get("/bracket", response_model=schemas.BracketOut)
 def get_bracket(
+    username: Optional[str] = Query(None, description="Fetch bracket for a specific user"),
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(get_optional_user),
 ):
@@ -399,6 +401,8 @@ def get_bracket(
         )
         user_predicted_all = group_preds_count >= len(group_matches)
 
+        user_predicted_all = group_preds_count >= len(group_matches)
+
     is_unlocked = all_finished or user_predicted_all
     unlock_reason = None
     if not is_unlocked:
@@ -408,10 +412,25 @@ def get_bracket(
     else:
         unlock_reason = "All group stage matches predicted"
 
-    user_id = current_user.id if current_user else None
+    target_user_id = None
+    if username:
+        target_user = db.query(models.User).filter(models.User.username == username).first()
+        if target_user: target_user_id = target_user.id
+        # For public profiles, consider the bracket unlocked if the user has predicted all matches
+        if target_user_id:
+            group_match_ids = [m.id for m in group_matches]
+            group_preds_count = db.query(models.Prediction).filter(
+                models.Prediction.user_id == target_user_id,
+                models.Prediction.match_id.in_(group_match_ids)
+            ).count()
+            is_unlocked = all_finished or (group_preds_count >= len(group_matches))
+            if not is_unlocked:
+                unlock_reason = "This user hasn't unlocked their bracket yet"
+    elif current_user:
+        target_user_id = current_user.id
 
     # Resolve bracket teams from standings
-    resolved = resolve_bracket_teams(db, user_id)
+    resolved = resolve_bracket_teams(db, target_user_id)
 
     # Load all knockout matches
     knockout_matches = (
@@ -431,12 +450,12 @@ def get_bracket(
 
     # Get user predictions for knockout matches
     user_preds = {}
-    if current_user:
+    if target_user_id:
         ko_match_ids = [m.id for m in knockout_matches]
         preds = (
             db.query(models.Prediction)
             .filter(
-                models.Prediction.user_id == current_user.id,
+                models.Prediction.user_id == target_user_id,
                 models.Prediction.match_id.in_(ko_match_ids),
             )
             .all()
@@ -445,28 +464,28 @@ def get_bracket(
 
     # Categorize matches by stage
     r32 = [
-        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num)
+        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username)
         for m in knockout_matches
         if m.stage == "Round of 32"
     ]
     r16 = [
-        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num)
+        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username)
         for m in knockout_matches
         if m.stage == "Round of 16"
     ]
     qf = [
-        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num)
+        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username)
         for m in knockout_matches
         if m.stage == "Quarter-finals"
     ]
     sf = [
-        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num)
+        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username)
         for m in knockout_matches
         if m.stage == "Semi-finals"
     ]
     third = next(
         (
-            build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num)
+            build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username)
             for m in knockout_matches
             if m.stage == "Third-place"
         ),
@@ -474,7 +493,7 @@ def get_bracket(
     )
     final = next(
         (
-            build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num)
+            build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username)
             for m in knockout_matches
             if m.stage == "Final"
         ),

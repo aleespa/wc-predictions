@@ -76,14 +76,19 @@ export async function homePage() {
                             </tr>
                         </thead>
                         <tbody>
-                            ${top5.map(entry => `
+                            ${top5.map(entry => {
+                                const isCommunity = entry.is_community;
+                                const nameHtml = isCommunity
+                                    ? `${entry.display_name || entry.username}`
+                                    : `<a href="#/user/${encodeURIComponent(entry.username)}" class="leaderboard-user-link">${entry.display_name || entry.username}</a>`;
+                                return `
                                 <tr>
                                     <td class="leaderboard-rank ${entry.rank <= 3 ? 'top-' + entry.rank : ''}">${entry.rank}</td>
-                                    <td class="leaderboard-user">${entry.display_name || entry.username}</td>
+                                    <td class="leaderboard-user">${nameHtml}</td>
                                     <td class="leaderboard-points">${entry.total_points}</td>
                                     <td class="leaderboard-stat">${entry.predictions_count}</td>
                                 </tr>
-                            `).join('')}
+                            `}).join('')}
                         </tbody>
                     </table>
                 </div>

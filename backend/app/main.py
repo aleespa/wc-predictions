@@ -4,7 +4,7 @@ import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, SessionLocal, Base
-from .routers import users, matches, predictions, leaderboard, admin, knockout, community
+from .routers import users, matches, predictions, leaderboard, admin, knockout, community, public_profile
 from . import models  # noqa - ensure models are imported for table creation
 
 app = FastAPI(
@@ -60,6 +60,7 @@ app.include_router(leaderboard.router)
 app.include_router(admin.router)
 app.include_router(knockout.router)
 app.include_router(community.router)
+app.include_router(public_profile.router)
 
 
 @app.on_event("startup")

@@ -625,28 +625,23 @@ a:hover {
     padding-top: var(--space-md);
     border-top: 1px solid var(--border-subtle);
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    position: relative;
-}
-
-.match-venue {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    flex: 1;
+    flex-direction: column;
+    gap: var(--space-sm);
+    width: 100%;
 }
 
 .match-prediction-badge {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 10px;
-    border-radius: var(--radius-full);
-    font-weight: 600;
-    font-size: 0.75rem;
+    justify-content: center;
+    gap: 8px;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 0.85rem;
+    width: 100%;
+    letter-spacing: 0.02em;
+    transition: all var(--transition-fast);
 }
 
 .match-prediction-badge.exact {
@@ -657,6 +652,23 @@ a:hover {
 .match-prediction-badge.correct {
     background: rgba(16, 185, 129, 0.15);
     color: var(--accent-green);
+}
+
+.match-prediction-badge.upcoming {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--accent-blue-light);
+}
+
+.badge-points {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+}
+
+.badge-label {
+    flex: 1;
+    text-align: center;
 }
 
 .match-prediction-badge.wrong {
@@ -2075,3 +2087,184 @@ select.form-input option {
     }
 }
 
+/* ══════════════════════════════════════════════════════
+   Public User Profile Page
+   ══════════════════════════════════════════════════════ */
+
+/* ── Share Bar ──────────────────────────────────────── */
+.user-profile-share-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-xl);
+    gap: var(--space-md);
+}
+
+/* ── User Header ────────────────────────────────────── */
+.user-profile-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xl);
+    margin-bottom: var(--space-xl);
+    padding: var(--space-xl);
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    position: relative;
+    overflow: hidden;
+}
+
+.user-profile-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.06) 0%, rgba(6, 182, 212, 0.04) 100%);
+    pointer-events: none;
+}
+
+.user-profile-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+    position: relative;
+}
+
+.user-profile-info {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+}
+
+.user-profile-name {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: var(--space-xs);
+    background: linear-gradient(135deg, var(--text-primary), var(--accent-purple-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.user-profile-username {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* ── Stats override for user profile page ──────────── */
+.user-profile-stats {
+    margin-bottom: var(--space-lg);
+}
+
+.user-profile-stats .profile-stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    transition: all var(--transition-base);
+}
+
+.user-profile-stats .profile-stat-card:hover {
+    border-color: var(--border-medium);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ── Prediction section inside match card ──────────── */
+.user-pred-section {
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-pred-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 700;
+    transition: all var(--transition-fast);
+}
+
+.user-pred-icon {
+    font-size: 1rem;
+}
+
+.user-pred-score {
+    letter-spacing: 0.02em;
+}
+
+/* ── Match card style overrides ────────────────────── */
+.user-profile-match-card {
+    cursor: default !important;
+}
+
+.user-profile-match-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+/* ── Leaderboard Clickable User Links ──────────────── */
+.leaderboard-user-link {
+    color: inherit;
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    position: relative;
+    padding-bottom: 1px;
+}
+
+.leaderboard-user-link:hover {
+    color: var(--accent-purple-light);
+    text-decoration: none;
+}
+
+.leaderboard-user-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 0;
+    height: 1px;
+    background: var(--accent-purple-light);
+    transition: width var(--transition-base);
+}
+
+.leaderboard-user-link:hover::after {
+    width: 100%;
+}
+
+/* ── Responsive ────────────────────────────────────── */
+@media (max-width: 768px) {
+    .user-profile-header {
+        flex-direction: column;
+        text-align: center;
+        padding: var(--space-lg);
+    }
+
+    .user-profile-avatar {
+        width: 64px;
+        height: 64px;
+        font-size: 1.6rem;
+    }
+
+    .user-profile-name {
+        font-size: 1.3rem;
+    }
+
+    .user-profile-share-bar {
+        flex-direction: column;
+    }
+}

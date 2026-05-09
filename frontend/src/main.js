@@ -10,6 +10,7 @@ import { profilePage } from './pages/profile.js';
 import { adminPage } from './pages/admin.js';
 import { bracketPage } from './pages/bracket.js';
 import { communityPage, joinCommunityPage } from './pages/community.js';
+import { userProfilePage } from './pages/userProfile.js';
 
 // Register all routes
 registerRoute('/', homePage);
@@ -22,6 +23,7 @@ registerRoute('/admin', adminPage);
 registerRoute('/bracket', bracketPage);
 registerRoute('/community', communityPage);
 registerRoute('/join/:code', joinCommunityPage);
+registerRoute('/user/:username', userProfilePage);
 
 // Initialize
 async function start() {

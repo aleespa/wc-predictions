@@ -2,7 +2,7 @@ import { getFlagURL } from './flags.js';
 import { t } from '../i18n.js';
 
 export function renderMatchCard(match, options = {}) {
-    const { onClick, showPrediction = true } = options;
+    const { onClick, showPrediction = true, profileName } = options;
     const isFinished = match.is_finished;
     const hasPrediction = match.user_prediction != null;
     const matchDate = new Date(match.match_date);
@@ -38,21 +38,29 @@ export function renderMatchCard(match, options = {}) {
         const pts = match.user_prediction.points_awarded;
         const pred = match.user_prediction;
         let badgeClass = 'wrong';
-        let badgeText = t('match_badge_0pts', { h: pred.predicted_home_score, a: pred.predicted_away_score });
-        if (pts === 5) {
-            badgeClass = 'exact';
-            badgeText = t('match_badge_exact', { h: pred.predicted_home_score, a: pred.predicted_away_score });
-        } else if (pts === 3) {
-            badgeClass = 'correct';
-            badgeText = t('match_badge_3pts', { h: pred.predicted_home_score, a: pred.predicted_away_score });
-        } else if (pts === 1) {
-            badgeClass = 'correct';
-            badgeText = t('match_badge_1pt', { h: pred.predicted_home_score, a: pred.predicted_away_score });
-        }
-        predictionBadge = `<span class="match-prediction-badge ${badgeClass}">${badgeText}</span>`;
+        if (pts === 5) badgeClass = 'exact';
+        else if (pts >= 1) badgeClass = 'correct';
+        
+        const labelText = profileName ? 
+            t('match_user_pick', { name: profileName, h: pred.predicted_home_score, a: pred.predicted_away_score }) : 
+            t('match_your_pick', { h: pred.predicted_home_score, a: pred.predicted_away_score });
+            
+        predictionBadge = `
+            <div class="match-prediction-badge ${badgeClass}">
+                <span class="badge-points">${pts} pts</span>
+                <span class="badge-label">${labelText}</span>
+            </div>
+        `;
     } else if (showPrediction && hasPrediction && !isFinished) {
         const pred = match.user_prediction;
-        predictionBadge = `<span class="match-prediction-badge correct">${t('match_your_pick', { h: pred.predicted_home_score, a: pred.predicted_away_score })}</span>`;
+        const labelText = profileName ? 
+            t('match_user_pick', { name: profileName, h: pred.predicted_home_score, a: pred.predicted_away_score }) : 
+            t('match_your_pick', { h: pred.predicted_home_score, a: pred.predicted_away_score });
+        predictionBadge = `
+            <div class="match-prediction-badge upcoming">
+                <span class="badge-label">${labelText}</span>
+            </div>
+        `;
     }
 
     const classes = ['match-card'];
@@ -88,10 +96,11 @@ export function renderMatchCard(match, options = {}) {
                     `}
                 </div>
             </div>
-            <div class="match-card-footer">
-                <span class="match-venue">📍 ${match.venue || 'TBD'}</span>
-                ${predictionBadge}
-            </div>
+            ${predictionBadge ? `
+                <div class="match-card-footer">
+                    ${predictionBadge}
+                </div>
+            ` : ''}
         </div>
     `;
 }
