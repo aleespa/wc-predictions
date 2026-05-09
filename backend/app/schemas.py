@@ -85,6 +85,8 @@ class MatchOut(BaseModel):
     group_letter: Optional[str]
     stage: str
     match_number: Optional[int]
+    home_team_id: Optional[int] = None
+    away_team_id: Optional[int] = None
     home_team: Optional[TeamOut] = None  # nullable for knockout TBD
     away_team: Optional[TeamOut] = None  # nullable for knockout TBD
     match_date: datetime

@@ -56,5 +56,8 @@ class UserCache:
             for k in to_delete:
                 self.store.pop(k, None)
 
+    def clear_all(self):
+        self.store.clear()
+
 # Global user cache instance
 user_cache = UserCache(ttl=30)

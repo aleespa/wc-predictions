@@ -5,19 +5,70 @@ from datetime import datetime
 from sqlalchemy.orm import Session, joinedload
 from ..database import get_db
 from ..auth import get_current_admin
+from ..cache import user_cache
 from .. import models, schemas
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
+def propagate_knockout_results(db: Session, match: models.Match):
+    """
+    Determines the winner and loser of a match and updates any dependent matches.
+    """
+    if not match.is_finished:
+        return
+
+    # Determine winner and loser IDs
+    winner_id = None
+    loser_id = None
+    if (match.home_score or 0) > (match.away_score or 0):
+        winner_id = match.home_team_id
+        loser_id = match.away_team_id
+    elif (match.away_score or 0) > (match.home_score or 0):
+        winner_id = match.away_team_id
+        loser_id = match.home_team_id
+    else:
+        # Draw: use penalty winner
+        winner_id = match.penalty_winner_id
+        loser_id = match.home_team_id if winner_id == match.away_team_id else match.away_team_id
+
+    if not winner_id:
+        return
+
+    # Find all matches that depend on this match as a source
+    dependents = db.query(models.Match).filter(
+        (models.Match.home_source_match_id == match.id) | 
+        (models.Match.away_source_match_id == match.id)
+    ).all()
+
+    for dep in dependents:
+        # Update home slot if it's fed by this match
+        if dep.home_source_match_id == match.id:
+            slot = dep.home_slot or ""
+            if slot.startswith("W"):
+                dep.home_team_id = winner_id
+            elif slot.startswith("L"):
+                dep.home_team_id = loser_id
+        
+        # Update away slot if it's fed by this match
+        if dep.away_source_match_id == match.id:
+            slot = dep.away_slot or ""
+            if slot.startswith("W"):
+                dep.away_team_id = winner_id
+            elif slot.startswith("L"):
+                dep.away_team_id = loser_id
+
+    db.commit()
+
+
 def invalidate_user_brackets(db: Session):
     """
-    One-time invalidation pass: compares real R32 seeding with user predictions.
-    Called when all group matches are finished.
+    Called when all group matches are finished or a knockout match result is entered.
+    Optimized to minimize DB queries.
     """
     from .knockout import resolve_bracket_teams, resolve_bracket_slot
     
-    # 1. Resolve official R32 seeding
+    # 1. Resolve official R32 seeding (and higher if matches finished)
     real_resolved = resolve_bracket_teams(db, user_id=None)
     
     # 2. Get all knockout matches and maps
@@ -26,55 +77,105 @@ def invalidate_user_brackets(db: Session):
     match_id_to_num = {m.id: m.match_number for m in ko_matches}
     ko_ids = [m.id for m in ko_matches]
     
-    # 3. Process all users
-    users = db.query(models.User).all()
-    for user in users:
-        preds = db.query(models.Prediction).filter(
-            models.Prediction.user_id == user.id,
-            models.Prediction.match_id.in_(ko_ids)
-        ).all()
+    # 3. Fetch all knockout predictions in one go
+    all_preds = db.query(models.Prediction).filter(
+        models.Prediction.match_id.in_(ko_ids)
+    ).all()
+    
+    # Group predictions by user_id
+    user_preds_map = {}
+    for p in all_preds:
+        user_preds_map.setdefault(p.user_id, {})[p.match_id] = p
         
-        if not preds:
-            continue
-        
-        preds_map = {p.match_id: p for p in preds}
-        
-        # Reset is_invalid first to start clean
-        for pred in preds:
-            pred.is_invalid = False
-            
-        # Process matches in order (R32 -> R16 -> ...) so recursive invalidation propagates
+    # 4. Process each user's predictions
+    for user_id, preds_map in user_preds_map.items():
+        # Process matches in chronological order (match_number)
         for m in ko_matches:
             if m.id in preds_map:
                 pred = preds_map[m.id]
                 
-                if m.stage == "Round of 32":
-                    # Compare R32 seeding
-                    off_h = resolve_bracket_slot(m, "home", real_resolved, match_num_map, match_id_to_num, {})
-                    off_a = resolve_bracket_slot(m, "away", real_resolved, match_num_map, match_id_to_num, {})
-                    
-                    off_h_id = off_h.team.id if off_h.team else None
-                    off_a_id = off_a.team.id if off_a.team else None
-                    
-                    p_h_id = pred.predicted_home_team_id
-                    p_a_id = pred.predicted_away_team_id
-                    
-                    if {off_h_id, off_a_id} != {p_h_id, p_a_id}:
-                        pred.is_invalid = True
-                else:
-                    # For R16+, invalid if any source match prediction is invalid
-                    sources_invalid = False
+                # Reset invalid flag - we re-calculate it based on current state
+                was_invalid = pred.is_invalid
+                is_now_invalid = False
+                
+                # A prediction is invalid if:
+                # 1. The official teams are set and don't match the user's prediction
+                if m.home_team_id and pred.predicted_home_team_id and m.home_team_id != pred.predicted_home_team_id:
+                    is_now_invalid = True
+                if m.away_team_id and pred.predicted_away_team_id and m.away_team_id != pred.predicted_away_team_id:
+                    is_now_invalid = True
+
+                # 2. Or if any source match prediction was invalid (propagates down the path)
+                if not is_now_invalid:
                     if m.home_source_match_id and m.home_source_match_id in preds_map:
                         if preds_map[m.home_source_match_id].is_invalid:
-                            sources_invalid = True
+                            is_now_invalid = True
                     if m.away_source_match_id and m.away_source_match_id in preds_map:
                         if preds_map[m.away_source_match_id].is_invalid:
-                            sources_invalid = True
-                    
-                    if sources_invalid:
-                        pred.is_invalid = True
+                            is_now_invalid = True
+                
+                # 3. Or if the source match is finished and the user's predicted winner for that source match 
+                # is not the actual winner (covers the case where teams were correct but outcome was different)
+                if not is_now_invalid:
+                    for source_id in [m.home_source_match_id, m.away_source_match_id]:
+                        if source_id and source_id in match_id_to_num:
+                            s_match_num = match_id_to_num[source_id]
+                            s_match = match_num_map[s_match_num]
+                            if s_match.is_finished and source_id in preds_map:
+                                s_pred = preds_map[source_id]
+                                
+                                # Determine actual winner of source match
+                                actual_winner = None
+                                if (s_match.home_score or 0) > (s_match.away_score or 0):
+                                    actual_winner = s_match.home_team_id
+                                elif (s_match.away_score or 0) > (s_match.home_score or 0):
+                                    actual_winner = s_match.away_team_id
+                                else:
+                                    actual_winner = s_match.penalty_winner_id
+                                    
+                                # Determine user's predicted winner of source match
+                                predicted_winner = None
+                                if s_pred.predicted_home_score > s_pred.predicted_away_score:
+                                    predicted_winner = s_pred.predicted_home_team_id
+                                elif s_pred.predicted_away_score > s_pred.predicted_home_score:
+                                    predicted_winner = s_pred.predicted_away_team_id
+                                else:
+                                    predicted_winner = s_pred.penalty_winner_id
+                                    
+                                # If the user's predicted winner for this source match is not the one who advanced, 
+                                # then this match prediction (which depends on that winner) is invalid.
+                                if predicted_winner and actual_winner and predicted_winner != actual_winner:
+                                    # Wait, this is only true if the slot we are filling is the winner slot
+                                    # (Most slots are winner slots, but L matches might exist)
+                                    is_loser_slot = False
+                                    slot = m.home_slot if m.home_source_match_id == source_id else m.away_slot
+                                    if slot and slot.startswith("L"):
+                                        is_loser_slot = True
+                                        
+                                    if not is_loser_slot and predicted_winner != actual_winner:
+                                        is_now_invalid = True
+                                    elif is_loser_slot:
+                                        # For loser slot, check if predicted loser matches actual loser
+                                        actual_loser = s_match.away_team_id if actual_winner == s_match.home_team_id else s_match.home_team_id
+                                        predicted_loser = s_pred.predicted_away_team_id if predicted_winner == s_pred.predicted_home_team_id else s_pred.predicted_home_team_id
+                                        if predicted_loser != actual_loser:
+                                            is_now_invalid = True
+
+                pred.is_invalid = is_now_invalid
+
+    # 5. Update the actual matches with official teams for R32
+    # This is a safety pass for R32 (though propagation handles R16+)
+    for m in ko_matches:
+        if m.stage == "Round of 32":
+            off_h = resolve_bracket_slot(m, "home", real_resolved, match_num_map, match_id_to_num, {})
+            off_a = resolve_bracket_slot(m, "away", real_resolved, match_num_map, match_id_to_num, {})
+            if off_h.team:
+                m.home_team_id = off_h.team.id
+            if off_a.team:
+                m.away_team_id = off_a.team.id
     
     db.commit()
+
 
 
 from ..utils import calculate_points
@@ -138,6 +239,15 @@ def set_match_result(
     db.commit()
     db.refresh(match)
 
+    # Propagation for knockout matches
+    if is_knockout:
+        propagate_knockout_results(db, match)
+        # Re-run invalidation to mark predictions that are now officially impossible
+        invalidate_user_brackets(db)
+
+    # Invalidate all match list caches so everyone sees the update immediately
+    user_cache.clear_all()
+
     # If this was a group stage match, check if all group matches are finished
     if match.stage == "Group Stage":
         group_total = db.query(models.Match).filter(models.Match.stage == "Group Stage").count()
@@ -188,17 +298,41 @@ def admin_list_matches(
 ):
     """List all matches for admin management."""
     from sqlalchemy.orm import joinedload
+    from .knockout import resolve_bracket_teams, resolve_bracket_slot
+    
     matches = (
         db.query(models.Match)
         .options(joinedload(models.Match.home_team), joinedload(models.Match.away_team))
         .order_by(models.Match.match_date, models.Match.id)
         .all()
     )
+    
+    # Resolve official bracket teams
+    real_resolved = resolve_bracket_teams(db, user_id=None)
+    match_num_map = {m.match_number: m for m in matches if m.stage != "Group Stage"}
+    match_id_to_num = {m.id: m.match_number for m in matches if m.stage != "Group Stage"}
 
-    return [
-        schemas.MatchOut.model_validate(m)
-        for m in matches
-    ]
+    out = []
+    for m in matches:
+        m_out = schemas.MatchOut.model_validate(m)
+        
+        # If knockout and teams are missing, try to resolve them for display
+        if m.stage != "Group Stage":
+            if not m_out.home_team:
+                slot_h = resolve_bracket_slot(m, "home", real_resolved, match_num_map, match_id_to_num, {})
+                if slot_h.team:
+                    m_out.home_team = slot_h.team
+                    m_out.home_team_id = slot_h.team.id
+                    m_out.is_home_predicted = slot_h.is_predicted
+            if not m_out.away_team:
+                slot_a = resolve_bracket_slot(m, "away", real_resolved, match_num_map, match_id_to_num, {})
+                if slot_a.team:
+                    m_out.away_team = slot_a.team
+                    m_out.away_team_id = slot_a.team.id
+                    m_out.is_away_predicted = slot_a.is_predicted
+        out.append(m_out)
+
+    return out
 
 
 class MatchUpdateRequest(BaseModel):

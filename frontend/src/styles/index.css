@@ -1298,57 +1298,181 @@ select.form-input option {
 }
 
 /* ── Admin Panel ─────────────────────────────────── */
-.admin-match-row {
+.admin-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: var(--space-xl);
+    gap: var(--space-xl);
+    flex-wrap: wrap;
+}
+
+.admin-status-box {
+    background: var(--bg-card);
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-medium);
+    min-width: 280px;
+}
+
+.status-item {
+    margin-bottom: var(--space-sm);
+}
+
+.status-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+
+.status-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--accent-gold);
+}
+
+.status-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.05);
+    border-radius: var(--radius-full);
+    margin-top: var(--space-xs);
+    overflow: hidden;
+}
+
+.status-bar-fill {
+    height: 100%;
+    background: var(--gradient-gold);
+    border-radius: var(--radius-full);
+    transition: width 1s ease-out;
+}
+
+.admin-section-title {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
-    padding: var(--space-md);
+    gap: var(--space-sm);
+    margin: var(--space-2xl) 0 var(--space-lg);
+}
+
+.admin-section-title h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+.title-icon {
+    font-size: 1.5rem;
+}
+
+/* Match Rows */
+.admin-match-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 180px 120px;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-md) var(--space-lg);
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
     margin-bottom: var(--space-sm);
-    transition: background var(--transition-fast);
+    transition: all var(--transition-base);
 }
 
 .admin-match-row:hover {
     background: var(--bg-card-hover);
+    border-color: var(--border-medium);
+}
+
+.admin-match-row.admin-match-not-ready {
+    opacity: 0.6;
+}
+
+.admin-match-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.admin-match-number {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 600;
 }
 
 .admin-match-teams {
-    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
 }
 
-.admin-match-score-inputs {
+.admin-team-item {
     display: flex;
     align-items: center;
     gap: var(--space-sm);
+    flex: 1;
+}
+
+.admin-team-item:first-child { justify-content: flex-end; }
+.admin-team-item:last-child { justify-content: flex-start; }
+
+.tbd-team {
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 400;
+}
+
+.vs-divider {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
 .admin-score-input {
-    width: 50px;
-    height: 40px;
+    width: 44px;
+    height: 36px;
     text-align: center;
-    font-size: 1rem;
-    font-weight: 700;
-    font-family: var(--font-sans);
-    background: var(--bg-glass-strong);
+    font-size: 1.1rem;
+    font-weight: 800;
+    background: rgba(255,255,255,0.05);
     border: 1px solid var(--border-medium);
     border-radius: var(--radius-sm);
     color: var(--text-primary);
     outline: none;
-    -moz-appearance: textfield;
-}
-
-.admin-score-input::-webkit-outer-spin-button,
-.admin-score-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
 }
 
 .admin-score-input:focus {
     border-color: var(--accent-gold);
+    background: rgba(255,255,255,0.1);
 }
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-locked {
+    background: rgba(255,255,255,0.05);
+    color: var(--text-muted);
+    border: 1px solid var(--border-subtle);
+}
+
+.status-unlocked {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent-green);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
 
 /* ── Toast Notifications ─────────────────────────── */
 #toast-container {

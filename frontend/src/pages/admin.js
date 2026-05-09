@@ -3,6 +3,7 @@ import { showToast } from '../components/toast.js';
 import { getCurrentUser } from '../components/navbar.js';
 import { getFlagURL } from '../components/flags.js';
 import { t } from '../i18n.js';
+import { renderRound } from './bracket.js';
 
 export async function adminPage() {
     if (!isAuthenticated()) {
@@ -23,62 +24,104 @@ export async function adminPage() {
 
     let matches = [];
     let teams = [];
+    let bracket = null;
     try {
-        matches = await fetchAPI('/admin/matches');
-        teams = await fetchAPI('/matches/teams');
+        const ts = Date.now();
+        const [mRes, tRes, bRes] = await Promise.all([
+            fetchAPI(`/admin/matches?t=${ts}`),
+            fetchAPI(`/matches/teams?t=${ts}`),
+            fetchAPI(`/knockout/bracket?t=${ts}`).catch(() => null)
+        ]);
+        matches = mRes;
+        teams = tRes;
+        bracket = bRes;
     } catch (e) {
         return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${e.message}</div></div>`;
     }
 
+
     const unfinished = matches.filter(m => !m.is_finished);
     const finished = matches.filter(m => m.is_finished);
+    const groupMatchesCount = matches.filter(m => m.stage === 'Group Stage').length;
+    const groupFinishedCount = matches.filter(m => m.stage === 'Group Stage' && m.is_finished).length;
 
     const teamOptions = teams.map(t => `<option value="${t.id}">${t.code} ${t.name}</option>`).join('');
 
     const matchRow = (m) => {
-        const homeName = m.home_team ? m.home_team.name : 'TBD';
-        const awayName = m.away_team ? m.away_team.name : 'TBD';
+        const homeName = m.home_team ? m.home_team.name : (m.home_slot ? `[${m.home_slot}]` : 'TBD');
+        const awayName = m.away_team ? m.away_team.name : (m.away_slot ? `[${m.away_slot}]` : 'TBD');
         const homeFlag = m.home_team ? `<img src="${getFlagURL(m.home_team.code)}" class="match-team-flag-svg" style="width:20px;vertical-align:middle;margin-right:4px;">` : '';
         const awayFlag = m.away_team ? `<img src="${getFlagURL(m.away_team.code)}" class="match-team-flag-svg" style="width:20px;vertical-align:middle;margin-left:4px;">` : '';
         
+        const isReady = m.home_team && m.away_team;
+
         return `
-        <div class="admin-match-row" id="admin-match-${m.id}">
-            <span class="match-group-badge" style="flex-shrink:0">${m.group_letter ? 'Grp ' + m.group_letter : m.stage}</span>
+        <div class="admin-match-row ${!isReady ? 'admin-match-not-ready' : ''}" id="admin-match-${m.id}">
+            <div class="admin-match-info">
+                <span class="match-group-badge">${m.group_letter ? 'Grp ' + m.group_letter : m.stage}</span>
+                <span class="admin-match-number">#${m.match_number || m.id}</span>
+            </div>
             <span class="admin-match-teams">
-                ${homeFlag}
-                ${homeName}
-                <span style="color:var(--text-muted);margin:0 var(--space-sm)">vs</span>
-                ${awayName}
-                ${awayFlag}
+                <div class="admin-team-item">
+                    ${homeFlag}
+                    <span class="${!m.home_team ? 'tbd-team' : ''}">${homeName}</span>
+                </div>
+                <span class="vs-divider">vs</span>
+                <div class="admin-team-item">
+                    <span class="${!m.away_team ? 'tbd-team' : ''}">${awayName}</span>
+                    ${awayFlag}
+                </div>
             </span>
             <div class="admin-match-score-inputs">
-                <div style="display:flex; flex-direction:column; gap:4px">
+                ${isReady ? `
+                <div style="display:flex; flex-direction:column; gap:4px; align-items:center">
                     <div style="display:flex; align-items:center; gap:var(--space-xs)">
-                        <input type="number" class="admin-score-input" id="admin-home-${m.id}" min="0" max="20" placeholder="${t('admin_placeholder_h')}" value="${m.home_score ?? ''}" oninput="window.__toggleAdminPen(${m.id})" />
+                        <input type="number" class="admin-score-input" id="admin-home-${m.id}" min="0" max="20" placeholder="0" value="${m.home_score ?? ''}" oninput="window.__toggleAdminPen(${m.id})" />
                         <span style="color:var(--text-muted);font-weight:700">—</span>
-                        <input type="number" class="admin-score-input" id="admin-away-${m.id}" min="0" max="20" placeholder="${t('admin_placeholder_a')}" value="${m.away_score ?? ''}" oninput="window.__toggleAdminPen(${m.id})" />
+                        <input type="number" class="admin-score-input" id="admin-away-${m.id}" min="0" max="20" placeholder="0" value="${m.away_score ?? ''}" oninput="window.__toggleAdminPen(${m.id})" />
                     </div>
                     ${m.stage !== 'Group Stage' ? `
                     <div id="admin-pen-wrapper-${m.id}" style="display:${m.home_score === m.away_score && m.home_score !== null ? 'block' : 'none'}">
-                        <select id="admin-pen-${m.id}" class="form-input" style="font-size:0.75rem; padding:2px 4px; height:auto">
-                            <option value="">-- ${t('predict_penalty_winner')} --</option>
-                            <option value="${m.home_team_id}" ${m.penalty_winner_id === m.home_team_id ? 'selected' : ''}>${m.home_team?.code || 'Home'} wins PK</option>
-                            <option value="${m.away_team_id}" ${m.penalty_winner_id === m.away_team_id ? 'selected' : ''}>${m.away_team?.code || 'Away'} wins PK</option>
+                        <select id="admin-pen-${m.id}" class="form-input" style="font-size:0.75rem; padding:2px 4px; height:auto; width:120px">
+                            <option value="">-- PK Winner --</option>
+                            <option value="${m.home_team?.id}" ${m.penalty_winner_id === m.home_team?.id ? 'selected' : ''}>${m.home_team?.code || 'Home'} wins</option>
+                            <option value="${m.away_team?.id}" ${m.penalty_winner_id === m.away_team?.id ? 'selected' : ''}>${m.away_team?.code || 'Away'} wins</option>
                         </select>
                     </div>
                     ` : ''}
                 </div>
+                ` : `<span class="status-badge status-locked">Awaiting Teams</span>`}
             </div>
-            <button class="btn btn-sm ${m.is_finished ? 'btn-secondary' : 'btn-success'}" onclick="window.__setResult(${m.id})" id="admin-btn-${m.id}">
+            <button class="btn btn-sm ${m.is_finished ? 'btn-secondary' : 'btn-success'}" 
+                    onclick="window.__setResult(${m.id})" 
+                    id="admin-btn-${m.id}"
+                    ${!isReady ? 'disabled' : ''}>
                 ${m.is_finished ? t('admin_btn_done') : t('admin_btn_set')}
             </button>
         </div>
     `};
 
+
     const html = `
         <div class="fade-in">
-            <h1 class="page-title">${t('admin_title')}</h1>
-            <p class="page-subtitle">${t('admin_subtitle')}</p>
+            <div class="admin-header-flex">
+                <div>
+                    <h1 class="page-title" style="text-align:left; margin-bottom:0">${t('admin_title')}</h1>
+                    <p class="page-subtitle" style="text-align:left">${t('admin_subtitle')}</p>
+                </div>
+                <div class="admin-status-box">
+                    <div class="status-item">
+                        <span class="status-label">Group Progress</span>
+                        <span class="status-value">${groupFinishedCount} / ${groupMatchesCount}</span>
+                        <div class="status-bar"><div class="status-bar-fill" style="width: ${(groupFinishedCount/groupMatchesCount)*100}%"></div></div>
+                    </div>
+                    ${groupFinishedCount === groupMatchesCount ? `
+                        <div class="status-badge status-unlocked" style="margin-top:var(--space-sm)">
+                            <span class="status-icon">✅</span> Knockout Stages Active
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
 
             <div class="card" style="margin: var(--space-xl) 0;">
                 <h3 style="margin-top:0;margin-bottom:var(--space-md);color:var(--accent-gold)">${t('admin_edit_title')}</h3>
@@ -116,19 +159,37 @@ export async function adminPage() {
                 </form>
             </div>
 
-            <h3 style="margin:var(--space-xl) 0 var(--space-md);font-size:1.1rem;color:var(--accent-gold)">
-                ${t('admin_pending', { count: unfinished.length })}
-            </h3>
+
+            <div class="admin-section-title">
+                <span class="title-icon">⏳</span>
+                <h3>${t('admin_pending', { count: unfinished.length })}</h3>
+            </div>
             <div id="admin-pending">
-                ${unfinished.length === 0 ? `<p style="color:var(--text-muted)">${t('admin_all_results')}</p>` : unfinished.map(matchRow).join('')}
+                ${unfinished.length === 0 ? `<p style="color:var(--text-muted); padding: var(--space-lg); text-align:center">${t('admin_all_results')}</p>` : unfinished.map(matchRow).join('')}
             </div>
 
-            <h3 style="margin:var(--space-xl) 0 var(--space-md);font-size:1.1rem;color:var(--accent-green)">
-                ${t('admin_completed', { count: finished.length })}
-            </h3>
-            <div>
+            <div class="admin-section-title">
+                <span class="title-icon">✅</span>
+                <h3>${t('admin_completed', { count: finished.length })}</h3>
+            </div>
+            <div class="admin-completed-list">
                 ${finished.map(matchRow).join('')}
             </div>
+
+
+            ${bracket ? `
+                <div style="margin-top: var(--space-2xl); border-top: 1px solid var(--border-color); padding-top: var(--space-xl)">
+                    <h2 class="page-title" style="text-align:left; font-size:1.5rem; margin-bottom:var(--space-md)">${t('bracket_title')}</h2>
+                    <div class="bracket-container" style="background: var(--card-bg); border-radius: var(--radius-lg); padding: var(--space-lg);">
+                        ${renderRound(t('stage_roundof32'), bracket.round_of_32, { isLocked: true })}
+                        ${renderRound(t('stage_roundof16'), bracket.round_of_16, { compact: true, isLocked: true })}
+                        ${renderRound(t('stage_quarterfinals'), bracket.quarter_finals, { compact: true, isLocked: true })}
+                        ${renderRound(t('stage_semifinals'), bracket.semi_finals, { compact: true, isLocked: true })}
+                        ${bracket.third_place ? renderRound(t('stage_thirdplace'), [bracket.third_place], { compact: true, isLocked: true }) : ''}
+                        ${bracket.final ? renderRound(t('stage_final'), [bracket.final], { isLocked: true }) : ''}
+                    </div>
+                </div>
+            ` : ''}
         </div>
     `;
 
@@ -168,7 +229,7 @@ export async function adminPage() {
                 btn.textContent = t('btn_saving');
  
                 try {
-                    await fetchAPI(`/admin/matches/${matchId}/result`, {
+                    await fetchAPI(`/admin/matches/${matchId}/result?t=${Date.now()}`, {
                         method: 'PUT',
                         body: JSON.stringify({ 
                             home_score: homeScore, 
@@ -179,6 +240,10 @@ export async function adminPage() {
                     showToast(t('toast_res_saved', { h: homeScore, a: awayScore }));
                     btn.textContent = t('admin_btn_done');
                     btn.className = 'btn btn-sm btn-secondary';
+                    // Refresh the page after a short delay to show propagated results
+                    setTimeout(() => {
+                        window.dispatchEvent(new HashChangeEvent("hashchange"));
+                    }, 800);
                 } catch (err) {
                     showToast(err.message, 'error');
                     btn.disabled = false;
