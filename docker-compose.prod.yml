@@ -10,6 +10,9 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
     networks:
       - internal
+    volumes:
+      - ./backend/simulate_results.py:/app/simulate_results.py
+      - ./backend/simulate_data.py:/app/simulate_data.py
 
   nginx:
     build:
