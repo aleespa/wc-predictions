@@ -3,31 +3,35 @@ import { showToast } from '../components/toast.js';
 import { getFlagURL } from '../components/flags.js';
 import { t } from '../i18n.js';
 
+const SHIELD_SVG = `
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px; height:16px; opacity:0.5">
+    <path d="M12 2L3 7V12C3 17.5 7 21 12 22C17 21 21 17.5 21 12V7L12 2Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+`;
+
 /**
  * Renders a single team slot in the bracket.
  */
 export function renderSlotTeam(slot, side, profileName) {
-    if (!slot) return `<div class="bracket-team bracket-tbd"><span class="bracket-team-name">${t('bracket_tbd')}</span></div>`;
-
-    if (slot.team) {
-        const predictedClass = slot.is_predicted ? 'bracket-predicted' : '';
-        const legendKey = profileName ? 'bracket_legend_user_pred' : 'bracket_legend_pred';
-        const titleText = profileName ? t(legendKey, { name: profileName }) : t(legendKey);
-
+    if (!slot || !slot.team) {
+        const label = slot?.slot_label || t('bracket_tbd');
         return `
-            <div class="bracket-team ${predictedClass}" data-side="${side}">
-                <img src="${getFlagURL(slot.team.code)}" alt="${slot.team.code}" class="bracket-team-flag" />
-                <span class="bracket-team-name">${slot.team.name}</span>
-                ${slot.is_predicted ? `<span class="bracket-predicted-badge" title="${titleText}">⟡</span>` : ''}
+            <div class="bracket-team bracket-tbd">
+                <div class="bracket-placeholder-icon">${SHIELD_SVG}</div>
+                <span class="bracket-team-name bracket-placeholder">${label}</span>
             </div>
         `;
     }
 
-    // Placeholder slot
-    const label = slot.slot_label || t('bracket_tbd');
+    const predictedClass = slot.is_predicted ? 'bracket-predicted' : '';
+    const legendKey = profileName ? 'bracket_legend_user_pred' : 'bracket_legend_pred';
+    const titleText = profileName ? t(legendKey, { name: profileName }) : t(legendKey);
+
     return `
-        <div class="bracket-team bracket-tbd">
-            <span class="bracket-team-name bracket-placeholder">${label}</span>
+        <div class="bracket-team ${predictedClass}" data-side="${side}">
+            <img src="${getFlagURL(slot.team.code)}" alt="${slot.team.code}" class="bracket-team-flag" />
+            <span class="bracket-team-name">${slot.team.name}</span>
+            ${slot.is_predicted ? `<span class="bracket-predicted-badge" title="${titleText}">⟡</span>` : ''}
         </div>
     `;
 }
@@ -36,7 +40,6 @@ export function renderSlotTeam(slot, side, profileName) {
  * Renders a single bracket match card.
  */
 export function renderBracketMatch(match, options = {}) {
-    const { compact = false } = options;
     const matchDate = new Date(match.match_date);
     const dateStr = matchDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     const timeStr = matchDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
@@ -46,11 +49,16 @@ export function renderBracketMatch(match, options = {}) {
     const isFinished = match.is_finished;
     const isInvalid = match.is_invalid_prediction;
 
-    let scoreSection = '';
+    let scoreHome = '';
+    let scoreAway = '';
+
     if (isFinished && match.home_score !== null) {
-        scoreSection = `<div class="bracket-score">${match.home_score} – ${match.away_score}</div>`;
+        scoreHome = `<div class="bracket-score">${match.home_score}</div>`;
+        scoreAway = `<div class="bracket-score">${match.away_score}</div>`;
     } else if (hasPrediction) {
-        scoreSection = `<div class="bracket-score bracket-score-predicted ${isInvalid ? 'bracket-score-invalid' : ''}">${match.user_prediction.predicted_home_score} – ${match.user_prediction.predicted_away_score}</div>`;
+        const invalidClass = isInvalid ? 'bracket-score-invalid' : '';
+        scoreHome = `<div class="bracket-score bracket-score-predicted ${invalidClass}">${match.user_prediction.predicted_home_score}</div>`;
+        scoreAway = `<div class="bracket-score bracket-score-predicted ${invalidClass}">${match.user_prediction.predicted_away_score}</div>`;
     }
 
     let statusClass = 'bracket-upcoming';
@@ -74,28 +82,39 @@ export function renderBracketMatch(match, options = {}) {
     const clickable = bothTeamsKnown && !isFinished && !isLocked ? `onclick="location.hash='#/predict/${finalMatchId}'"` : '';
     const clickableClass = bothTeamsKnown && !isFinished && !isLocked ? 'bracket-match-clickable' : '';
     const lockedClass = isLocked ? 'bracket-match-locked' : '';
+    const showConnectors = options.showConnectors !== false;
 
     return `
-        <div class="bracket-match ${statusClass} ${clickableClass} ${lockedClass} ${compact ? 'bracket-match-compact' : ''}" 
-             id="bracket-match-${finalMatchId}" ${clickable}
-             data-match-id="${finalMatchId}" data-match-number="${match.match_number}">
-            <div class="bracket-match-header">
-                <span class="bracket-match-num">M${match.match_number}</span>
-                <span class="bracket-match-info">${dateStr} · ${timeStr}</span>
-                ${statusIcon ? `<span class="bracket-status-icon">${statusIcon}</span>` : ''}
+        <div class="bracket-match-wrapper ${!showConnectors ? 'no-connectors' : ''}">
+            <div class="bracket-match ${statusClass} ${clickableClass} ${lockedClass}" 
+                 id="bracket-match-${finalMatchId}" ${clickable}
+                 data-match-id="${finalMatchId}" 
+                 data-match-number="${match.match_number}"
+                 data-home-source="${match.home_source_match_id || ''}"
+                 data-away-source="${match.away_source_match_id || ''}">
+                <div class="bracket-match-header">
+                    <span class="bracket-match-num">M${match.match_number}</span>
+                    <span class="bracket-match-info">${dateStr} · ${timeStr}</span>
+                    ${statusIcon ? `<span class="bracket-status-icon">${statusIcon}</span>` : ''}
+                </div>
+                <div class="bracket-matchup">
+                    <div style="display:flex; align-items:center; width:100%">
+                        ${renderSlotTeam(match.home, 'home', options.profileName)}
+                        ${scoreHome}
+                    </div>
+                    <div style="display:flex; align-items:center; width:100%">
+                        ${renderSlotTeam(match.away, 'away', options.profileName)}
+                        ${scoreAway}
+                    </div>
+                </div>
+                ${match.venue ? `<div class="bracket-venue">📍 ${match.venue}</div>` : ''}
             </div>
-            <div class="bracket-matchup">
-                ${renderSlotTeam(match.home, 'home', options.profileName)}
-                ${scoreSection}
-                ${renderSlotTeam(match.away, 'away', options.profileName)}
-            </div>
-            ${!compact && match.venue ? `<div class="bracket-venue">📍 ${match.venue}</div>` : ''}
         </div>
     `;
 }
 
 /**
- * Renders a round column in the bracket.
+ * Renders a round column (Legacy/Simplified view used by Profile).
  */
 export function renderRound(title, matches, options = {}) {
     if (!matches || matches.length === 0) return '';
@@ -106,12 +125,59 @@ export function renderRound(title, matches, options = {}) {
                 <span class="bracket-round-count">${matches.length === 1 ? t('bracket_round_match', { count: matches.length }) : t('bracket_round_matches', { count: matches.length })}</span>
             </div>
             <div class="bracket-round-matches">
-                ${matches.map(m => renderBracketMatch(m, options)).join('')}
+                ${matches.map(m => renderBracketMatch(m, { ...options, showConnectors: false })).join('')}
             </div>
         </div>
     `;
 }
 
+/**
+ * Organizes matches into a tree-compatible order for each round.
+ */
+function getOrderedTree(bracket) {
+    const final = bracket.final;
+    if (!final) return null;
+
+    const allMatches = [
+        ...(bracket.round_of_32 || []),
+        ...(bracket.round_of_16 || []),
+        ...(bracket.quarter_finals || []),
+        ...(bracket.semi_finals || []),
+        final
+    ];
+    const matchMap = {};
+    allMatches.forEach(m => matchMap[m.match_id] = m);
+
+    const tree = {
+        final: [final],
+        semi_finals: [],
+        quarter_finals: [],
+        round_of_16: [],
+        round_of_32: []
+    };
+
+    const levels = ['final', 'semi_finals', 'quarter_finals', 'round_of_16', 'round_of_32'];
+    for (let i = 0; i < levels.length - 1; i++) {
+        const currentLevel = levels[i];
+        const nextLevel = levels[i + 1];
+        tree[currentLevel].forEach(m => {
+            const h = matchMap[m.home_source_match_id];
+            const a = matchMap[m.away_source_match_id];
+            // Order is important here: first one pushed is top in next level traversal
+            if (h) tree[nextLevel].push(h);
+            if (a) tree[nextLevel].push(a);
+        });
+    }
+
+    // Use the collected matches in the order they were discovered (top-to-bottom traversal)
+    return {
+        round_of_32: tree.round_of_32,
+        round_of_16: tree.round_of_16,
+        quarter_finals: tree.quarter_finals,
+        semi_finals: tree.semi_finals,
+        final: tree.final[0]
+    };
+}
 
 export async function bracketPage() {
     let bracket;
@@ -122,11 +188,12 @@ export async function bracketPage() {
     }
 
     const authed = isAuthenticated();
+    const ordered = getOrderedTree(bracket);
 
     // Count stats
     const totalKO = (bracket.round_of_32?.length || 0) + (bracket.round_of_16?.length || 0) +
-                    (bracket.quarter_finals?.length || 0) + (bracket.semi_finals?.length || 0) +
-                    (bracket.third_place ? 1 : 0) + (bracket.final ? 1 : 0);
+        (bracket.quarter_finals?.length || 0) + (bracket.semi_finals?.length || 0) +
+        (bracket.third_place ? 1 : 0) + (bracket.final ? 1 : 0);
     const predictedCount = [
         ...(bracket.round_of_32 || []),
         ...(bracket.round_of_16 || []),
@@ -146,14 +213,39 @@ export async function bracketPage() {
     ];
     const invalidMatches = allMatches.filter(m => m.is_invalid_prediction);
 
+    const renderColumn = (title, matches, index) => {
+        if (!matches || (Array.isArray(matches) && matches.length === 0)) return '';
+        const matchesList = Array.isArray(matches) ? matches : [matches];
+        return `
+            <div class="bracket-column ${index === 0 ? 'first-visible' : ''}" data-index="${index}">
+                <div class="bracket-column-header">
+                    <h4 class="bracket-column-title">${title}</h4>
+                </div>
+                <div class="bracket-column-content">
+                    ${matchesList.map((m, i) => renderBracketMatch(m, { 
+                        isLocked: !bracket.is_unlocked
+                    })).join('')}
+                </div>
+            </div>
+        `;
+    };
+
+    const rounds = [
+        { id: 0, title: t('stage_roundof32') },
+        { id: 1, title: t('stage_roundof16') },
+        { id: 2, title: t('stage_quarterfinals') },
+        { id: 3, title: t('stage_semifinals') },
+        { id: 4, title: t('stage_final') }
+    ];
+
     const html = `
         <div class="bracket-page fade-in">
             <div class="bracket-hero">
                 <h1 class="page-title">${t('bracket_title')}</h1>
                 <p class="page-subtitle">
                     ${authed
-                        ? t('bracket_subtitle_authed')
-                        : t('bracket_subtitle_unauthed')}
+            ? t('bracket_subtitle_authed')
+            : t('bracket_subtitle_unauthed')}
                 </p>
                 ${authed ? `
                     <div class="bracket-stats-bar">
@@ -216,18 +308,173 @@ export async function bracketPage() {
                 </div>
             </div>
 
-            <div id="bracket-content">
-                <div id="bracket-rounds-view" class="bracket-container ${!bracket.is_unlocked ? 'bracket-container-locked' : ''}">
-                    ${renderRound(t('stage_roundof32'), bracket.round_of_32, { isLocked: !bracket.is_unlocked })}
-                    ${renderRound(t('stage_roundof16'), bracket.round_of_16, { compact: true, isLocked: !bracket.is_unlocked })}
-                    ${renderRound(t('stage_quarterfinals'), bracket.quarter_finals, { compact: true, isLocked: !bracket.is_unlocked })}
-                    ${renderRound(t('stage_semifinals'), bracket.semi_finals, { compact: true, isLocked: !bracket.is_unlocked })}
-                    ${bracket.third_place ? renderRound(t('stage_thirdplace'), [bracket.third_place], { compact: true, isLocked: !bracket.is_unlocked }) : ''}
-                    ${bracket.final ? renderRound(t('stage_final'), [bracket.final], { isLocked: !bracket.is_unlocked }) : ''}
+            <div id="bracket-content" class="${!bracket.is_unlocked ? 'bracket-container-locked' : ''}">
+                <div class="bracket-header-nav" id="bracket-header-nav">
+                    ${rounds.map(r => `
+                        <button class="bracket-round-btn ${r.id === 0 ? 'active' : ''}" data-index="${r.id}">
+                            ${r.title}
+                        </button>
+                    `).join('')}
                 </div>
+
+                <div class="bracket-tree-container">
+                    <svg class="bracket-svg-overlay" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1; overflow:visible"></svg>
+                    ${renderColumn(t('stage_roundof32'), ordered?.round_of_32 || bracket.round_of_32, 0)}
+                    ${renderColumn(t('stage_roundof16'), ordered?.round_of_16 || bracket.round_of_16, 1)}
+                    ${renderColumn(t('stage_quarterfinals'), ordered?.quarter_finals || bracket.quarter_finals, 2)}
+                    ${renderColumn(t('stage_semifinals'), ordered?.semi_finals || bracket.semi_finals, 3)}
+                    ${renderColumn(t('stage_final'), [bracket.final], 4)}
+                </div>
+
+                ${bracket.third_place ? `
+                    <div class="bracket-small-finals">
+                        <div class="bracket-small-finals-title">${t('stage_thirdplace')}</div>
+                        ${renderBracketMatch(bracket.third_place, { isLocked: !bracket.is_unlocked, showConnectors: false })}
+                    </div>
+                ` : ''}
             </div>
         </div>
     `;
 
-    return html;
+    return {
+        html,
+        init: () => {
+            const headerNav = document.getElementById('bracket-header-nav');
+            const container = document.querySelector('.bracket-tree-container');
+            const columns = document.querySelectorAll('.bracket-column');
+            const buttons = document.querySelectorAll('.bracket-round-btn');
+            let currentStartIndex = 0;
+
+            const updateVisibility = (index) => {
+                // If clicking the currently active (first visible) round, toggle back to full view
+                if (index === currentStartIndex && index !== 0) {
+                    index = 0;
+                }
+
+                currentStartIndex = index;
+                if (container) container.dataset.startIndex = index;
+
+                columns.forEach((col, i) => {
+                    const colIndex = parseInt(col.dataset.index);
+                    col.classList.toggle('collapsed', colIndex < index);
+                    col.classList.toggle('first-visible', colIndex === index);
+                });
+
+                buttons.forEach((btn, i) => {
+                    const btnIndex = parseInt(btn.dataset.index);
+                    btn.classList.toggle('active', btnIndex === index);
+                    btn.classList.toggle('hidden-prev', btnIndex < index);
+                });
+            };
+
+            headerNav?.addEventListener('click', (e) => {
+                const btn = e.target.closest('.bracket-round-btn');
+                if (!btn) return;
+                const index = parseInt(btn.dataset.index);
+                updateVisibility(index);
+                // Redraw connectors after transition
+                setTimeout(drawBracketConnectors, 600);
+            });
+
+            // Initial draw
+            setTimeout(drawBracketConnectors, 100);
+
+            // Resize listener
+            window.addEventListener('resize', drawBracketConnectors);
+
+            // Cleanup listener if needed (though this is a SPA, so we might want to handle this better)
+            // For now, we'll just keep it simple.
+        }
+    };
 }
+
+/**
+ * Draws the SVG connector lines between matches.
+ */
+function drawBracketConnectors() {
+    const container = document.querySelector('.bracket-tree-container');
+    const svg = container?.querySelector('.bracket-svg-overlay');
+    if (!container || !svg) return;
+
+    svg.innerHTML = ''; // Clear existing paths
+    
+    // Ensure SVG covers the full scrollable area
+    svg.setAttribute('width', container.scrollWidth);
+    svg.setAttribute('height', container.scrollHeight);
+
+    const containerRect = container.getBoundingClientRect();
+    const matches = container.querySelectorAll('.bracket-match');
+
+    matches.forEach(targetCard => {
+        const homeSourceId = targetCard.dataset.homeSource;
+        const awaySourceId = targetCard.dataset.awaySource;
+        if (!homeSourceId && !awaySourceId) return;
+
+        // Target left-center
+        const targetRect = targetCard.getBoundingClientRect();
+        // If target card is hidden (collapsed column), skip
+        if (targetRect.width === 0) return;
+
+        const targetX = targetRect.left - containerRect.left + container.scrollLeft;
+        const targetY = targetRect.top - containerRect.top + container.scrollTop + (targetRect.height / 2);
+
+        const getSourcePos = (sourceId) => {
+            const sourceCard = container.querySelector(`[data-match-id="${sourceId}"]`);
+            if (!sourceCard) return null;
+            const sourceRect = sourceCard.getBoundingClientRect();
+            if (sourceRect.width === 0) return null; // Hidden
+
+            return {
+                x: sourceRect.right - containerRect.left + container.scrollLeft,
+                y: sourceRect.top - containerRect.top + container.scrollTop + (sourceRect.height / 2)
+            };
+        };
+
+        const homePos = getSourcePos(homeSourceId);
+        const awayPos = getSourcePos(awaySourceId);
+
+        if (homePos && awayPos) {
+            // Standard fork: Source 1 & 2 -> Midpoint -> Target
+            const midX = homePos.x + (targetX - homePos.x) / 2;
+            const midY = homePos.y + (awayPos.y - homePos.y) / 2;
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            // D-string: M x y L x y ...
+            // We use square lines: Horizontal -> Vertical -> Horizontal
+            const d = `
+                M ${homePos.x} ${homePos.y}
+                H ${midX}
+                V ${midY}
+                M ${awayPos.x} ${awayPos.y}
+                H ${midX}
+                V ${midY}
+                H ${targetX}
+            `;
+            path.setAttribute('d', d);
+            path.setAttribute('stroke', 'var(--border-medium)');
+            path.setAttribute('stroke-width', '2');
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke-opacity', '0.6');
+            svg.appendChild(path);
+        } else if (homePos || awayPos) {
+            // Single connection (e.g. if one source is missing for some reason)
+            const pos = homePos || awayPos;
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const midX = pos.x + (targetX - pos.x) / 2;
+            const d = `
+                M ${pos.x} ${pos.y}
+                H ${midX}
+                V ${targetY}
+                H ${targetX}
+            `;
+            path.setAttribute('d', d);
+            path.setAttribute('stroke', 'var(--border-medium)');
+            path.setAttribute('stroke-width', '2');
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke-opacity', '0.6');
+            svg.appendChild(path);
+        }
+    });
+}
+
+

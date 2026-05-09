@@ -38,21 +38,21 @@
 
     /* Gradients */
     --gradient-hero: linear-gradient(135deg, #0a0e1a 0%, #1a1145 50%, #0f172a 100%);
-    --gradient-card: linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+    --gradient-card: linear-gradient(145deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
     --gradient-gold: linear-gradient(135deg, #f59e0b, #d97706);
     --gradient-green: linear-gradient(135deg, #10b981, #059669);
     --gradient-red: linear-gradient(135deg, #ef4444, #dc2626);
     --gradient-blue: linear-gradient(135deg, #3b82f6, #2563eb);
     --gradient-purple: linear-gradient(135deg, #8b5cf6, #7c3aed);
     --gradient-mesh: radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-                     radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
-                     radial-gradient(ellipse at 50% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 50%);
+        radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 50%);
 
     /* Shadows */
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-    --shadow-md: 0 4px 6px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2);
-    --shadow-lg: 0 10px 15px rgba(0,0,0,0.4), 0 4px 6px rgba(0,0,0,0.2);
-    --shadow-xl: 0 20px 25px rgba(0,0,0,0.5), 0 8px 10px rgba(0,0,0,0.3);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4), 0 4px 6px rgba(0, 0, 0, 0.2);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5), 0 8px 10px rgba(0, 0, 0, 0.3);
     --shadow-glow-gold: 0 0 20px rgba(245, 158, 11, 0.2);
     --shadow-glow-green: 0 0 20px rgba(16, 185, 129, 0.2);
 
@@ -84,7 +84,9 @@
 
 
 /* ── Reset & Base ────────────────────────────────── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -136,13 +138,16 @@ a:hover {
 ::-webkit-scrollbar {
     width: 6px;
 }
+
 ::-webkit-scrollbar-track {
     background: var(--bg-primary);
 }
+
 ::-webkit-scrollbar-thumb {
     background: var(--border-medium);
     border-radius: var(--radius-full);
 }
+
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-muted);
 }
@@ -401,8 +406,8 @@ a:hover {
 }
 
 .btn-secondary:hover {
-    background: rgba(255,255,255,0.12);
-    border-color: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .btn-success {
@@ -476,7 +481,7 @@ a:hover {
     width: 28px;
     height: 19px;
     object-fit: contain;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
     vertical-align: middle;
 }
 
@@ -1041,9 +1046,17 @@ select.form-input option {
     animation: fadeInUp 0.6s ease-out both;
 }
 
-.podium-item:nth-child(1) { animation-delay: 0.2s; }
-.podium-item:nth-child(2) { animation-delay: 0.1s; }
-.podium-item:nth-child(3) { animation-delay: 0.3s; }
+.podium-item:nth-child(1) {
+    animation-delay: 0.2s;
+}
+
+.podium-item:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.podium-item:nth-child(3) {
+    animation-delay: 0.3s;
+}
 
 .podium-avatar {
     width: 48px;
@@ -1057,9 +1070,19 @@ select.form-input option {
     color: #000;
 }
 
-.podium-item:nth-child(1) .podium-avatar { background: var(--gradient-gold); width: 56px; height: 56px; }
-.podium-item:nth-child(2) .podium-avatar { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); }
-.podium-item:nth-child(3) .podium-avatar { background: linear-gradient(135deg, #cd7f32, #a0522d); }
+.podium-item:nth-child(1) .podium-avatar {
+    background: var(--gradient-gold);
+    width: 56px;
+    height: 56px;
+}
+
+.podium-item:nth-child(2) .podium-avatar {
+    background: linear-gradient(135deg, #c0c0c0, #a0a0a0);
+}
+
+.podium-item:nth-child(3) .podium-avatar {
+    background: linear-gradient(135deg, #cd7f32, #a0522d);
+}
 
 .podium-name {
     font-size: 0.85rem;
@@ -1081,9 +1104,19 @@ select.form-input option {
     border-bottom: none;
 }
 
-.podium-item:nth-child(1) .podium-bar { height: 120px; background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2); }
-.podium-item:nth-child(2) .podium-bar { height: 90px; }
-.podium-item:nth-child(3) .podium-bar { height: 60px; }
+.podium-item:nth-child(1) .podium-bar {
+    height: 120px;
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.2);
+}
+
+.podium-item:nth-child(2) .podium-bar {
+    height: 90px;
+}
+
+.podium-item:nth-child(3) .podium-bar {
+    height: 60px;
+}
 
 .leaderboard-table {
     width: 100%;
@@ -1130,9 +1163,17 @@ select.form-input option {
     width: 40px;
 }
 
-.leaderboard-rank.top-1 { color: var(--accent-gold); }
-.leaderboard-rank.top-2 { color: #c0c0c0; }
-.leaderboard-rank.top-3 { color: #cd7f32; }
+.leaderboard-rank.top-1 {
+    color: var(--accent-gold);
+}
+
+.leaderboard-rank.top-2 {
+    color: #c0c0c0;
+}
+
+.leaderboard-rank.top-3 {
+    color: #cd7f32;
+}
 
 .leaderboard-user {
     font-weight: 600;
@@ -1336,7 +1377,7 @@ select.form-input option {
 
 .status-bar {
     height: 6px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: var(--radius-full);
     margin-top: var(--space-xs);
     overflow: hidden;
@@ -1417,8 +1458,13 @@ select.form-input option {
     flex: 1;
 }
 
-.admin-team-item:first-child { justify-content: flex-end; }
-.admin-team-item:last-child { justify-content: flex-start; }
+.admin-team-item:first-child {
+    justify-content: flex-end;
+}
+
+.admin-team-item:last-child {
+    justify-content: flex-start;
+}
 
 .tbd-team {
     color: var(--text-muted);
@@ -1439,7 +1485,7 @@ select.form-input option {
     text-align: center;
     font-size: 1.1rem;
     font-weight: 800;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border-medium);
     border-radius: var(--radius-sm);
     color: var(--text-primary);
@@ -1448,7 +1494,7 @@ select.form-input option {
 
 .admin-score-input:focus {
     border-color: var(--accent-gold);
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .status-badge {
@@ -1462,7 +1508,7 @@ select.form-input option {
 }
 
 .status-locked {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     color: var(--text-muted);
     border: 1px solid var(--border-subtle);
 }
@@ -1567,6 +1613,7 @@ select.form-input option {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1578,6 +1625,7 @@ select.form-input option {
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1589,6 +1637,7 @@ select.form-input option {
         opacity: 0;
         transform: translateX(100px);
     }
+
     to {
         opacity: 1;
         transform: translateX(0);
@@ -1700,6 +1749,7 @@ select.form-input option {
 /* ── Bracket Page Layout ────────────────────────────── */
 .bracket-page {
     max-width: 100%;
+    padding-bottom: var(--space-3xl);
 }
 
 .bracket-hero {
@@ -1774,105 +1824,210 @@ select.form-input option {
     opacity: 0.5;
 }
 
-/* ── View Toggle ────────────────────────────────────── */
-.bracket-view-toggle {
+/* ── Tournament Tree Layout ─────────────────────────── */
+.bracket-tree-container {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    overflow-y: visible;
+    touch-action: pan-y;
+    padding: var(--space-xl) 0;
+    padding-bottom: 200px;
+    /* Extra room at the bottom of the tree */
+    margin: 0 -1rem;
+    min-height: 3000px;
+    /* Increased from 2400px to prevent R32 cropping */
+    height: 3000px;
+    transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    mask-image: linear-gradient(to right, transparent, black 2%, black 98%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 2%, black 98%, transparent);
+}
+
+.bracket-tree-container[data-start-index="1"] {
+    height: 1600px;
+    min-height: 1600px;
+}
+
+.bracket-tree-container[data-start-index="2"] {
+    height: 900px;
+    min-height: 900px;
+}
+
+.bracket-tree-container[data-start-index="3"] {
+    height: 600px;
+    min-height: 600px;
+}
+
+.bracket-tree-container[data-start-index="4"] {
+    height: 400px;
+    min-height: 400px;
+}
+
+.bracket-column {
+    display: flex;
+    flex-direction: column;
+    min-width: 320px;
+    flex: 1;
+    position: relative;
+    padding: 0 var(--space-xl);
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-x: hidden;
+    /* Keep horizontal clipping for collapse */
+    overflow-y: visible;
+    /* Allow matches to spill out vertically if needed */
+    transform-origin: left center;
+}
+
+.bracket-column-header {
+    display: none;
+    /* Hidden because we use the global header nav now */
+}
+
+.bracket-column-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* ── Bracket Interactive Header ────────────────────── */
+.bracket-header-nav {
     display: flex;
     justify-content: center;
     gap: var(--space-xs);
     margin-bottom: var(--space-xl);
     background: var(--bg-glass);
-    border-radius: var(--radius-lg);
-    padding: 4px;
+    padding: 6px;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-subtle);
     width: fit-content;
     margin-left: auto;
     margin-right: auto;
+    position: sticky;
+    top: 64px;
+    /* Align below main navbar */
+    z-index: 100;
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(12px);
+    animation: fadeInDown 0.5s ease-out;
+    overflow-y: hidden;
+    /* Prevent any vertical scroll */
+    overflow-x: auto;
+    /* Allow horizontal scroll on mobile */
 }
 
-.bracket-view-btn {
-    padding: var(--space-sm) var(--space-lg);
+.bracket-round-btn {
+    padding: var(--space-sm) var(--space-xl);
     border: none;
-    border-radius: var(--radius-md);
     background: transparent;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     font-family: var(--font-sans);
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-base);
+    white-space: nowrap;
+    position: relative;
+    user-select: none;
 }
 
-.bracket-view-btn.active {
+.bracket-round-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.bracket-round-btn.active {
     background: var(--gradient-gold);
     color: #000;
     box-shadow: var(--shadow-sm);
 }
 
-.bracket-view-btn:hover:not(.active) {
-    color: var(--text-primary);
-    background: var(--bg-glass-strong);
+.bracket-round-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--accent-gold);
 }
 
-/* ── Rounds View ────────────────────────────────────── */
-.bracket-container {
+.bracket-round-btn.hidden-prev {
+    opacity: 0.3;
+}
+
+/* ── Collapsing Logic ──────────────────────────────── */
+.bracket-column {
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    transform-origin: left center;
+}
+
+.bracket-column.collapsed {
+    min-width: 0 !important;
+    width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none;
+    flex-grow: 0 !important;
+}
+
+/* Ensure connectors don't look weird during collapse */
+.bracket-column.collapsed * {
+    visibility: hidden;
+}
+
+/* When a column is the first visible one, hide its incoming connectors */
+.bracket-column.first-visible .bracket-connector-in {
+    opacity: 0;
+    visibility: hidden;
+}
+
+@media (max-width: 768px) {
+    .bracket-header-nav {
+        width: calc(100% - 2rem);
+        overflow-x: auto;
+        justify-content: flex-start;
+        padding: 4px;
+    }
+
+    .bracket-round-btn {
+        padding: var(--space-sm) var(--space-md);
+        font-size: 0.65rem;
+    }
+}
+
+.bracket-match-wrapper {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--space-2xl);
-}
-
-.bracket-round {
-    background: var(--bg-card);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-xl);
-    padding: var(--space-xl);
-    transition: all var(--transition-base);
-}
-
-.bracket-round:hover {
-    border-color: var(--border-medium);
-}
-
-.bracket-round-header {
-    display: flex;
+    justify-content: center;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--space-lg);
-    padding-bottom: var(--space-md);
-    border-bottom: 1px solid var(--border-subtle);
-}
-
-.bracket-round-title {
-    font-size: 1.2rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-gold), var(--accent-purple-light));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.bracket-round-count {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    padding: 2px 10px;
-    background: var(--bg-glass);
-    border-radius: var(--radius-full);
-}
-
-.bracket-round-matches {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: var(--space-md);
+    width: 100%;
+    padding: 0;
+    /* Remove vertical padding to ensure perfect line meeting */
+    flex: 1;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── Bracket Match Card ─────────────────────────────── */
 .bracket-match {
     background: var(--bg-glass);
+    backdrop-filter: blur(12px);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
     padding: var(--space-md);
+    width: 100%;
     transition: all var(--transition-base);
     position: relative;
     overflow: hidden;
+    z-index: 2;
+    box-shadow: var(--shadow-md);
 }
 
 .bracket-match::before {
@@ -1908,16 +2063,12 @@ select.form-input option {
     transform: translateY(-2px);
 }
 
-.bracket-match-compact {
-    padding: var(--space-sm) var(--space-md);
-}
-
 .bracket-match-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: var(--space-sm);
-    font-size: 0.7rem;
+    font-size: 0.65rem;
 }
 
 .bracket-match-num {
@@ -1939,22 +2090,21 @@ select.form-input option {
 /* ── Bracket Matchup ────────────────────────────────── */
 .bracket-matchup {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-sm);
+    flex-direction: column;
+    gap: 2px;
 }
 
 .bracket-team {
     display: flex;
     align-items: center;
     gap: var(--space-sm);
-    flex: 1;
-    min-width: 0;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-md);
+    transition: background var(--transition-fast);
 }
 
-.bracket-team[data-side="away"] {
-    flex-direction: row-reverse;
-    text-align: right;
+.bracket-team:hover {
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .bracket-team-flag {
@@ -1972,12 +2122,26 @@ select.form-input option {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 1;
+}
+
+.bracket-placeholder-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: var(--text-muted);
+    flex-shrink: 0;
 }
 
 .bracket-placeholder {
     color: var(--text-muted);
     font-weight: 500;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-style: italic;
 }
 
@@ -1991,35 +2155,51 @@ select.form-input option {
     flex-shrink: 0;
 }
 
-.bracket-tbd .bracket-team-name {
-    color: var(--text-muted);
-    font-style: italic;
-}
-
 .bracket-score {
     font-size: 1rem;
     font-weight: 800;
     color: var(--text-primary);
-    flex-shrink: 0;
-    padding: 0 var(--space-sm);
+    margin-left: auto;
     letter-spacing: 0.05em;
+    min-width: 20px;
+    text-align: right;
 }
 
 .bracket-score-predicted {
     color: var(--accent-purple-light);
-    font-size: 0.85rem;
     opacity: 0.8;
 }
 
 .bracket-venue {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     color: var(--text-muted);
     margin-top: var(--space-sm);
-    padding-top: var(--space-sm);
+    padding-top: var(--space-xs);
     border-top: 1px solid var(--border-subtle);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* ── Small Finals (Third Place) ───────────────────── */
+.bracket-small-finals {
+    margin-top: var(--space-3xl);
+    padding: var(--space-xl);
+    background: var(--bg-glass);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.bracket-small-finals-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: var(--space-md);
 }
 
 
@@ -2125,9 +2305,17 @@ select.form-input option {
     border-radius: 3px;
 }
 
-.community-bar-home { background: var(--accent-green); }
-.community-bar-draw { background: var(--accent-gold); }
-.community-bar-away { background: var(--accent-blue); }
+.community-bar-home {
+    background: var(--accent-green);
+}
+
+.community-bar-draw {
+    background: var(--accent-gold);
+}
+
+.community-bar-away {
+    background: var(--accent-blue);
+}
 
 .community-points-hero {
     display: flex;
