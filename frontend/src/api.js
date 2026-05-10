@@ -1,6 +1,10 @@
 import { isAuthenticated } from './auth.js';
 
-const API_BASE = (import.meta.env.VITE_API_URL || '') + '/api';
+// We always use relative paths for API calls to ensure they hit the 
+// Cloudflare Pages Functions proxy on the same origin.
+// This is required for session cookies to be sent and for the 
+// proxy to inject the trusted X-User-Sub header for the backend.
+const API_BASE = '/api';
 
 export { isAuthenticated };
 

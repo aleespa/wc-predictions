@@ -12,6 +12,23 @@ let initialised = false;
 export async function initAuth() {
   try {
     const res = await fetch('/api/auth/me', { credentials: 'include' });
+    
+    if (!res.ok) {
+      if (res.status === 404) {
+        console.warn('Auth: /api/auth/me not found. Functions might not be deployed correctly.');
+      }
+      initialised = true;
+      return null;
+    }
+
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await res.text();
+      console.error('Auth: Expected JSON from /api/auth/me but got:', text.substring(0, 100));
+      initialised = true;
+      return null;
+    }
+
     const data = await res.json();
     // Support both formats: { user: {...} } or just {...}
     currentUser = data.user !== undefined ? data.user : (data.sub ? data : null);
