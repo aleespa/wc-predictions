@@ -1,42 +1,59 @@
 export async function onRequest(context) {
   const { request, env } = context;
+
+  // Handle CORS preflight
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': 'https://wc-predictions.pages.dev',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': '*',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Max-Age': '86400',
+      },
+    });
+  }
+
   const url = new URL(request.url);
-
+  
   // Define the target Clerk Frontend API URL
-  // This is derived from your publishable key's decoded domain
-  const CLERK_FRONTEND_API = "https://stirred-bear-45.clerk.accounts.dev";
+  // We use the one provided in your prompt, but fall back to the account domain if needed.
+  // Given the error dev_browser_unauthenticated, it's vital we use the correct account domain for dev instances.
+  const CLERK_DOMAIN = 'stirred-bear-45.clerk.accounts.dev';
   
-  // Update the hostname to Clerk's Frontend API
-  url.hostname = new URL(CLERK_FRONTEND_API).hostname;
-  
-  // Ensure we strip the prefix correctly
-  url.pathname = url.pathname.replace(/^\/api\/clerk-proxy/, "");
-  if (!url.pathname.startsWith("/")) {
-    url.pathname = "/" + url.pathname;
-  }
+  const clerkUrl = new URL(
+    `https://${CLERK_DOMAIN}` +
+    url.pathname.replace('/api/clerk-proxy', '') +
+    url.search
+  );
 
-  // Create the new request to forward
-  const proxyReq = new Request(url.toString(), {
-    method: request.method,
-    headers: new Headers(request.headers),
-    body: request.body,
-    redirect: 'manual',
-  });
-
-  // Add required Clerk proxy headers
-  proxyReq.headers.set('Clerk-Proxy-Url', 'https://wc-predictions.pages.dev/api/clerk-proxy');
+  const headers = new Headers(request.headers);
+  headers.set('Host', CLERK_DOMAIN);
+  headers.set('Origin', 'https://wc-predictions.pages.dev');
   
-  // Use the secret key from environment variables
+  // Ensure Clerk-Proxy-Url is set correctly for session handling
+  headers.set('Clerk-Proxy-Url', 'https://wc-predictions.pages.dev/api/clerk-proxy');
+  
   if (env.CLERK_SECRET_KEY) {
-    proxyReq.headers.set('Clerk-Secret-Key', env.CLERK_SECRET_KEY);
-  }
-  
-  // Set X-Forwarded-For using Cloudflare's IP header
-  const clientIp = request.headers.get('CF-Connecting-IP');
-  if (clientIp) {
-    proxyReq.headers.set('X-Forwarded-For', clientIp);
+    headers.set('Clerk-Secret-Key', env.CLERK_SECRET_KEY);
   }
 
-  // Forward the request to Clerk
-  return fetch(proxyReq);
+  const response = await fetch(new Request(clerkUrl.toString(), {
+    method: request.method,
+    headers,
+    body: request.method !== 'GET' && request.method !== 'HEAD'
+      ? request.body
+      : undefined,
+    redirect: 'manual'
+  }));
+
+  const responseHeaders = new Headers(response.headers);
+  responseHeaders.set('Access-Control-Allow-Origin', 'https://wc-predictions.pages.dev');
+  responseHeaders.set('Access-Control-Allow-Credentials', 'true');
+
+  return new Response(response.body, {
+    status: response.status,
+    headers: responseHeaders,
+  });
 }
