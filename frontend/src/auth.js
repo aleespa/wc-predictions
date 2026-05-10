@@ -10,7 +10,9 @@ export const clerk = new Clerk(clerkPublishableKey);
 
 export async function initAuth() {
   try {
-    await clerk.load();
+    await clerk.load({
+      proxyUrl: 'https://wc-predictions.pages.dev/api/clerk-proxy'
+    });
   } catch (err) {
   }
   

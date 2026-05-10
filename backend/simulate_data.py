@@ -48,6 +48,10 @@ def simulate_predictions_for_user(db, user):
     print(f"Generating predictions for user {user.username}")
 
     matches = db.query(Match).order_by(Match.match_number).all()
+    if not matches:
+        print("Error: No matches found in database. Please seed the database first.")
+        return
+
     group_matches = [m for m in matches if m.stage == "Group Stage"]
     knockout_matches = [m for m in matches if m.stage != "Group Stage"]
 
@@ -120,6 +124,8 @@ if __name__ == "__main__":
         print("Successfully generated simulated users and predictions.")
     except Exception as e:
         db.rollback()
-        print(f"Error: {e}")
+        print(f"Error during simulation: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         db.close()
