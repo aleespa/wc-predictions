@@ -18,8 +18,7 @@ export function loginPage() {
             const container = document.getElementById('sign-in-container');
             if (container) {
                 clerk.mountSignIn(container, {
-                    afterSignInUrl: window.location.origin + '/#/',
-                    afterSignUpUrl: window.location.origin + '/#/'
+                    fallbackRedirectUrl: '/'
                 });
             }
             

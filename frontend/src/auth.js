@@ -11,7 +11,12 @@ export const clerk = new Clerk(clerkPublishableKey);
 export async function initAuth() {
   try {
     await clerk.load({
-      proxyUrl: 'https://wc-predictions.pages.dev/api/clerk-proxy'
+      proxyUrl: '/api/clerk-proxy',
+      navigate: (to) => {
+        // Handle hash-based routing for Clerk redirects
+        const path = to.startsWith('/') ? to : `/${to}`;
+        window.location.hash = `#${path}`;
+      }
     });
   } catch (err) {
   }
