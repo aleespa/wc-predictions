@@ -162,7 +162,7 @@ def _get_cached_community_matches(community_id: Optional[int] = None):
                 "group_letter": m.group_letter,
                 "stage": m.stage,
                 "match_number": m.match_number,
-                "match_date": m.match_date.isoformat(),
+                "match_date": m.match_date if isinstance(m.match_date, str) else m.match_date.isoformat(),
                 "venue": m.venue,
                 "home_team": schemas.TeamOut.model_validate(m.home_team).model_dump() if m.home_team else None,
                 "away_team": schemas.TeamOut.model_validate(m.away_team).model_dump() if m.away_team else None,

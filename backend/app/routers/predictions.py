@@ -63,8 +63,14 @@ def submit_prediction(
 
     # 2. Check if match has already started or finished
     now = datetime.now(timezone.utc)
-    match_date = match.match_date.replace(tzinfo=timezone.utc) if match.match_date.tzinfo is None else match.match_date
-    if match_date <= now:
+    match_dt = match.match_date
+    if isinstance(match_dt, str):
+        match_dt = datetime.fromisoformat(match_dt)
+        
+    if match_dt.tzinfo is None:
+        match_dt = match_dt.replace(tzinfo=timezone.utc)
+    
+    if match_dt <= now:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot predict after match has started")
     if match.is_finished:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Match is already finished")
@@ -117,7 +123,7 @@ def submit_prediction(
 
         existing.predicted_home_score = data.predicted_home_score
         existing.predicted_away_score = data.predicted_away_score
-        existing.updated_at = datetime.now(timezone.utc)
+        existing.updated_at = datetime.now(timezone.utc).isoformat()
         existing.predicted_home_team_id = p_home_id
         existing.predicted_away_team_id = p_away_id
         existing.penalty_winner_id = data.penalty_winner_id

@@ -98,7 +98,7 @@ def get_user_public_profile(username: str, db: Session = Depends(get_db)):
             "match_number": m.match_number,
             "group_letter": m.group_letter,
             "stage": m.stage,
-            "match_date": m.match_date.isoformat(),
+            "match_date": m.match_date if isinstance(m.match_date, str) else m.match_date.isoformat(),
             "venue": m.venue,
             "home_team": home_team,
             "away_team": away_team,

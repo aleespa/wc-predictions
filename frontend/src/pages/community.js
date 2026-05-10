@@ -36,11 +36,19 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
 
     let scoreHtml;
     if (isFinished) {
-        scoreHtml = `<span class="match-score">${match.home_score} — ${match.away_score}</span>`;
+        scoreHtml = `
+            <div style="display:flex;flex-direction:column;align-items:center;line-height:1">
+                <span class="match-score">${match.home_score} — ${match.away_score}</span>
+                <span style="font-size:0.6rem;color:var(--text-muted);margin-top:4px">${dateStr}</span>
+            </div>
+        `;
     } else {
         scoreHtml = `
             <span class="match-vs-label">VS</span>
-            <span style="font-size:0.7rem;color:var(--text-muted)">${timeStr}</span>
+            <div style="display:flex;flex-direction:column;align-items:center;line-height:1">
+                <span style="font-size:0.6rem;color:var(--text-muted);margin-bottom:2px">${dateStr}</span>
+                <span style="font-size:0.7rem;color:var(--text-muted);font-weight:500">${timeStr}</span>
+            </div>
         `;
     }
 
@@ -155,7 +163,6 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
             </div>
             <div class="match-card-footer">
                 <span class="match-venue">📍 ${match.venue || 'TBD'}</span>
-                <span style="font-size:0.7rem;color:var(--text-muted)">${dateStr}</span>
             </div>
             ${communitySection}
         </div>

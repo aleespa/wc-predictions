@@ -18,7 +18,7 @@ class Community(Base):
     name = Column(String(100), nullable=False)
     invite_code = Column(String(50), unique=True, index=True, nullable=False)
     creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(String(50), default=lambda: datetime.now(timezone.utc).isoformat())
 
     creator = relationship("User", foreign_keys=[creator_id])
     members = relationship("User", secondary=user_community, back_populates="communities")
@@ -34,7 +34,7 @@ class User(Base):
     display_name = Column(String(100), nullable=True)
     is_admin = Column(Boolean, default=False)
     is_group_stage_locked = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(String(50), default=lambda: datetime.now(timezone.utc).isoformat())
 
     predictions = relationship("Prediction", back_populates="user", cascade="all, delete-orphan")
     communities = relationship("Community", secondary=user_community, back_populates="members")
@@ -62,7 +62,7 @@ class Match(Base):
     match_number = Column(Integer, nullable=True)
     home_team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)   # nullable for knockout TBD
     away_team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)   # nullable for knockout TBD
-    match_date = Column(DateTime, nullable=False)
+    match_date = Column(String(50), nullable=False)
     venue = Column(String(200), nullable=True)
     home_score = Column(Integer, nullable=True)  # NULL until result entered
     away_score = Column(Integer, nullable=True)
@@ -95,8 +95,8 @@ class Prediction(Base):
     predicted_away_score = Column(Integer, nullable=False)
     penalty_winner_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
     points_awarded = Column(Integer, nullable=True)  # NULL until match finished
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(String(50), default=lambda: datetime.now(timezone.utc).isoformat())
+    updated_at = Column(String(50), default=lambda: datetime.now(timezone.utc).isoformat(), onupdate=lambda: datetime.now(timezone.utc).isoformat())
 
     # For knockout: track which teams the prediction was made for
     predicted_home_team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)

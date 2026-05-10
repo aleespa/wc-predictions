@@ -281,7 +281,7 @@ def create_match(
         stage=data.stage,
         home_team_id=data.home_team_id,
         away_team_id=data.away_team_id,
-        match_date=data.match_date,
+        match_date=data.match_date.isoformat(),
         venue=data.venue,
     )
     db.add(match)
@@ -372,7 +372,7 @@ def update_match(
         match.away_team_id = data.away_team_id
         
     if data.match_date is not None:
-        match.match_date = data.match_date
+        match.match_date = data.match_date.isoformat()
 
     if data.venue is not None:
         match.venue = data.venue
