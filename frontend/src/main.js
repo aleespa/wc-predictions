@@ -1,6 +1,6 @@
 import './styles/index.css';
-import { initAuth, clerk } from './auth.js';
-import { registerRoute, initRouter, handleRoute } from './router.js';
+import { initAuth } from './auth.js';
+import { registerRoute, initRouter } from './router.js';
 import { renderNavbar } from './components/navbar.js';
 import { homePage } from './pages/home.js';
 import { loginPage, registerPage } from './pages/login.js';
@@ -28,27 +28,9 @@ registerRoute('/user/:username', userProfilePage);
 // Initialize
 async function start() {
     await initAuth();
-    
-    // Clean up malformed Clerk redirect URLs (e.g., /?redirect_url=...)
-    if (window.location.search.includes('redirect_url')) {
-        const url = new URL(window.location.href);
-        url.search = '';
-        window.history.replaceState({}, document.title, url.toString());
-    }
 
     renderNavbar();
     initRouter();
-
-    // Re-render everything only if the user actually changes (login/logout)
-    let lastUserId = clerk.user?.id;
-    clerk.addListener(({ user }) => {
-        if (user?.id !== lastUserId) {
-            lastUserId = user?.id;
-            console.log("Auth state changed, re-rendering...");
-            renderNavbar();
-            handleRoute(); 
-        }
-    });
 }
 
 start();
@@ -61,5 +43,4 @@ window.addEventListener('hashchange', () => {
 // Re-render when language changes
 window.addEventListener('languagechange', () => {
     renderNavbar();
-    handleRoute();
 });

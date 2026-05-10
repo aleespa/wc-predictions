@@ -1,28 +1,22 @@
-import { clerk } from './auth.js';
+import { isAuthenticated } from './auth.js';
 
 const API_BASE = (import.meta.env.VITE_API_URL || '') + '/api';
 
-export function isAuthenticated() {
-    return !!clerk.user;
-}
+export { isAuthenticated };
 
 export async function fetchAPI(endpoint, options = {}) {
-    const token = await clerk.session?.getToken();
-    console.log(`API Call to ${endpoint}. Token present: ${!!token}`);
+    console.log(`API Call to ${endpoint}`);
 
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers,
     };
 
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
     const startTime = performance.now();
     const response = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
         headers,
+        credentials: 'include', // send session cookie on every request
     });
     const duration = performance.now() - startTime;
     const serverTime = response.headers.get('X-Process-Time');

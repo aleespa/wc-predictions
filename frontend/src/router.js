@@ -1,4 +1,4 @@
-import { isAuthenticated } from './api.js';
+import { isAuthenticated } from './auth.js';
 import { t } from './i18n.js';
 
 const routes = {};
@@ -26,10 +26,21 @@ export function getCurrentPath() {
     return path;
 }
 
+const PUBLIC_ROUTES = ['/', '/login', '/register', '/matches', '/bracket', '/community'];
+
 export async function handleRoute() {
     const path = getCurrentPath();
     const container = document.getElementById('page-content');
     if (!container) return;
+
+    // Route guard: redirect unauthenticated users away from protected routes
+    const isPublic = PUBLIC_ROUTES.includes(path) ||
+        path.startsWith('/user/') ||
+        path.startsWith('/join/');
+    if (!isAuthenticated() && !isPublic) {
+        navigate('/login');
+        return;
+    }
 
     if (path !== '/profile' && isAuthenticated()) {
         const { getCurrentUser } = await import('./components/navbar.js');

@@ -1,5 +1,5 @@
 import { isAuthenticated, fetchAPI } from '../api.js';
-import { clerk } from '../auth.js';
+import { getUser, signOut } from '../auth.js';
 import { t, getLanguage, setLanguage } from '../i18n.js';
 
 let cachedUser = null;
@@ -8,10 +8,10 @@ let userPromise = null;
 export async function getCurrentUser() {
     if (!isAuthenticated()) return null;
     if (cachedUser) return cachedUser;
-    
+
     // If a request is already in progress, wait for it
     if (userPromise) return userPromise;
-    
+
     userPromise = fetchAPI('/me').then(user => {
         cachedUser = user;
         userPromise = null;
@@ -20,7 +20,7 @@ export async function getCurrentUser() {
         userPromise = null;
         return null;
     });
-    
+
     return userPromise;
 }
 
@@ -31,7 +31,8 @@ export function clearUserCache() {
 export async function renderNavbar() {
     const nav = document.getElementById('navbar');
     const authed = isAuthenticated();
-    const clerkUser = clerk.user;
+    // googleUser contains { sub, email, name, picture } from the KV session
+    const googleUser = getUser();
     const user = authed ? await getCurrentUser() : null;
     const lang = getLanguage();
 
@@ -52,7 +53,10 @@ export async function renderNavbar() {
                     ${user?.is_admin ? `<button class="nav-link" data-route="/admin" onclick="location.hash='#/admin'">⚙️ ${t('nav_admin')}</button>` : ''}
                     <button class="nav-link" data-route="/profile" onclick="location.hash='#/profile'">🔮 ${t('nav_my_predictions')}</button>
                     <div class="nav-user-info">
-                        <img src="${clerkUser.imageUrl}" class="nav-user-avatar" alt="User avatar">
+                        ${googleUser?.picture
+                            ? `<img src="${googleUser.picture}" class="nav-user-avatar" alt="User avatar" referrerpolicy="no-referrer">`
+                            : `<div class="nav-user-avatar nav-user-avatar--placeholder">${(googleUser?.name || googleUser?.email || '?')[0].toUpperCase()}</div>`
+                        }
                         <span class="nav-link nav-user-name" id="nav-username"></span>
                     </div>
                     <button class="nav-link" id="nav-logout">${t('nav_logout')}</button>
@@ -83,17 +87,15 @@ export async function renderNavbar() {
 
     // Logout
     if (authed) {
-        document.getElementById('nav-logout')?.addEventListener('click', async () => {
-            await clerk.signOut();
+        document.getElementById('nav-logout')?.addEventListener('click', () => {
             clearUserCache();
-            renderNavbar();
-            location.hash = '#/';
+            signOut(); // redirects to /api/auth/logout which clears the cookie
         });
 
-        // Load username/display name
+        // Display name: prefer backend username, fall back to Google name/email
         const el = document.getElementById('nav-username');
         if (el) {
-            el.textContent = clerkUser.fullName || clerkUser.username || clerkUser.primaryEmailAddress?.emailAddress;
+            el.textContent = user?.display_name || user?.username || googleUser?.name || googleUser?.email || '';
         }
     }
 }
