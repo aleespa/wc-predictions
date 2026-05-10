@@ -20,7 +20,8 @@ export async function onRequest(context) {
     });
   }
 
-  return new Response(data, {
+  // Wrap the session data in a 'user' property to match the frontend expectation
+  return new Response(JSON.stringify({ user: JSON.parse(data) }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });

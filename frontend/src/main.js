@@ -27,12 +27,15 @@ registerRoute('/user/:username', userProfilePage);
 
 // Initialize
 async function start() {
+    // CRITICAL: Wait for auth to resolve before starting the router
+    // to prevent infinite redirect loops caused by the route guard.
     await initAuth();
 
     renderNavbar();
     initRouter();
 }
 
+// Start the app
 start();
 
 // Re-render navbar on hash change

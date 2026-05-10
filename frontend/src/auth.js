@@ -3,6 +3,7 @@
 // HttpOnly session cookie — no tokens are exposed to JavaScript.
 
 let currentUser = null;
+let initialised = false;
 
 /**
  * Call once on app load. Fetches the current session from the server and
@@ -12,10 +13,13 @@ export async function initAuth() {
   try {
     const res = await fetch('/api/auth/me', { credentials: 'include' });
     const data = await res.json();
-    currentUser = data ?? null;
+    // Support both formats: { user: {...} } or just {...}
+    currentUser = data.user !== undefined ? data.user : (data.sub ? data : null);
+    initialised = true;
   } catch (err) {
     console.error('Auth: Failed to fetch session', err);
     currentUser = null;
+    initialised = true;
   }
   return currentUser;
 }
@@ -27,7 +31,12 @@ export function getUser() {
 
 /** Returns true if a user is currently signed in. */
 export function isAuthenticated() {
-  return currentUser !== null;
+  return initialised && currentUser !== null;
+}
+
+/** Returns true if the auth state has been checked at least once. */
+export function isAuthInitialised() {
+  return initialised;
 }
 
 /** Redirects the browser to the Google OAuth consent screen. */
