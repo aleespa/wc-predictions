@@ -10,8 +10,9 @@ export const clerk = new Clerk(clerkPublishableKey);
 
 export async function initAuth() {
   try {
+    console.log("Clerk: Initializing SDK...");
     await clerk.load({
-      proxyUrl: '/api/clerk-proxy',
+      proxyUrl: 'https://wc-predictions.pages.dev/api/clerk-proxy',
       routing: 'hash',
       navigate: (to) => {
         // Handle hash-based routing for Clerk redirects
@@ -25,7 +26,9 @@ export async function initAuth() {
         }
       }
     });
+    console.log("Clerk: SDK Initialized. User:", clerk.user?.id || 'None');
   } catch (err) {
+    console.error("Clerk: Initialization failed", err);
   }
   
   // Listen for session changes to keep the app in sync
