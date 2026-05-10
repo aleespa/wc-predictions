@@ -13,7 +13,12 @@ export function navigate(path) {
 }
 
 export function getCurrentPath() {
-    let path = decodeURIComponent(window.location.hash.slice(1)) || '/';
+    // Priority 1: The hash (e.g. #/login)
+    let hash = window.location.hash.slice(1) || '/';
+    
+    // If the hash contains a query string (e.g. #/login?foo=bar), strip it for route matching
+    let path = decodeURIComponent(hash.split('?')[0]) || '/';
+    
     // Remove trailing slash if it's not the root
     if (path.length > 1 && path.endsWith('/')) {
         path = path.slice(0, -1);

@@ -18,7 +18,7 @@ export function loginPage() {
             const container = document.getElementById('sign-in-container');
             if (container) {
                 clerk.mountSignIn(container, {
-                    fallbackRedirectUrl: '/'
+                    forceRedirectUrl: '/'
                 });
             }
             

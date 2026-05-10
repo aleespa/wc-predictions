@@ -12,10 +12,17 @@ export async function initAuth() {
   try {
     await clerk.load({
       proxyUrl: '/api/clerk-proxy',
+      routing: 'hash',
       navigate: (to) => {
         // Handle hash-based routing for Clerk redirects
-        const path = to.startsWith('/') ? to : `/${to}`;
-        window.location.hash = `#${path}`;
+        // If 'to' is a full URL or already has a hash, we handle it
+        if (to.includes('#')) {
+           const [base, hash] = to.split('#');
+           window.location.hash = hash;
+        } else {
+           const path = to.startsWith('/') ? to : `/${to}`;
+           window.location.hash = `#${path}`;
+        }
       }
     });
   } catch (err) {

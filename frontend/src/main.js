@@ -28,6 +28,14 @@ registerRoute('/user/:username', userProfilePage);
 // Initialize
 async function start() {
     await initAuth();
+    
+    // Clean up malformed Clerk redirect URLs (e.g., /?redirect_url=...)
+    if (window.location.search.includes('redirect_url')) {
+        const url = new URL(window.location.href);
+        url.search = '';
+        window.history.replaceState({}, document.title, url.toString());
+    }
+
     renderNavbar();
     initRouter();
 
