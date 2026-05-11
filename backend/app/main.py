@@ -65,9 +65,6 @@ app.include_router(public_profile.router)
 
 @app.on_event("startup")
 def on_startup():
-    # Create tables (safe to run multiple times — only creates if missing)
-    Base.metadata.create_all(bind=engine)
-
     # Seed data
     from .seed import seed_database
     db = SessionLocal()

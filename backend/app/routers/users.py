@@ -19,7 +19,6 @@ def get_me(current_user: models.User = Depends(from_auth.get_current_user), db: 
             username=current_user.username,
             is_admin=current_user.is_admin,
             created_at=current_user.created_at,
-            is_group_stage_locked=current_user.is_group_stage_locked,
             **cached
         )
 
@@ -50,7 +49,6 @@ def get_me(current_user: models.User = Depends(from_auth.get_current_user), db: 
         username=current_user.username,
         is_admin=current_user.is_admin,
         created_at=current_user.created_at,
-        is_group_stage_locked=current_user.is_group_stage_locked,
         **res_data
     )
 
@@ -75,7 +73,6 @@ def update_me(
         created_at=current_user.created_at,
         total_points=0,
         predictions_count=0,
-        is_group_stage_locked=current_user.is_group_stage_locked,
         has_knockout_predictions=False
     )
 @router.delete("/me")
@@ -109,7 +106,7 @@ def register_user(
         raise HTTPException(status_code=400, detail="ERR_USERNAME_REQUIRED")
 
     # Check if user already exists
-    existing_user = db.query(models.User).filter(models.User.clerk_id == user_sub).first()
+    existing_user = db.query(models.User).filter(models.User.google_sub == user_sub).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="ERR_USER_ALREADY_EXISTS")
 
@@ -124,7 +121,7 @@ def register_user(
     is_admin = (user_sub in admin_subs)
 
     new_user = models.User(
-        clerk_id=user_sub,
+        google_sub=user_sub,
         username=data.username,
         is_admin=is_admin,
     )
@@ -132,4 +129,12 @@ def register_user(
     db.commit()
     db.refresh(new_user)
 
-    return get_me(new_user, db)
+    return schemas.UserOut(
+        id=new_user.id,
+        username=new_user.username,
+        is_admin=new_user.is_admin,
+        created_at=new_user.created_at,
+        total_points=0,
+        predictions_count=0,
+        has_knockout_predictions=False
+    )

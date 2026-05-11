@@ -34,14 +34,13 @@ def _cached_user(user_id_str: str) -> Optional[models.User]:
 
 
 def _cache_user(user: models.User) -> None:
-    _user_data_cache[user.clerk_id] = {
+    _user_data_cache[user.google_sub] = {
         "time": time.time(),
         "data": {
             "id": user.id,
-            "clerk_id": user.clerk_id,   # stores Google `sub` value
+            "google_sub": user.google_sub,   # stores Google `sub` value
             "username": user.username,
             "is_admin": user.is_admin,
-            "is_group_stage_locked": user.is_group_stage_locked,
             "created_at": user.created_at,
         },
     }
@@ -69,8 +68,8 @@ def get_current_user(
     if cached and request.method == "GET":
         return cached
 
-    # Fetch from DB (clerk_id column now stores the Google sub)
-    user = db.query(models.User).filter(models.User.clerk_id == user_sub).first()
+    # Fetch from DB (google_sub column stores the Google sub)
+    user = db.query(models.User).filter(models.User.google_sub == user_sub).first()
 
     if user is None:
         raise HTTPException(
@@ -117,7 +116,7 @@ def get_optional_user(
     if cached:
         return cached
 
-    user = db.query(models.User).filter(models.User.clerk_id == user_sub).first()
+    user = db.query(models.User).filter(models.User.google_sub == user_sub).first()
     if user:
         _cache_user(user)
     return user

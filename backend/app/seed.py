@@ -33,7 +33,7 @@ def seed_database(db: Session):
     if not admin:
         try:
             admin = User(
-                clerk_id="admin_placeholder_id",
+                google_sub="admin_placeholder_id",
                 username="admin",
                 is_admin=True,
             )

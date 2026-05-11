@@ -28,12 +28,9 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    clerk_id = Column(String(255), unique=True, index=True, nullable=False)
+    google_sub = Column(String(255), unique=True, index=True, nullable=False)
     username = Column(String(50), unique=True, index=True, nullable=True)
-    hashed_password = Column(String(255), nullable=True)
-    display_name = Column(String(100), nullable=True)
     is_admin = Column(Boolean, default=False)
-    is_group_stage_locked = Column(Boolean, default=False)
     created_at = Column(String(50), default=lambda: datetime.now(timezone.utc).isoformat())
 
     predictions = relationship("Prediction", back_populates="user", cascade="all, delete-orphan")
