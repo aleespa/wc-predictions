@@ -14,6 +14,15 @@ const BACKEND_URL = 'https://wc-predictions.duckdns.org';
 export async function onRequest(context) {
   const { request, env } = context;
 
+  // Validate environment configuration
+  if (!env.SESSIONS) {
+    console.error('KV SESSIONS binding missing in /api/me');
+    return new Response(JSON.stringify({ detail: 'Cloudflare KV SESSIONS binding missing' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   // Resolve session from cookie
   const cookie = request.headers.get('Cookie') || '';
   const sessionId = cookie.match(/session=([^;]+)/)?.[1];
@@ -39,12 +48,13 @@ export async function onRequest(context) {
   // Build the proxied request to the backend
   const backendUrl = new URL('/api/me', BACKEND_URL);
 
-  const headers = new Headers(request.headers);
-  headers.delete('Cookie'); // The backend doesn't need the cookie
+  const headers = new Headers();
+  // We don't forward all headers from the client to avoid conflicts
   headers.set('X-User-Sub', userSub);
   if (user.email) headers.set('X-User-Email', user.email);
-  if (user.name) headers.set('X-User-Name', user.name);
+  if (user.name)  headers.set('X-User-Name', user.name);
   headers.set('Host', new URL(BACKEND_URL).host);
+  headers.set('Accept', 'application/json');
 
   const proxyRequest = new Request(backendUrl.toString(), {
     method: 'GET',
@@ -52,14 +62,22 @@ export async function onRequest(context) {
     redirect: 'follow',
   });
 
-  const response = await fetch(proxyRequest);
+  try {
+    const response = await fetch(proxyRequest);
 
-  // Strip any CORS headers from the backend — Cloudflare Pages handles CORS
-  const responseHeaders = new Headers(response.headers);
-  responseHeaders.delete('Access-Control-Allow-Origin');
+    // Strip any CORS headers from the backend — Cloudflare Pages handles CORS
+    const responseHeaders = new Headers(response.headers);
+    responseHeaders.delete('Access-Control-Allow-Origin');
 
-  return new Response(response.body, {
-    status: response.status,
-    headers: responseHeaders,
-  });
+    return new Response(response.body, {
+      status: response.status,
+      headers: responseHeaders,
+    });
+  } catch (err) {
+    console.error('Proxy fetch failed:', err);
+    return new Response(JSON.stringify({ detail: 'Failed to reach backend server' }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }

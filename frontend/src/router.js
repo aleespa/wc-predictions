@@ -47,7 +47,19 @@ export async function handleRoute() {
     // and non-onboarded users to onboarding (unless they are logging in/out)
     if (isAuthenticated()) {
         const { getCurrentUser } = await import('./components/navbar.js');
-        const user = await getCurrentUser();
+        let user = null;
+        try {
+            user = await getCurrentUser();
+        } catch (err) {
+            console.error('Router: Failed to get current user', err);
+        }
+
+        if (!user && !isPublic) {
+            // Cloudflare says we are authed, but backend says no or failed.
+            // Redirect to login to force a session refresh or show error.
+            navigate('/login');
+            return;
+        }
 
         if (user) {
             if (!user.is_onboarded && path !== '/onboarding') {

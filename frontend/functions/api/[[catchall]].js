@@ -12,7 +12,7 @@
  *  3. If no valid session exists and the route requires auth, return 401.
  */
 
-const BACKEND_URL = 'https://wc-predictions.duckdns.org'; // Update if needed
+const BACKEND_URL = 'https://wc-predictions.duckdns.org';
 
 // Routes the backend accepts without authentication
 const PUBLIC_PATH_PREFIXES = [
@@ -30,6 +30,14 @@ function isPublicPath(pathname) {
 
 export async function onRequest(context) {
   const { request, env } = context;
+
+  // Validate environment configuration
+  if (!env.SESSIONS) {
+    console.error('KV SESSIONS binding missing in [[catchall]]');
+    // If KV is missing, we can't authenticate, but we can still allow public routes
+    // through without the X-User-Sub header.
+  }
+
   const url = new URL(request.url);
   const pathname = url.pathname;
 
@@ -42,14 +50,17 @@ export async function onRequest(context) {
   const cookie = request.headers.get('Cookie') || '';
   const sessionId = cookie.match(/session=([^;]+)/)?.[1];
   let userSub = null;
+  let userData = null;
 
-  if (sessionId) {
-    const sessionData = await env.SESSIONS.get(sessionId);
-    if (sessionData) {
-      try {
-        const parsed = JSON.parse(sessionData);
-        userSub = parsed.sub ?? null;
-      } catch { /* ignore malformed session */ }
+  if (sessionId && env.SESSIONS) {
+    try {
+      const sessionData = await env.SESSIONS.get(sessionId);
+      if (sessionData) {
+        userData = JSON.parse(sessionData);
+        userSub = userData.sub ?? null;
+      }
+    } catch (err) {
+      console.error('KV get failed in [[catchall]]:', err);
     }
   }
 
@@ -64,24 +75,21 @@ export async function onRequest(context) {
   // Build the proxied request
   const backendUrl = new URL(pathname + url.search, BACKEND_URL);
 
-  const headers = new Headers(request.headers);
-  // Remove the session cookie — the backend doesn't need it
-  headers.delete('Cookie');
+  const headers = new Headers();
+  // Copy relevant headers from original request
+  for (const [key, value] of request.headers.entries()) {
+    if (!['cookie', 'host', 'cf-ray', 'cf-connecting-ip'].includes(key.toLowerCase())) {
+      headers.set(key, value);
+    }
+  }
+
   // Inject the trusted user identity header
   if (userSub) {
     headers.set('X-User-Sub', userSub);
-    // Also forward name and email for auto-creating the user on first sign-in
-    if (sessionId) {
-      const sessionData = await env.SESSIONS.get(sessionId);
-      if (sessionData) {
-        try {
-          const parsed = JSON.parse(sessionData);
-          if (parsed.email) headers.set('X-User-Email', parsed.email);
-          if (parsed.name) headers.set('X-User-Name', parsed.name);
-        } catch { /* ignore */ }
-      }
-    }
+    if (userData.email) headers.set('X-User-Email', userData.email);
+    if (userData.name)  headers.set('X-User-Name', userData.name);
   }
+  
   // Ensure the host header points to the backend
   headers.set('Host', new URL(BACKEND_URL).host);
 
@@ -92,14 +100,22 @@ export async function onRequest(context) {
     redirect: 'follow',
   });
 
-  const response = await fetch(proxyRequest);
+  try {
+    const response = await fetch(proxyRequest);
 
-  // Strip any CORS headers from the backend — Cloudflare Pages handles CORS
-  const responseHeaders = new Headers(response.headers);
-  responseHeaders.delete('Access-Control-Allow-Origin');
+    // Strip any CORS headers from the backend — Cloudflare Pages handles CORS
+    const responseHeaders = new Headers(response.headers);
+    responseHeaders.delete('Access-Control-Allow-Origin');
 
-  return new Response(response.body, {
-    status: response.status,
-    headers: responseHeaders,
-  });
+    return new Response(response.body, {
+      status: response.status,
+      headers: responseHeaders,
+    });
+  } catch (err) {
+    console.error('Proxy fetch failed in [[catchall]]:', err);
+    return new Response(JSON.stringify({ detail: 'Failed to reach backend server' }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }

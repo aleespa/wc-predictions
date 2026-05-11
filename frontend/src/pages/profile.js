@@ -33,6 +33,8 @@ export async function profilePage() {
     let user, matches, bracket;
     try {
         user = await getCurrentUser();
+        if (!user) throw new Error('User data not found');
+
         // Use the public profile stats too
         const [m, b, p] = await Promise.all([
             fetchAPI(`/matches?username=${encodeURIComponent(user.username)}`),
@@ -68,20 +70,20 @@ export async function profilePage() {
                 <button class="btn btn-secondary btn-sm" id="edit-profile-btn" style="margin-left:auto">${t('profile_edit_btn')}</button>
             </div>
 
-            <div id="edit-profile-form-container" style="display:${user.username.startsWith('user_') ? 'block' : 'none'}; margin-bottom:var(--space-xl); padding:var(--space-lg); background:var(--bg-glass); border-radius:var(--radius-lg); border:1px solid var(--border-light); animation: slideDown 0.3s ease-out">
-                <h3 style="margin-bottom:var(--space-md)">${user.username.startsWith('user_') ? t('profile_setup_title') || 'Set Your Username' : t('profile_update_title')}</h3>
+            <div id="edit-profile-form-container" style="display:${!user.is_onboarded ? 'block' : 'none'}; margin-bottom:var(--space-xl); padding:var(--space-lg); background:var(--bg-glass); border-radius:var(--radius-lg); border:1px solid var(--border-light); animation: slideDown 0.3s ease-out">
+                <h3 style="margin-bottom:var(--space-md)">${!user.is_onboarded ? t('profile_setup_title') || 'Set Your Username' : t('profile_update_title')}</h3>
                 <form id="edit-profile-form" style="display:grid; gap:var(--space-md)">
-                    <div style="display:${user.username.startsWith('user_') ? 'none' : 'block'}">
+                    <div style="display:${!user.is_onboarded ? 'none' : 'block'}">
                         <label class="form-label">${t('profile_label_display')}</label>
                         <input type="text" id="edit-display-name" class="form-input" value="${user.display_name || ''}" placeholder="${t('profile_placeholder_display')}">
                     </div>
                     <div>
                         <label class="form-label">${t('profile_label_username')}</label>
-                        <input type="text" id="edit-username" class="form-input" value="${user.username.startsWith('user_') ? '' : user.username}" placeholder="${t('profile_placeholder_username')}" required>
+                        <input type="text" id="edit-username" class="form-input" value="${!user.is_onboarded ? '' : user.username}" placeholder="${t('profile_placeholder_username')}" required>
                     </div>
                     <div style="display:flex; gap:var(--space-md); margin-top:var(--space-sm)">
-                        <button type="submit" class="btn btn-primary btn-sm" id="save-profile-btn">${user.username.startsWith('user_') ? t('profile_btn_complete') || 'Complete Setup' : t('profile_btn_save')}</button>
-                        <button type="button" class="btn btn-secondary btn-sm" id="cancel-edit-btn" ${user.username.startsWith('user_') ? 'disabled style="display:none"' : ''}>${t('profile_btn_cancel')}</button>
+                        <button type="submit" class="btn btn-primary btn-sm" id="save-profile-btn">${!user.is_onboarded ? t('profile_btn_complete') || 'Complete Setup' : t('profile_btn_save')}</button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="cancel-edit-btn" ${!user.is_onboarded ? 'disabled style="display:none"' : ''}>${t('profile_btn_cancel')}</button>
                     </div>
                 </form>
             </div>
