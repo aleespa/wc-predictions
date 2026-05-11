@@ -10,6 +10,7 @@ class UserOut(BaseModel):
     username: Optional[str]
     display_name: Optional[str]
     is_admin: bool
+    is_onboarded: bool
     created_at: datetime
     total_points: Optional[int] = 0
     predictions_count: Optional[int] = 0

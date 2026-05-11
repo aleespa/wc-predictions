@@ -43,7 +43,7 @@ export async function onRequest(context) {
   headers.delete('Cookie'); // The backend doesn't need the cookie
   headers.set('X-User-Sub', userSub);
   if (user.email) headers.set('X-User-Email', user.email);
-  if (user.name)  headers.set('X-User-Name', user.name);
+  if (user.name) headers.set('X-User-Name', user.name);
   headers.set('Host', new URL(BACKEND_URL).host);
 
   const proxyRequest = new Request(backendUrl.toString(), {

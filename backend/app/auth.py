@@ -42,6 +42,7 @@ def _cache_user(user: models.User) -> None:
             "username": user.username,
             "display_name": user.display_name,
             "is_admin": user.is_admin,
+            "is_onboarded": user.is_onboarded,
             "is_group_stage_locked": user.is_group_stage_locked,
             "created_at": user.created_at,
         },
@@ -94,6 +95,7 @@ def get_current_user(
             username=username_base,
             display_name=google_name or username_base,
             is_admin=is_admin,
+            is_onboarded=False,
         )
         db.add(user)
         db.commit()

@@ -77,7 +77,7 @@ export async function onRequest(context) {
         try {
           const parsed = JSON.parse(sessionData);
           if (parsed.email) headers.set('X-User-Email', parsed.email);
-          if (parsed.name)  headers.set('X-User-Name', parsed.name);
+          if (parsed.name) headers.set('X-User-Name', parsed.name);
         } catch { /* ignore */ }
       }
     }

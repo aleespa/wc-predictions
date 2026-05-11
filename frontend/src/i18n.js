@@ -229,6 +229,14 @@ export const translations = {
         user_profile_preds_title: "{name}'s Predictions",
         user_profile_no_preds: "This user hasn't made any predictions yet",
         user_profile_no_preds_filter: "No predictions in this category",
+        // Onboarding
+        onboarding_title: "Final Step: Choose Your Username",
+        onboarding_subtitle: "Welcome! To join the leaderboard, please choose a unique username that will be visible to other players.",
+        onboarding_username_label: "Public Username",
+        onboarding_username_placeholder: "e.g. striker2026",
+        onboarding_username_help: "Only letters, numbers, and underscores allowed (min 3 chars).",
+        onboarding_submit_btn: "Complete Setup",
+        onboarding_submitting: "Saving...",
     },
     es: {
         nav_matches: "Partidos",
@@ -458,6 +466,14 @@ export const translations = {
         user_profile_preds_title: "Quinielas de {name}",
         user_profile_no_preds: "Este usuario aún no tiene quinielas",
         user_profile_no_preds_filter: "Sin quinielas en esta categoría",
+        // Onboarding
+        onboarding_title: "Último paso: Elige tu usuario",
+        onboarding_subtitle: "¡Bienvenido! Para unirte a la tabla general, por favor elige un usuario único que será visible para los demás jugadores.",
+        onboarding_username_label: "Usuario Público",
+        onboarding_username_placeholder: "ej. goleador2026",
+        onboarding_username_help: "Solo letras, números y guiones bajos (min 3 caracteres).",
+        onboarding_submit_btn: "Terminar configuración",
+        onboarding_submitting: "Guardando...",
     }
 };
 

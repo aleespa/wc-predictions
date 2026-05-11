@@ -106,3 +106,37 @@ def delete_me(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to delete account: {str(e)}")
+
+
+@router.post("/me/onboard", response_model=schemas.UserOut)
+def onboard_user(
+    data: schemas.UserUpdate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.is_onboarded:
+        raise HTTPException(status_code=400, detail="User already onboarded")
+
+    if not data.username:
+        raise HTTPException(status_code=400, detail="Username is required")
+
+    # Check if username is taken
+    existing = db.query(models.User).filter(models.User.username == data.username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username already taken")
+
+    current_user.username = data.username
+    if data.display_name:
+        current_user.display_name = data.display_name
+    
+    current_user.is_onboarded = True
+    db.commit()
+    db.refresh(current_user)
+
+    # Invalidate cache
+    from ..auth import _user_data_cache
+    if current_user.clerk_id in _user_data_cache:
+        del _user_data_cache[current_user.clerk_id]
+
+    # Re-use the logic from get_me for return consistency
+    return get_me(current_user, db)

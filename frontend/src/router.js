@@ -26,7 +26,7 @@ export function getCurrentPath() {
     return path;
 }
 
-const PUBLIC_ROUTES = ['/', '/login', '/register', '/matches', '/bracket', '/community'];
+const PUBLIC_ROUTES = ['/', '/login', '/register', '/matches', '/bracket', '/community', '/onboarding'];
 
 export async function handleRoute() {
     const path = getCurrentPath();
@@ -37,19 +37,27 @@ export async function handleRoute() {
     const isPublic = PUBLIC_ROUTES.includes(path) ||
         path.startsWith('/user/') ||
         path.startsWith('/join/');
+    
     if (!isAuthenticated() && !isPublic) {
         navigate('/login');
         return;
     }
 
-    if (path !== '/profile' && isAuthenticated()) {
+    // Onboarding check: redirect onboarded users away from onboarding, 
+    // and non-onboarded users to onboarding (unless they are logging in/out)
+    if (isAuthenticated()) {
         const { getCurrentUser } = await import('./components/navbar.js');
         const user = await getCurrentUser();
-        if (user && user.username && user.username.startsWith('user_')) {
-            const { showToast } = await import('./components/toast.js');
-            showToast('Please update your username to continue', 'warning');
-            navigate('/profile');
-            return;
+
+        if (user) {
+            if (!user.is_onboarded && path !== '/onboarding') {
+                navigate('/onboarding');
+                return;
+            }
+            if (user.is_onboarded && path === '/onboarding') {
+                navigate('/');
+                return;
+            }
         }
     }
 
