@@ -20,8 +20,9 @@ def get_me(current_user: models.User = Depends(get_current_user), db: Session = 
             username=current_user.username,
             display_name=current_user.display_name,
             is_admin=current_user.is_admin,
+            is_onboarded=current_user.is_onboarded,
             created_at=current_user.created_at,
-            is_group_stage_locked=False,
+            is_group_stage_locked=current_user.is_group_stage_locked,
             **cached
         )
 
@@ -52,8 +53,9 @@ def get_me(current_user: models.User = Depends(get_current_user), db: Session = 
         username=current_user.username,
         display_name=current_user.display_name,
         is_admin=current_user.is_admin,
+        is_onboarded=current_user.is_onboarded,
         created_at=current_user.created_at,
-        is_group_stage_locked=False,
+        is_group_stage_locked=current_user.is_group_stage_locked,
         **res_data
     )
 
@@ -83,10 +85,11 @@ def update_me(
         username=current_user.username,
         display_name=current_user.display_name,
         is_admin=current_user.is_admin,
+        is_onboarded=current_user.is_onboarded,
         created_at=current_user.created_at,
-        total_points=0, # These won't be recalculated here for performance but usually 0 is fine for the response
+        total_points=0,
         predictions_count=0,
-        is_group_stage_locked=False,
+        is_group_stage_locked=current_user.is_group_stage_locked,
         has_knockout_predictions=False
     )
 @router.delete("/me")
