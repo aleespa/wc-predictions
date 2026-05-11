@@ -67,21 +67,6 @@ export async function profilePage() {
                     <h1 class="user-profile-name">${user.username}</h1>
                     <p class="user-profile-username">@${user.username} · ${t('profile_joined', { date: new Date(user.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) })}</p>
                 </div>
-                <button class="btn btn-secondary btn-sm" id="edit-profile-btn" style="margin-left:auto">${t('profile_edit_btn')}</button>
-            </div>
-
-            <div id="edit-profile-form-container" style="display:${!user.is_onboarded ? 'block' : 'none'}; margin-bottom:var(--space-xl); padding:var(--space-lg); background:var(--bg-glass); border-radius:var(--radius-lg); border:1px solid var(--border-light); animation: slideDown 0.3s ease-out">
-                <h3 style="margin-bottom:var(--space-md)">${!user.is_onboarded ? t('profile_setup_title') || 'Set Your Username' : t('profile_update_title')}</h3>
-                <form id="edit-profile-form" style="display:grid; gap:var(--space-md)">
-                    <div>
-                        <label class="form-label">${t('profile_label_username')}</label>
-                        <input type="text" id="edit-username" class="form-input" value="${!user.is_onboarded ? '' : user.username}" placeholder="${t('profile_placeholder_username')}" required>
-                    </div>
-                    <div style="display:flex; gap:var(--space-md); margin-top:var(--space-sm)">
-                        <button type="submit" class="btn btn-primary btn-sm" id="save-profile-btn">${!user.is_onboarded ? t('profile_btn_complete') || 'Complete Setup' : t('profile_btn_save')}</button>
-                        <button type="button" class="btn btn-secondary btn-sm" id="cancel-edit-btn" ${!user.is_onboarded ? 'disabled style="display:none"' : ''}>${t('profile_btn_cancel')}</button>
-                    </div>
-                </form>
             </div>
 
             <!-- Stats cards -->
@@ -141,40 +126,7 @@ export async function profilePage() {
             const tabsContainer = document.getElementById('user-group-tabs');
             const predTabsContainer = document.getElementById('user-pred-tabs');
             
-            // Profile edit listeners
-            const editBtn = document.getElementById('edit-profile-btn');
-            const editContainer = document.getElementById('edit-profile-form-container');
-            const cancelEditBtn = document.getElementById('cancel-edit-btn');
-            const editForm = document.getElementById('edit-profile-form');
             const deleteBtn = document.getElementById('btn-delete-account');
-
-            editBtn?.addEventListener('click', () => editContainer.style.display = 'block');
-            cancelEditBtn?.addEventListener('click', () => editContainer.style.display = 'none');
-            
-            editForm?.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const btn = document.getElementById('save-profile-btn');
-                const prevText = btn.textContent;
-                btn.textContent = t('btn_saving');
-                btn.disabled = true;
-
-                const username = document.getElementById('edit-username').value;
-
-                try {
-                    await fetchAPI('/me', {
-                        method: 'PUT',
-                        body: JSON.stringify({ username: username })
-                    });
-                    showToast(t('toast_prof_updated'), 'success');
-                    clearUserCache();
-                    location.reload();
-                } catch (err) {
-                    showToast(err.message, 'error');
-                } finally {
-                    btn.textContent = prevText;
-                    btn.disabled = false;
-                }
-            });
 
             deleteBtn?.addEventListener('click', async () => {
                 if (confirm(t('profile_delete_confirm'))) {

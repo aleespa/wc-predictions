@@ -57,7 +57,7 @@ export async function onboardingPage() {
                 submitBtn.textContent = t('onboarding_submitting');
 
                 try {
-                    await fetchAPI('/me/onboard', {
+                    await fetchAPI('/users/register', {
                         method: 'POST',
                         body: JSON.stringify({ username })
                     });
@@ -68,7 +68,11 @@ export async function onboardingPage() {
                     // Redirect to home
                     navigate('/');
                 } catch (err) {
-                    errorEl.textContent = err.message || 'Failed to save username. Try a different one.';
+                    if (err.message === 'ERR_USERNAME_TAKEN') {
+                        errorEl.textContent = t('error_username_taken');
+                    } else {
+                        errorEl.textContent = err.message || 'Failed to save username. Try a different one.';
+                    }
                     errorEl.style.display = 'block';
                     submitBtn.disabled = false;
                     submitBtn.textContent = t('onboarding_submit_btn');

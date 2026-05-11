@@ -41,7 +41,6 @@ def _cache_user(user: models.User) -> None:
             "clerk_id": user.clerk_id,   # stores Google `sub` value
             "username": user.username,
             "is_admin": user.is_admin,
-            "is_onboarded": user.is_onboarded,
             "is_group_stage_locked": user.is_group_stage_locked,
             "created_at": user.created_at,
         },
@@ -74,33 +73,24 @@ def get_current_user(
     user = db.query(models.User).filter(models.User.clerk_id == user_sub).first()
 
     if user is None:
-        # Auto-create user on first sign-in
-        admin_subs_env = os.environ.get("ADMIN_GOOGLE_SUBS", "")
-        admin_subs = [s.strip() for s in admin_subs_env.split(",") if s.strip()]
-
-        admin_emails_env = os.environ.get("ADMIN_EMAILS", "")
-        admin_emails = [e.strip().lower() for e in admin_emails_env.split(",") if e.strip()]
-
-        # For admin detection we rely on the ADMIN_GOOGLE_SUBS env var (Google `sub` values)
-        # or fall back to matching the email passed via a separate header (optional).
-        google_email = request.headers.get("X-User-Email", "").lower()
-        is_admin = (user_sub in admin_subs) or (google_email in admin_emails)
-
-        google_name = request.headers.get("X-User-Name", "")
-        username_base = google_email.split("@")[0] if google_email else f"user_{user_sub[-6:]}"
-
-        user = models.User(
-            clerk_id=user_sub,
-            username=username_base,
-            is_admin=is_admin,
-            is_onboarded=False,
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not registered",
         )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
 
     _cache_user(user)
     return user
+
+
+def get_unregistered_sub(request: Request) -> str:
+    """Returns the Google sub from headers even if the user is not in the DB."""
+    user_sub = request.headers.get("X-User-Sub")
+    if not user_sub:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )
+    return user_sub
 
 
 def get_current_admin(

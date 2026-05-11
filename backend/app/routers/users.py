@@ -19,7 +19,6 @@ def get_me(current_user: models.User = Depends(get_current_user), db: Session = 
             id=current_user.id,
             username=current_user.username,
             is_admin=current_user.is_admin,
-            is_onboarded=current_user.is_onboarded,
             created_at=current_user.created_at,
             is_group_stage_locked=current_user.is_group_stage_locked,
             **cached
@@ -51,7 +50,6 @@ def get_me(current_user: models.User = Depends(get_current_user), db: Session = 
         id=current_user.id,
         username=current_user.username,
         is_admin=current_user.is_admin,
-        is_onboarded=current_user.is_onboarded,
         created_at=current_user.created_at,
         is_group_stage_locked=current_user.is_group_stage_locked,
         **res_data
@@ -64,12 +62,8 @@ def update_me(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if data.username is not None:
-        # Check if username is taken
-        existing = db.query(models.User).filter(models.User.username == data.username).first()
-        if existing and existing.id != current_user.id:
-            raise HTTPException(status_code=400, detail="Username already taken")
-        current_user.username = data.username
+    # Currently no fields in UserUpdate are used since username is locked
+    pass
 
     db.commit()
     db.refresh(current_user)
@@ -79,7 +73,6 @@ def update_me(
         id=current_user.id,
         username=current_user.username,
         is_admin=current_user.is_admin,
-        is_onboarded=current_user.is_onboarded,
         created_at=current_user.created_at,
         total_points=0,
         predictions_count=0,
@@ -105,32 +98,40 @@ def delete_me(
         raise HTTPException(status_code=500, detail=f"Failed to delete account: {str(e)}")
 
 
-@router.post("/me/onboard", response_model=schemas.UserOut)
-def onboard_user(
+@router.post("/users/register", response_model=schemas.UserOut)
+def register_user(
     data: schemas.UserUpdate,
-    current_user: models.User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    user_sub: str = Depends(from_auth.get_unregistered_sub)
 ):
-    if current_user.is_onboarded:
-        raise HTTPException(status_code=400, detail="User already onboarded")
+    from .. import auth as from_auth
+    import os
 
     if not data.username:
-        raise HTTPException(status_code=400, detail="Username is required")
+        raise HTTPException(status_code=400, detail="ERR_USERNAME_REQUIRED")
+
+    # Check if user already exists
+    existing_user = db.query(models.User).filter(models.User.clerk_id == user_sub).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="ERR_USER_ALREADY_EXISTS")
 
     # Check if username is taken
-    existing = db.query(models.User).filter(models.User.username == data.username).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Username already taken")
+    existing_name = db.query(models.User).filter(models.User.username == data.username).first()
+    if existing_name:
+        raise HTTPException(status_code=400, detail="ERR_USERNAME_TAKEN")
 
-    current_user.username = data.username
-    current_user.is_onboarded = True
+    # Admin detection
+    admin_subs_env = os.environ.get("ADMIN_GOOGLE_SUBS", "")
+    admin_subs = [s.strip() for s in admin_subs_env.split(",") if s.strip()]
+    is_admin = (user_sub in admin_subs)
+
+    new_user = models.User(
+        clerk_id=user_sub,
+        username=data.username,
+        is_admin=is_admin,
+    )
+    db.add(new_user)
     db.commit()
-    db.refresh(current_user)
+    db.refresh(new_user)
 
-    # Invalidate cache
-    from ..auth import _user_data_cache
-    if current_user.clerk_id in _user_data_cache:
-        del _user_data_cache[current_user.clerk_id]
-
-    # Re-use the logic from get_me for return consistency
-    return get_me(current_user, db)
+    return get_me(new_user, db)

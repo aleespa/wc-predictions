@@ -43,8 +43,6 @@ export async function handleRoute() {
         return;
     }
 
-    // Onboarding check: redirect onboarded users away from onboarding, 
-    // and non-onboarded users to onboarding (unless they are logging in/out)
     if (isAuthenticated()) {
         const { getCurrentUser } = await import('./components/navbar.js');
         let user = null;
@@ -54,22 +52,24 @@ export async function handleRoute() {
             console.error('Router: Failed to get current user', err);
         }
 
-        if (!user && !isPublic) {
-            // Cloudflare says we are authed, but backend says no or failed.
-            // Redirect to login to force a session refresh or show error.
-            navigate('/login');
-            return;
-        }
-
-        if (user) {
-            if (!user.is_onboarded && path !== '/onboarding') {
+        // Case 1: User is authenticated but NOT registered in DB
+        if (user && user.unregistered) {
+            if (path !== '/onboarding') {
                 navigate('/onboarding');
                 return;
             }
-            if (user.is_onboarded && path === '/onboarding') {
+        }
+        // Case 2: User IS registered in DB
+        else if (user) {
+            if (path === '/onboarding') {
                 navigate('/');
                 return;
             }
+        }
+        // Case 3: Failed to get user (and not public)
+        else if (!isPublic) {
+            navigate('/login');
+            return;
         }
     }
 
