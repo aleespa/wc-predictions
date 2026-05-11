@@ -7,11 +7,11 @@ export function loginPage() {
     }
 
     const html = `
-        <div class="auth-container fade-in" style="display:flex;justify-content:center;align-items:center;min-height:70vh;">
-            <div class="login-card">
-                <div class="login-logo">⚽</div>
-                <h1 class="login-title">WC 2026 Predictions</h1>
-                <p class="login-subtitle">Sign in to make your predictions and compete with friends.</p>
+        <div class="auth-container fade-in" style="display:flex;justify-content:center;align-items:center;padding:var(--space-xl) 0;">
+            <div class="card">
+                <div class="login-logo" style="text-align:center; font-size:3rem; margin-bottom:var(--space-md);">⚽</div>
+                <h1 class="auth-title">WC 2026 Predictions</h1>
+                <p class="auth-subtitle">Sign in to make your predictions and compete with friends.</p>
                 <button id="google-signin-btn" class="btn-google-signin">
                     <svg class="btn-google-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20">
                         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>

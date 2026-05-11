@@ -6,12 +6,12 @@ import { navigate } from '../router.js';
 export async function onboardingPage() {
     return {
         html: `
-            <div class="login-container">
-                <div class="login-card onboarding-card animate-fade-in">
-                    <div class="login-header">
-                        <div class="login-logo">👋</div>
-                        <h1 class="login-title">${t('onboarding_title')}</h1>
-                        <p class="login-subtitle">${t('onboarding_subtitle')}</p>
+            <div class="auth-container animate-fade-in" style="padding: var(--space-xl) 0;">
+                <div class="card">
+                    <div class="auth-header" style="text-align:center; margin-bottom:var(--space-xl)">
+                        <div style="font-size:3rem; margin-bottom:var(--space-md)">👋</div>
+                        <h1 class="auth-title">${t('onboarding_title')}</h1>
+                        <p class="auth-subtitle">${t('onboarding_subtitle')}</p>
                     </div>
 
                     <form id="onboarding-form" class="login-form">

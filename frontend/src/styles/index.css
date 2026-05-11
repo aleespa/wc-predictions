@@ -936,7 +936,7 @@ select.form-input option {
 /* ── Auth Pages ──────────────────────────────────── */
 .auth-container {
     max-width: 420px;
-    margin: var(--space-3xl) auto;
+    margin: var(--space-xl) auto;
 }
 
 .auth-container .card {

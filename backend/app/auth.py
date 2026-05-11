@@ -64,7 +64,14 @@ def get_current_user(
     if not user_sub:
         raise credentials_exception
 
-    # Try in-process cache first
+    # Bypass cache for /me to ensure manual DB updates (like is_admin) reflect immediately
+    if request.url.path.endswith("/me"):
+        user = db.query(models.User).filter(models.User.google_sub == user_sub).first()
+        if user:
+            return _cache_user(user_sub, user)
+        return None
+
+    # Try in-process cache first for other endpoints
     cached = _cached_user(user_sub)
     if cached and request.method == "GET":
         return cached
