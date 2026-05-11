@@ -2,13 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from ..database import get_db
-from ..auth import get_current_user
-from .. import models, schemas
+from .. import models, schemas, auth as from_auth
 
 router = APIRouter(prefix="/api", tags=["users"])
 
 @router.get("/me", response_model=schemas.UserOut)
-def get_me(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_me(current_user: models.User = Depends(from_auth.get_current_user), db: Session = Depends(get_db)):
     from ..cache import user_cache
     
     # Try cache
@@ -59,7 +58,7 @@ def get_me(current_user: models.User = Depends(get_current_user), db: Session = 
 @router.put("/me", response_model=schemas.UserOut)
 def update_me(
     data: schemas.UserUpdate,
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User = Depends(from_auth.get_current_user),
     db: Session = Depends(get_db)
 ):
     # Currently no fields in UserUpdate are used since username is locked
@@ -81,7 +80,7 @@ def update_me(
     )
 @router.delete("/me")
 def delete_me(
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User = Depends(from_auth.get_current_user),
     db: Session = Depends(get_db)
 ):
     try:
@@ -104,7 +103,6 @@ def register_user(
     db: Session = Depends(get_db),
     user_sub: str = Depends(from_auth.get_unregistered_sub)
 ):
-    from .. import auth as from_auth
     import os
 
     if not data.username:
