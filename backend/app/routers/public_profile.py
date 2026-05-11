@@ -13,7 +13,6 @@ router = APIRouter(prefix="/api/users", tags=["public_profile"])
 
 class UserPublicProfile(schemas.BaseModel):
     username: str
-    display_name: str | None
     created_at: schemas.datetime
     total_points: int = 0
     predictions_count: int = 0
@@ -119,7 +118,6 @@ def get_user_public_profile(username: str, db: Session = Depends(get_db)):
 
     return UserPublicProfile(
         username=user.username,
-        display_name=user.display_name,
         created_at=user.created_at,
         total_points=total_points,
         predictions_count=len(predictions),

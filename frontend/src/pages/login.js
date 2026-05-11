@@ -7,7 +7,7 @@ export function loginPage() {
     }
 
     const html = `
-        <div class="auth-container fade-in" style="display:flex;justify-content:center;align-items:center;min-height:80vh;">
+        <div class="auth-container fade-in" style="display:flex;justify-content:center;align-items:center;min-height:70vh;">
             <div class="login-card">
                 <div class="login-logo">⚽</div>
                 <h1 class="login-title">WC 2026 Predictions</h1>

@@ -40,7 +40,6 @@ def _cache_user(user: models.User) -> None:
             "id": user.id,
             "clerk_id": user.clerk_id,   # stores Google `sub` value
             "username": user.username,
-            "display_name": user.display_name,
             "is_admin": user.is_admin,
             "is_onboarded": user.is_onboarded,
             "is_group_stage_locked": user.is_group_stage_locked,
@@ -93,7 +92,6 @@ def get_current_user(
         user = models.User(
             clerk_id=user_sub,
             username=username_base,
-            display_name=google_name or username_base,
             is_admin=is_admin,
             is_onboarded=False,
         )

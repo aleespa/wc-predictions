@@ -68,7 +68,6 @@ def _get_cached_leaderboard(community_id: Optional[int] = None):
             db.query(
                 models.User.id,
                 models.User.username,
-                models.User.display_name,
                 func.coalesce(func.sum(models.Prediction.points_awarded), 0).label("total_points"),
                 func.count(models.Prediction.id).label("predictions_count"),
                 func.sum(
@@ -87,7 +86,7 @@ def _get_cached_leaderboard(community_id: Optional[int] = None):
                          .filter(models.user_community.c.community_id == community_id)
 
         results = (
-            query.group_by(models.User.id, models.User.username, models.User.display_name)
+            query.group_by(models.User.id, models.User.username)
             .order_by(func.coalesce(func.sum(models.Prediction.points_awarded), 0).desc())
             .all()
         )
@@ -97,7 +96,6 @@ def _get_cached_leaderboard(community_id: Optional[int] = None):
             entries.append({
                 "user_id": row.id,
                 "username": row.username,
-                "display_name": row.display_name,
                 "total_points": row.total_points or 0,
                 "predictions_count": row.predictions_count or 0,
                 "exact_scores": row.exact_scores or 0,
@@ -110,8 +108,7 @@ def _get_cached_leaderboard(community_id: Optional[int] = None):
         if community_stats["predictions_count"] > 0:
             entries.append({
                 "user_id": -1,
-                "username": "community",
-                "display_name": "👥 The Community",
+                "username": "👥 The Community",
                 "total_points": community_stats["total_points"],
                 "predictions_count": community_stats["predictions_count"],
                 "exact_scores": community_stats["exact_scores"],

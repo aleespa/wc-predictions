@@ -49,7 +49,7 @@ export async function profilePage() {
         return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${e.message}</div></div>`;
     }
 
-    const initial = (user.display_name || user.username).charAt(0).toUpperCase();
+    const initial = user.username.charAt(0).toUpperCase();
 
     const tabs = FILTERS.map((f, i) =>
         `<button class="group-tab ${i === 0 ? 'active' : ''}" data-type="${f.type}" data-val="${f.val}">${f.label}</button>`
@@ -64,7 +64,7 @@ export async function profilePage() {
             <div class="user-profile-header">
                 <div class="user-profile-avatar">${initial}</div>
                 <div class="user-profile-info">
-                    <h1 class="user-profile-name">${user.display_name || user.username}</h1>
+                    <h1 class="user-profile-name">${user.username}</h1>
                     <p class="user-profile-username">@${user.username} · ${t('profile_joined', { date: new Date(user.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) })}</p>
                 </div>
                 <button class="btn btn-secondary btn-sm" id="edit-profile-btn" style="margin-left:auto">${t('profile_edit_btn')}</button>
@@ -73,10 +73,6 @@ export async function profilePage() {
             <div id="edit-profile-form-container" style="display:${!user.is_onboarded ? 'block' : 'none'}; margin-bottom:var(--space-xl); padding:var(--space-lg); background:var(--bg-glass); border-radius:var(--radius-lg); border:1px solid var(--border-light); animation: slideDown 0.3s ease-out">
                 <h3 style="margin-bottom:var(--space-md)">${!user.is_onboarded ? t('profile_setup_title') || 'Set Your Username' : t('profile_update_title')}</h3>
                 <form id="edit-profile-form" style="display:grid; gap:var(--space-md)">
-                    <div style="display:${!user.is_onboarded ? 'none' : 'block'}">
-                        <label class="form-label">${t('profile_label_display')}</label>
-                        <input type="text" id="edit-display-name" class="form-input" value="${user.display_name || ''}" placeholder="${t('profile_placeholder_display')}">
-                    </div>
                     <div>
                         <label class="form-label">${t('profile_label_username')}</label>
                         <input type="text" id="edit-username" class="form-input" value="${!user.is_onboarded ? '' : user.username}" placeholder="${t('profile_placeholder_username')}" required>
@@ -162,13 +158,12 @@ export async function profilePage() {
                 btn.textContent = t('btn_saving');
                 btn.disabled = true;
 
-                const displayName = document.getElementById('edit-display-name').value;
                 const username = document.getElementById('edit-username').value;
 
                 try {
                     await fetchAPI('/me', {
                         method: 'PUT',
-                        body: JSON.stringify({ display_name: displayName, username: username })
+                        body: JSON.stringify({ username: username })
                     });
                     showToast(t('toast_prof_updated'), 'success');
                     clearUserCache();
@@ -217,16 +212,16 @@ export async function profilePage() {
                             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: var(--space-lg)">
                                 <h3 style="margin:0">${t('bracket_title')}</h3>
                                 <div style="font-size:0.85rem; color:var(--text-muted)">
-                                    ${t('matches_standings_legend_user_predicted', { name: user.display_name || user.username })}: <strong>${predictedCount}</strong>
+                                    ${t('matches_standings_legend_user_predicted', { name: user.username })}: <strong>${predictedCount}</strong>
                                 </div>
                             </div>
                             <div class="bracket-container">
-                                ${renderRound(t('stage_roundof32'), bracket.round_of_32, { profileName: user.display_name || user.username })}
-                                ${renderRound(t('stage_roundof16'), bracket.round_of_16, { profileName: user.display_name || user.username })}
-                                ${renderRound(t('stage_quarterfinals'), bracket.quarter_finals, { profileName: user.display_name || user.username })}
-                                ${renderRound(t('stage_semifinals'), bracket.semi_finals, { profileName: user.display_name || user.username })}
-                                ${bracket.third_place ? renderRound(t('stage_thirdplace'), [bracket.third_place], { profileName: user.display_name || user.username }) : ''}
-                                ${bracket.final ? renderRound(t('stage_final'), [bracket.final], { profileName: user.display_name || user.username }) : ''}
+                                ${renderRound(t('stage_roundof32'), bracket.round_of_32, { profileName: user.username })}
+                                ${renderRound(t('stage_roundof16'), bracket.round_of_16, { profileName: user.username })}
+                                ${renderRound(t('stage_quarterfinals'), bracket.quarter_finals, { profileName: user.username })}
+                                ${renderRound(t('stage_semifinals'), bracket.semi_finals, { profileName: user.username })}
+                                ${bracket.third_place ? renderRound(t('stage_thirdplace'), [bracket.third_place], { profileName: user.username }) : ''}
+                                ${bracket.final ? renderRound(t('stage_final'), [bracket.final], { profileName: user.username }) : ''}
                             </div>
                         </div>
                     `;
@@ -274,7 +269,7 @@ export async function profilePage() {
                                     </tbody>
                                 </table>
                                 <div style="padding:10px; font-size:0.7rem; color:var(--text-muted); border-top:1px solid var(--border-subtle)">
-                                    ℹ️ ${t('matches_standings_legend_user_predicted', { name: user.display_name || user.username })}
+                                    ℹ️ ${t('matches_standings_legend_user_predicted', { name: user.username })}
                                 </div>
                             </div>
                         `;

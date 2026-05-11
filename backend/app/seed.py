@@ -35,7 +35,6 @@ def seed_database(db: Session):
             admin = User(
                 clerk_id="admin_placeholder_id",
                 username="admin",
-                display_name="Administrator",
                 is_admin=True,
                 is_onboarded=True,
             )

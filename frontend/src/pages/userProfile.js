@@ -48,7 +48,7 @@ export async function userProfilePage(params) {
         return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${e.message}</div></div>`;
     }
 
-    const initial = (profile.display_name || profile.username || '?').charAt(0).toUpperCase();
+    const initial = (profile.username || '?').charAt(0).toUpperCase();
 
     const tabs = FILTERS.map((f, i) =>
         `<button class="group-tab ${i === 0 ? 'active' : ''}" data-type="${f.type}" data-val="${f.val}">${f.label}</button>`
@@ -72,7 +72,7 @@ export async function userProfilePage(params) {
             <div class="user-profile-header">
                 <div class="user-profile-avatar">${initial}</div>
                 <div class="user-profile-info">
-                    <h1 class="user-profile-name">${profile.display_name || profile.username}</h1>
+                    <h1 class="user-profile-name">${profile.username}</h1>
                     <p class="user-profile-username">@${profile.username} · ${t('profile_joined', { date: new Date(profile.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) })}</p>
                 </div>
             </div>
@@ -100,7 +100,7 @@ export async function userProfilePage(params) {
             <!-- Matches Section -->
             <h2 style="margin-bottom: var(--space-md); margin-top: var(--space-xl)">
                 <span style="background:linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">
-                    🔮 ${t('user_profile_preds_title', { name: profile.display_name || profile.username })}
+                    🔮 ${t('user_profile_preds_title', { name: profile.username })}
                 </span>
             </h2>
 
@@ -221,7 +221,7 @@ export async function userProfilePage(params) {
                                     </div>
                                     <div style="display:flex; align-items:center; gap:4px">
                                         <span style="width:8px; height:8px; border-radius:50%; background:var(--accent-purple)"></span>
-                                        ${t('matches_standings_legend_user_predicted', { name: profile.display_name || profile.username })}
+                                        ${t('matches_standings_legend_user_predicted', { name: profile.username })}
                                     </div>
                                 </div>
                             </div>
@@ -280,7 +280,7 @@ export async function userProfilePage(params) {
                                     </div>
                                     <div style="display:flex; align-items:center; gap:4px">
                                         <span style="width:8px; height:8px; border-radius:50%; background:var(--accent-purple)"></span>
-                                        ${t('matches_standings_legend_user_predicted', { name: profile.display_name || profile.username })}
+                                        ${t('matches_standings_legend_user_predicted', { name: profile.username })}
                                     </div>
                                 </div>
                             </div>
@@ -302,12 +302,12 @@ export async function userProfilePage(params) {
                         <div style="grid-column:1/-1; overflow-x:auto;">
                             ${lockedMsg}
                             <div id="bracket-rounds-view" class="bracket-container ${!bracket.is_unlocked ? 'bracket-container-locked' : ''}">
-                                ${renderRound(t('stage_roundof32'), bracket.round_of_32, { isLocked: !bracket.is_unlocked, profileName: profile.display_name || profile.username })}
-                                ${renderRound(t('stage_roundof16'), bracket.round_of_16, { compact: true, isLocked: !bracket.is_unlocked, profileName: profile.display_name || profile.username })}
-                                ${renderRound(t('stage_quarterfinals'), bracket.quarter_finals, { compact: true, isLocked: !bracket.is_unlocked, profileName: profile.display_name || profile.username })}
-                                ${renderRound(t('stage_semifinals'), bracket.semi_finals, { compact: true, isLocked: !bracket.is_unlocked, profileName: profile.display_name || profile.username })}
-                                ${bracket.third_place ? renderRound(t('stage_thirdplace'), [bracket.third_place], { compact: true, isLocked: !bracket.is_unlocked, profileName: profile.display_name || profile.username }) : ''}
-                                ${bracket.final ? renderRound(t('stage_final'), [bracket.final], { isLocked: !bracket.is_unlocked, profileName: profile.display_name || profile.username }) : ''}
+                                ${renderRound(t('stage_roundof32'), bracket.round_of_32, { isLocked: !bracket.is_unlocked, profileName: profile.username })}
+                                ${renderRound(t('stage_roundof16'), bracket.round_of_16, { compact: true, isLocked: !bracket.is_unlocked, profileName: profile.username })}
+                                ${renderRound(t('stage_quarterfinals'), bracket.quarter_finals, { compact: true, isLocked: !bracket.is_unlocked, profileName: profile.username })}
+                                ${renderRound(t('stage_semifinals'), bracket.semi_finals, { compact: true, isLocked: !bracket.is_unlocked, profileName: profile.username })}
+                                ${bracket.third_place ? renderRound(t('stage_thirdplace'), [bracket.third_place], { compact: true, isLocked: !bracket.is_unlocked, profileName: profile.username }) : ''}
+                                ${bracket.final ? renderRound(t('stage_final'), [bracket.final], { isLocked: !bracket.is_unlocked, profileName: profile.username }) : ''}
                             </div>
                         </div>
                     `;
@@ -359,7 +359,7 @@ export async function userProfilePage(params) {
                     }
                 } else {
                     // Re-use standard renderMatchCard
-                    grid.innerHTML = filtered.map(m => renderMatchCard(m, { profileName: profile.display_name || profile.username })).join('');
+                    grid.innerHTML = filtered.map(m => renderMatchCard(m, { profileName: profile.username })).join('');
                     
                     // But we don't want them to be clickable to /predict since they are someone else's matches!
                     document.querySelectorAll('#user-matches-grid .match-card').forEach(el => {

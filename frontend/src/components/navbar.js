@@ -95,7 +95,7 @@ export async function renderNavbar() {
         // Display name: prefer backend username, fall back to Google name/email
         const el = document.getElementById('nav-username');
         if (el) {
-            el.textContent = user?.display_name || user?.username || googleUser?.name || googleUser?.email || '';
+            el.textContent = user?.username || googleUser?.name || googleUser?.email || '';
         }
     }
 }

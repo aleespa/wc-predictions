@@ -18,7 +18,6 @@ def get_me(current_user: models.User = Depends(get_current_user), db: Session = 
         return schemas.UserOut(
             id=current_user.id,
             username=current_user.username,
-            display_name=current_user.display_name,
             is_admin=current_user.is_admin,
             is_onboarded=current_user.is_onboarded,
             created_at=current_user.created_at,
@@ -51,7 +50,6 @@ def get_me(current_user: models.User = Depends(get_current_user), db: Session = 
     return schemas.UserOut(
         id=current_user.id,
         username=current_user.username,
-        display_name=current_user.display_name,
         is_admin=current_user.is_admin,
         is_onboarded=current_user.is_onboarded,
         created_at=current_user.created_at,
@@ -73,9 +71,6 @@ def update_me(
             raise HTTPException(status_code=400, detail="Username already taken")
         current_user.username = data.username
 
-    if data.display_name is not None:
-        current_user.display_name = data.display_name
-
     db.commit()
     db.refresh(current_user)
     
@@ -83,7 +78,6 @@ def update_me(
     return schemas.UserOut(
         id=current_user.id,
         username=current_user.username,
-        display_name=current_user.display_name,
         is_admin=current_user.is_admin,
         is_onboarded=current_user.is_onboarded,
         created_at=current_user.created_at,
@@ -129,9 +123,6 @@ def onboard_user(
         raise HTTPException(status_code=400, detail="Username already taken")
 
     current_user.username = data.username
-    if data.display_name:
-        current_user.display_name = data.display_name
-    
     current_user.is_onboarded = True
     db.commit()
     db.refresh(current_user)

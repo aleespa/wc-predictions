@@ -8,7 +8,6 @@ from datetime import datetime
 class UserOut(BaseModel):
     id: int
     username: Optional[str]
-    display_name: Optional[str]
     is_admin: bool
     is_onboarded: bool
     created_at: datetime
@@ -23,7 +22,6 @@ class UserOut(BaseModel):
 
 class UserUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=30, pattern="^[a-zA-Z0-9_]+$")
-    display_name: Optional[str] = Field(None, min_length=2, max_length=50)
 
 
 # ── Communities ───────────────────────────────────────
@@ -176,7 +174,6 @@ class LeaderboardEntry(BaseModel):
     rank: int
     user_id: int
     username: Optional[str]
-    display_name: Optional[str]
     total_points: int
     predictions_count: int
     exact_scores: int

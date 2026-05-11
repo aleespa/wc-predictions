@@ -529,10 +529,10 @@ function renderLeaderboardTable(leaderboard, currentUser, page = 1) {
         const stickyClass = isSticky ? 'leaderboard-row-sticky' : '';
         let nameDisplay;
         if (isCommunity) {
-            nameDisplay = `<span class="leaderboard-community-name">${entry.display_name || entry.username}</span>`;
+            nameDisplay = `<span class="leaderboard-community-name">${entry.username}</span>`;
         } else {
-            const displayText = `${entry.display_name || entry.username}${isMe ? t('leaderboard_you') : ''}`;
-            nameDisplay = `<a href="#/user/${encodeURIComponent(entry.username)}" class="leaderboard-user-link" title="View ${entry.display_name || entry.username}'s predictions">${displayText}</a>`;
+            const displayText = `${entry.username}${isMe ? t('leaderboard_you') : ''}`;
+            nameDisplay = `<a href="#/user/${encodeURIComponent(entry.username)}" class="leaderboard-user-link" title="View ${entry.username}'s predictions">${displayText}</a>`;
         }
         return `
             <tr class="${rowClass} ${stickyClass}">

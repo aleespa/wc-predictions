@@ -79,8 +79,8 @@ export async function homePage() {
                             ${top5.map(entry => {
                                 const isCommunity = entry.is_community;
                                 const nameHtml = isCommunity
-                                    ? `${entry.display_name || entry.username}`
-                                    : `<a href="#/user/${encodeURIComponent(entry.username)}" class="leaderboard-user-link">${entry.display_name || entry.username}</a>`;
+                                    ? `${entry.username}`
+                                    : `<a href="#/user/${encodeURIComponent(entry.username)}" class="leaderboard-user-link">${entry.username}</a>`;
                                 return `
                                 <tr>
                                     <td class="leaderboard-rank ${entry.rank <= 3 ? 'top-' + entry.rank : ''}">${entry.rank}</td>
