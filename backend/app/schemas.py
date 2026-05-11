@@ -8,6 +8,7 @@ from datetime import datetime
 class UserOut(BaseModel):
     id: int
     username: Optional[str]
+    email: Optional[str]
     is_admin: bool
     created_at: datetime
     total_points: Optional[int] = 0

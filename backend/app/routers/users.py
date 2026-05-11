@@ -98,9 +98,11 @@ def delete_me(
 def register_user(
     data: schemas.UserUpdate,
     db: Session = Depends(get_db),
-    user_sub: str = Depends(from_auth.get_unregistered_sub)
+    user_info: dict = Depends(from_auth.get_unregistered_user_info)
 ):
     import os
+    user_sub = user_info["sub"]
+    user_email = user_info["email"]
 
     if not data.username:
         raise HTTPException(status_code=400, detail="ERR_USERNAME_REQUIRED")
@@ -115,13 +117,22 @@ def register_user(
     if existing_name:
         raise HTTPException(status_code=400, detail="ERR_USERNAME_TAKEN")
 
-    # Admin detection
+    # Admin detection (by sub or email)
+    is_admin = False
+    
     admin_subs_env = os.environ.get("ADMIN_GOOGLE_SUBS", "")
     admin_subs = [s.strip() for s in admin_subs_env.split(",") if s.strip()]
-    is_admin = (user_sub in admin_subs)
+    if user_sub in admin_subs:
+        is_admin = True
+        
+    admin_emails_env = os.environ.get("ADMIN_EMAILS", "")
+    admin_emails = [e.strip().lower() for e in admin_emails_env.split(",") if e.strip()]
+    if user_email and user_email.lower() in admin_emails:
+        is_admin = True
 
     new_user = models.User(
         google_sub=user_sub,
+        email=user_email,
         username=data.username,
         is_admin=is_admin,
     )
@@ -132,6 +143,7 @@ def register_user(
     return schemas.UserOut(
         id=new_user.id,
         username=new_user.username,
+        email=new_user.email,
         is_admin=new_user.is_admin,
         created_at=new_user.created_at,
         total_points=0,

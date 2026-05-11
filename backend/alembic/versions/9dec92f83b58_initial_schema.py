@@ -32,11 +32,13 @@ def upgrade() -> None:
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('google_sub', sa.String(length=255), nullable=False),
+    sa.Column('email', sa.String(length=255), nullable=True),
     sa.Column('username', sa.String(length=50), nullable=True),
     sa.Column('is_admin', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.String(length=50), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_index(op.f('ix_users_google_sub'), 'users', ['google_sub'], unique=True)
     op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
     op.create_index(op.f('ix_users_username'), 'users', ['username'], unique=True)
@@ -121,6 +123,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_users_username'), table_name='users')
     op.drop_index(op.f('ix_users_id'), table_name='users')
     op.drop_index(op.f('ix_users_google_sub'), table_name='users')
+    op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_table('users')
     op.drop_index(op.f('ix_teams_id'), table_name='teams')
     op.drop_table('teams')

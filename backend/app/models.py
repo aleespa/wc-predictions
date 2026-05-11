@@ -29,6 +29,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     google_sub = Column(String(255), unique=True, index=True, nullable=False)
+    email = Column(String(255), unique=True, index=True, nullable=True)
     username = Column(String(50), unique=True, index=True, nullable=True)
     is_admin = Column(Boolean, default=False)
     created_at = Column(String(50), default=lambda: datetime.now(timezone.utc).isoformat())

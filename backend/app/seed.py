@@ -34,6 +34,7 @@ def seed_database(db: Session):
         try:
             admin = User(
                 google_sub="admin_placeholder_id",
+                email="admin@example.com",
                 username="admin",
                 is_admin=True,
             )

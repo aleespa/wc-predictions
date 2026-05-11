@@ -38,7 +38,8 @@ def _cache_user(user: models.User) -> None:
         "time": time.time(),
         "data": {
             "id": user.id,
-            "google_sub": user.google_sub,   # stores Google `sub` value
+            "google_sub": user.google_sub,
+            "email": user.email,
             "username": user.username,
             "is_admin": user.is_admin,
             "created_at": user.created_at,
@@ -79,6 +80,18 @@ def get_current_user(
 
     _cache_user(user)
     return user
+
+
+def get_unregistered_user_info(request: Request) -> dict:
+    """Returns the Google sub and email from headers even if the user is not in the DB."""
+    user_sub = request.headers.get("X-User-Sub")
+    user_email = request.headers.get("X-User-Email")
+    if not user_sub:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )
+    return {"sub": user_sub, "email": user_email}
 
 
 def get_unregistered_sub(request: Request) -> str:
