@@ -37,6 +37,7 @@ def seed_database(db: Session):
                 username="admin",
                 display_name="Administrator",
                 is_admin=True,
+                is_onboarded=True,
             )
             db.add(admin)
             db.commit() # Commit admin immediately to avoid duplicate key in other workers
