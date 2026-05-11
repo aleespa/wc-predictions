@@ -19,7 +19,8 @@ export async function getCurrentUser() {
     }).catch(err => {
         userPromise = null;
         if (err.status === 401 && err.message === "User not registered") {
-            return { unregistered: true };
+            cachedUser = { unregistered: true };
+            return cachedUser;
         }
         return null;
     });

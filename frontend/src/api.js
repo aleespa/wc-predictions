@@ -28,8 +28,13 @@ export async function fetchAPI(endpoint, options = {}) {
     console.log(`API Call to ${endpoint} took ${duration.toFixed(2)}ms${serverTimeStr}`);
 
     if (response.status === 401) {
-        window.location.hash = '#/login';
-        throw new Error('Session expired. Please log in again.');
+        // Special case: if it's not the /me endpoint, we might want to redirect, 
+        // but it's cleaner to let the router or component handle it based on the error.
+        // For now, we just throw so the caller can catch it.
+        const detail = await response.json().then(d => d.detail).catch(() => 'Unauthorized');
+        const error = new Error(detail);
+        error.status = 401;
+        throw error;
     }
 
     let data;
