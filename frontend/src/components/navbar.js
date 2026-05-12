@@ -55,14 +55,13 @@ export async function renderNavbar() {
                 <button class="nav-link" data-route="/community" onclick="location.hash='#/community'">👥 ${t('nav_community')}</button>
                 ${authed ? `
                     ${user?.is_admin ? `<button class="nav-link" data-route="/admin" onclick="location.hash='#/admin'">⚙️ ${t('nav_admin')}</button>` : ''}
-                    <button class="nav-link" data-route="/profile" onclick="location.hash='#/profile'">🔮 ${t('nav_my_predictions')}</button>
-                    <div class="nav-user-info">
+                    <button class="nav-link nav-user-info" data-route="/profile" onclick="location.hash='#/profile'">
                         ${googleUser?.picture
                             ? `<img src="${googleUser.picture}" class="nav-user-avatar" alt="User avatar" referrerpolicy="no-referrer">`
                             : `<div class="nav-user-avatar nav-user-avatar--placeholder">${(googleUser?.name || googleUser?.email || '?')[0].toUpperCase()}</div>`
                         }
-                        <span class="nav-link nav-user-name" id="nav-username"></span>
-                    </div>
+                        <span class="nav-user-name" id="nav-username"></span>
+                    </button>
                     <button class="nav-link" id="nav-logout">${t('nav_logout')}</button>
                 ` : `
                     <button class="nav-link" data-route="/login" onclick="location.hash='#/login'">${t('nav_login')}</button>
