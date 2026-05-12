@@ -4,7 +4,7 @@ import { t } from '../i18n.js';
 
 const getFilters = () => [
     { label: t('matches_filter_all'), type: 'all', val: 'All' },
-    ...['A','B','C','D','E','F','G','H','I','J','K','L'].map(g => ({ label: t('matches_filter_grp', { group: g }), type: 'group', val: g })),
+    ...['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'].map(g => ({ label: t('matches_filter_grp', { group: g }), type: 'group', val: g })),
     { label: t('matches_filter_r32'), type: 'stage', val: 'Round of 32' },
     { label: t('matches_filter_r16'), type: 'stage', val: 'Round of 16' },
     { label: t('matches_filter_qf'), type: 'stage', val: 'Quarter-finals' },
@@ -101,20 +101,20 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
                     </div>
                 </div>
                 ${(() => {
-                    const detail = matchPointsMap[match.match_id];
-                    if (!detail) return '';
-                    const pts = detail.points_awarded;
-                    let color = 'var(--accent-red)';
-                    let label = t('match_badge_0pts', { h: detail.predicted_home, a: detail.predicted_away }) + ' ❌';
-                    if (pts === 5) { color = 'var(--accent-gold)'; label = t('match_badge_exact', { h: detail.predicted_home, a: detail.predicted_away }); }
-                    else if (pts === 3) { color = 'var(--accent-green)'; label = t('match_badge_3pts', { h: detail.predicted_home, a: detail.predicted_away }) + ' ✓'; }
-                    else if (pts === 1) { color = 'var(--accent-blue)'; label = t('match_badge_1pt', { h: detail.predicted_home, a: detail.predicted_away }) + ' ✓'; }
-                    return `
+                const detail = matchPointsMap[match.match_id];
+                if (!detail) return '';
+                const pts = detail.points_awarded;
+                let color = 'var(--accent-red)';
+                let label = t('match_badge_0pts', { h: detail.predicted_home, a: detail.predicted_away }) + ' ❌';
+                if (pts === 5) { color = 'var(--accent-gold)'; label = t('match_badge_exact', { h: detail.predicted_home, a: detail.predicted_away }); }
+                else if (pts === 3) { color = 'var(--accent-green)'; label = t('match_badge_3pts', { h: detail.predicted_home, a: detail.predicted_away }) + ' ✓'; }
+                else if (pts === 1) { color = 'var(--accent-blue)'; label = t('match_badge_1pt', { h: detail.predicted_home, a: detail.predicted_away }) + ' ✓'; }
+                return `
                         <div class="community-match-points" style="color:${color}">
                             ${label}
                         </div>
                     `;
-                })()}
+            })()}
                 <div class="community-count">
                     <span class="community-count-icon">👥</span>
                     ${match.prediction_count === 1 ? t('community_pred_count', { count: match.prediction_count }) : t('community_preds_count', { count: match.prediction_count })}
@@ -162,7 +162,7 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
                 </div>
             </div>
             <div class="match-card-footer">
-                <span class="match-venue">📍 ${match.venue || 'TBD'}</span>
+                <span class="match-venue">🏟️ ${match.venue || 'TBD'}</span>
             </div>
             ${communitySection}
         </div>
@@ -284,7 +284,7 @@ function renderCommunityBracketMatch(match) {
                 ${renderSlot(match.away)}
             </div>
             ${miniOutcome}
-            ${match.venue ? `<div class="bracket-venue">📍 ${match.venue}</div>` : ''}
+            ${match.venue ? `<div class="bracket-venue">🏟️ ${match.venue}</div>` : ''}
         </div>
     `;
 }
@@ -335,7 +335,7 @@ export async function communityPage() {
         for (const c of myCommunities) {
             opts += `<option value="${c.id}" ${currentCommunityId == c.id ? 'selected' : ''}>${t('community_opt_private', { name: c.name, count: c.member_count })}</option>`;
         }
-        
+
         return `
             <div class="community-controls card fade-in" style="margin-bottom: var(--space-xl); display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-lg); padding: var(--space-lg); background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
                 <div class="community-selector-block" style="display: flex; flex-direction: column; gap: var(--space-sm);">
@@ -423,7 +423,7 @@ export async function communityPage() {
                 const { matches, communityPoints, leaderboard, suffix } = currentData;
                 contentArea.innerHTML = renderCommunityContent(matches, communityPoints, leaderboard, currentUser, suffix);
                 initCommunityContent(matches, communityPoints, suffix);
-                
+
                 // Pagination listeners
                 const prevBtn = document.getElementById('prev-page');
                 const nextBtn = document.getElementById('next-page');
@@ -467,12 +467,12 @@ export async function communityPage() {
                         });
                         myCommunities.push(newComm);
                         currentCommunityId = newComm.id;
-                        
-                        
+
+
                         // Reliably reload the page to render the new state cleanly
                         const { handleRoute } = await import('../router.js');
                         handleRoute();
-                        
+
                     } catch (e) {
                         alert(e.message);
                     }
@@ -536,7 +536,7 @@ function renderLeaderboardTable(leaderboard, currentUser, page = 1) {
         }
         return `
             <tr class="${rowClass} ${stickyClass}">
-                <td class="leaderboard-rank ${entry.rank <= 3 ? 'top-' + entry.rank : ''}">${entry.rank <= 3 ? ['🥇','🥈','🥉'][entry.rank-1] : entry.rank}</td>
+                <td class="leaderboard-rank ${entry.rank <= 3 ? 'top-' + entry.rank : ''}">${entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : entry.rank}</td>
                 <td class="leaderboard-user ${isMe ? 'is-me' : ''}">${nameDisplay}</td>
                 <td class="leaderboard-points ${isCommunity ? 'leaderboard-community-points' : ''}">${entry.total_points}</td>
                 <td class="leaderboard-stat">${entry.exact_scores}</td>
@@ -656,7 +656,7 @@ function initCommunityContent(matches, communityPoints, suffix) {
             try {
                 let url = `/community/standings/${filterVal}`;
                 if (suffix) {
-                   url += suffix;
+                    url += suffix;
                 }
                 const stds = await fetchAPI(url);
                 standingsContainer.innerHTML = renderStandingsTable(stds, filterVal);

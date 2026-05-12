@@ -107,7 +107,7 @@ export function renderBracketMatch(match, options = {}) {
                         ${scoreAway}
                     </div>
                 </div>
-                ${match.venue ? `<div class="bracket-venue">📍 ${match.venue}</div>` : ''}
+                ${match.venue ? `<div class="bracket-venue">🏟️ ${match.venue}</div>` : ''}
             </div>
         </div>
     `;
@@ -222,9 +222,9 @@ export async function bracketPage() {
                     <h4 class="bracket-column-title">${title}</h4>
                 </div>
                 <div class="bracket-column-content">
-                    ${matchesList.map((m, i) => renderBracketMatch(m, { 
-                        isLocked: !bracket.is_unlocked
-                    })).join('')}
+                    ${matchesList.map((m, i) => renderBracketMatch(m, {
+            isLocked: !bracket.is_unlocked
+        })).join('')}
                 </div>
             </div>
         `;
@@ -397,7 +397,7 @@ function drawBracketConnectors() {
     if (!container || !svg) return;
 
     svg.innerHTML = ''; // Clear existing paths
-    
+
     // Ensure SVG covers the full scrollable area
     svg.setAttribute('width', container.scrollWidth);
     svg.setAttribute('height', container.scrollHeight);
