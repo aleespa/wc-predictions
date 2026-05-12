@@ -68,8 +68,12 @@ def get_current_user(
     if request.url.path.endswith("/me"):
         user = db.query(models.User).filter(models.User.google_sub == user_sub).first()
         if user:
-            return _cache_user(user_sub, user)
-        return None
+            _cache_user(user)
+            return user
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not registered",
+        )
 
     # Try in-process cache first for other endpoints
     cached = _cached_user(user_sub)

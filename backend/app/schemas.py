@@ -7,8 +7,8 @@ from datetime import datetime
 
 class UserOut(BaseModel):
     id: int
-    username: Optional[str]
-    email: Optional[str]
+    username: Optional[str] = None
+    email: Optional[str] = None
     is_admin: bool
     created_at: datetime
     total_points: Optional[int] = 0
@@ -80,17 +80,17 @@ class StandingOut(BaseModel):
 
 class MatchOut(BaseModel):
     id: int
-    group_letter: Optional[str]
+    group_letter: Optional[str] = None
     stage: str
-    match_number: Optional[int]
+    match_number: Optional[int] = None
     home_team_id: Optional[int] = None
     away_team_id: Optional[int] = None
     home_team: Optional[TeamOut] = None  # nullable for knockout TBD
     away_team: Optional[TeamOut] = None  # nullable for knockout TBD
     match_date: datetime
-    venue: Optional[str]
-    home_score: Optional[int]
-    away_score: Optional[int]
+    venue: Optional[str] = None
+    home_score: Optional[int] = None
+    away_score: Optional[int] = None
     penalty_winner_id: Optional[int] = None
     is_finished: bool
     user_prediction: Optional["PredictionOut"] = None
@@ -138,7 +138,7 @@ class PredictionOut(BaseModel):
     match_id: int
     predicted_home_score: int
     predicted_away_score: int
-    points_awarded: Optional[int]
+    points_awarded: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     predicted_home_team_id: Optional[int] = None
@@ -172,7 +172,7 @@ class PredictionWithMatch(BaseModel):
 class LeaderboardEntry(BaseModel):
     rank: int
     user_id: int
-    username: Optional[str]
+    username: Optional[str] = None
     total_points: int
     predictions_count: int
     exact_scores: int

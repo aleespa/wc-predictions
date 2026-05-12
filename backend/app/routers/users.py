@@ -17,6 +17,7 @@ def get_me(current_user: models.User = Depends(from_auth.get_current_user), db: 
         return schemas.UserOut(
             id=current_user.id,
             username=current_user.username,
+            email=current_user.email,
             is_admin=current_user.is_admin,
             created_at=current_user.created_at,
             **cached
@@ -47,6 +48,7 @@ def get_me(current_user: models.User = Depends(from_auth.get_current_user), db: 
     return schemas.UserOut(
         id=current_user.id,
         username=current_user.username,
+        email=current_user.email,
         is_admin=current_user.is_admin,
         created_at=current_user.created_at,
         **res_data
@@ -69,6 +71,7 @@ def update_me(
     return schemas.UserOut(
         id=current_user.id,
         username=current_user.username,
+        email=current_user.email,
         is_admin=current_user.is_admin,
         created_at=current_user.created_at,
         total_points=0,
