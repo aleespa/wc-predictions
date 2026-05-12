@@ -545,7 +545,7 @@ function renderLeaderboardTable(leaderboard, currentUser, page = 1) {
                     <div class="leaderboard-mobile-stats">
                         <span>🎯 ${entry.exact_scores}</span>
                         <span>✓ ${entry.correct_outcomes}</span>
-                        <span>👥 ${entry.predictions_count}</span>
+                        <span>🔮 ${entry.predictions_count}</span>
                     </div>
                 </td>
                 <td class="leaderboard-points ${isCommunity ? 'leaderboard-community-points' : ''}">${entry.total_points}</td>
@@ -592,7 +592,7 @@ function renderLeaderboardTable(leaderboard, currentUser, page = 1) {
                                 <th>${t('leaderboard_th_points')}</th>
                                 <th>${t('leaderboard_th_exact')}</th>
                                 <th>${t('leaderboard_th_correct')}</th>
-                                <th>${t('leaderboard_th_preds')}</th>
+                                <th>🔮 ${t('leaderboard_th_preds')}</th>
                             </tr>
                         </thead>
                         <tbody>${tableRows}</tbody>

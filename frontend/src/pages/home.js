@@ -72,7 +72,7 @@ export async function homePage() {
                                 <th>#</th>
                                 <th>${t('leaderboard_th_player')}</th>
                                 <th>${t('leaderboard_th_points')}</th>
-                                <th>${t('leaderboard_th_preds')}</th>
+                                <th>🔮 ${t('leaderboard_th_preds')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -87,7 +87,7 @@ export async function homePage() {
                                     <td class="leaderboard-user">
                                         ${nameHtml}
                                         <div class="leaderboard-mobile-stats">
-                                            <span>👥 ${entry.predictions_count}</span>
+                                            <span>🔮 ${entry.predictions_count}</span>
                                         </div>
                                     </td>
                                     <td class="leaderboard-points">${entry.total_points}</td>

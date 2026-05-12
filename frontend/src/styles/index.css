@@ -1361,6 +1361,14 @@ select.form-input option {
 .profile-stat-value {
     font-size: 1.8rem;
     font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--accent-gold);
+}
+
+.profile-stat-value .stat-number {
     background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-light));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;

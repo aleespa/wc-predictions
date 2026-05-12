@@ -69,19 +69,23 @@ export async function profilePage() {
                 </div>
             </div>
 
-            <!-- Stats cards -->
+            <!-- Stats bar -->
             <div class="profile-stats user-profile-stats">
                 <div class="profile-stat-card">
-                    <div class="profile-stat-value">${user.total_points || 0}</div>
-                    <div class="profile-stat-label">${t('profile_stat_points')}</div>
+                    <div class="profile-stat-value"><span class="stat-number">${user.total_points || 0}</span></div>
+                    <div class="profile-stat-label">${t('leaderboard_th_points')}</div>
                 </div>
                 <div class="profile-stat-card">
-                    <div class="profile-stat-value">${user.predictions_count || 0}</div>
-                    <div class="profile-stat-label">${t('profile_stat_preds')}</div>
+                    <div class="profile-stat-value">🎯 <span class="stat-number">${user.exact_scores || 0}</span></div>
+                    <div class="profile-stat-label">${t('leaderboard_th_exact')}</div>
                 </div>
                 <div class="profile-stat-card">
-                    <div class="profile-stat-value">${user.exact_scores || 0}</div>
-                    <div class="profile-stat-label">${t('profile_stat_exact')}</div>
+                    <div class="profile-stat-value">✓ <span class="stat-number">${user.correct_outcomes || 0}</span></div>
+                    <div class="profile-stat-label">${t('leaderboard_th_correct')}</div>
+                </div>
+                <div class="profile-stat-card">
+                    <div class="profile-stat-value">🔮 <span class="stat-number">${user.predictions_count || 0}</span></div>
+                    <div class="profile-stat-label">${t('leaderboard_th_preds')}</div>
                 </div>
             </div>
 
