@@ -144,7 +144,7 @@ export async function predictPage(params) {
                             <div class="wheel-picker-container" id="home-score-wheel" data-value="${homeScore || 0}">
                                 <div class="wheel-picker-center-highlight"></div>
                                 <div class="wheel-picker-scroll">
-                                    ${Array.from({length: 21}, (_, i) => `<div class="wheel-picker-item" data-val="${i}">${i}</div>`).join('')}
+                                    ${Array.from({ length: 21 }, (_, i) => `<div class="wheel-picker-item" data-val="${i}">${i}</div>`).join('')}
                                 </div>
                                 <input type="hidden" id="home-score" value="${homeScore !== '' ? homeScore : 0}" />
                             </div>
@@ -159,7 +159,7 @@ export async function predictPage(params) {
                             <div class="wheel-picker-container" id="away-score-wheel" data-value="${awayScore || 0}">
                                 <div class="wheel-picker-center-highlight"></div>
                                 <div class="wheel-picker-scroll">
-                                    ${Array.from({length: 21}, (_, i) => `<div class="wheel-picker-item" data-val="${i}">${i}</div>`).join('')}
+                                    ${Array.from({ length: 21 }, (_, i) => `<div class="wheel-picker-item" data-val="${i}">${i}</div>`).join('')}
                                 </div>
                                 <input type="hidden" id="away-score" value="${awayScore !== '' ? awayScore : 0}" />
                             </div>
@@ -237,7 +237,7 @@ export async function predictPage(params) {
 
                 <div class="predict-info">
                     <div class="match-date">${dateStr} · ${timeStr}</div>
-                    <div class="match-venue" style="white-space:normal">📍 ${match.venue || 'TBD'}</div>
+                    <div class="match-venue" style="white-space:normal">🏟️ ${match.venue || 'TBD'}</div>
                 </div>
 
                 ${formSection}
@@ -278,17 +278,17 @@ export async function predictPage(params) {
 
                 let startY, currentTranslate = 0, prevTranslate = 0;
                 const itemHeight = 40;
-                
+
                 const updateSelection = (y) => {
                     const index = Math.round(-y / itemHeight);
                     const clampedIndex = Math.max(0, Math.min(20, index));
                     const finalY = -clampedIndex * itemHeight;
-                    
+
                     scroll.style.transform = `translateY(${finalY}px)`;
                     currentTranslate = finalY;
                     prevTranslate = finalY;
                     input.value = clampedIndex;
-                    
+
                     items.forEach((item, idx) => {
                         item.classList.toggle('active', idx === clampedIndex);
                     });
@@ -312,7 +312,7 @@ export async function predictPage(params) {
                     // Dampen resistance at edges
                     if (currentTranslate > 20) currentTranslate = 20 + (currentTranslate - 20) * 0.3;
                     if (currentTranslate < -20 * itemHeight - 20) currentTranslate = -20 * itemHeight - 20 + (currentTranslate + 20 * itemHeight + 20) * 0.3;
-                    
+
                     scroll.style.transform = `translateY(${currentTranslate}px)`;
                 });
 
@@ -342,10 +342,10 @@ export async function predictPage(params) {
 
             form?.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
+
                 const h = parseInt(homeInput.value);
                 const a = parseInt(awayInput.value);
-                
+
                 if (isKnockout && h === a && !penWinnerInput.value) {
                     showToast(t('predict_penalty_desc'), 'warning');
                     return;
@@ -374,20 +374,20 @@ export async function predictPage(params) {
                         }),
                     });
                     showToast(t('toast_pred_saved'));
-                    
+
                     // Fetch all matches to find the next unpredicted one
                     let nextMatchToPredict = null;
                     try {
                         const allMatches = await fetchAPI('/matches');
                         const currentIndex = allMatches.findIndex(m => m.id === parseInt(matchId));
-                        
+
                         if (currentIndex !== -1) {
                             for (let i = currentIndex + 1; i < allMatches.length; i++) {
                                 const m = allMatches[i];
                                 const mDate = new Date(m.match_date);
                                 const isMLocked = mDate <= new Date() || m.is_finished;
                                 const mTeamsKnown = m.home_team && m.away_team;
-                                
+
                                 if (!m.user_prediction && !isMLocked && mTeamsKnown) {
                                     nextMatchToPredict = m;
                                     break;

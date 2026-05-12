@@ -602,59 +602,12 @@ function renderCommunityContent(matches, communityPoints, leaderboard, currentUs
         }
     }
     const groupMatches = matches.filter(m => m.stage === 'Group Stage');
-    const matchesWithPredictions = matches.filter(m => m.prediction_count > 0);
-    const totalPredictions = matches.reduce((sum, m) => sum + m.prediction_count, 0);
-    const avgPredictionsPerMatch = matchesWithPredictions.length > 0
-        ? Math.round(totalPredictions / matchesWithPredictions.length)
-        : 0;
 
     const tabs = getFilters().map((f, i) =>
         `<button class="group-tab ${i === 0 ? 'active' : ''}" data-type="${f.type}" data-val="${f.val}">${f.label}</button>`
     ).join('');
 
-    const totalPts = communityPoints ? communityPoints.total_points : 0;
-    const exactCount = communityPoints ? communityPoints.exact_scores : 0;
-    const correctCount = communityPoints ? communityPoints.correct_outcomes : 0;
-    const predCount = communityPoints ? communityPoints.predictions_count : 0;
-
     return `
-        <div class="community-points-hero" style="margin-bottom: var(--space-xl);">
-            ${predCount > 0 ? `
-                <div class="community-points-main">
-                    <div class="community-points-value">${totalPts}</div>
-                    <div class="community-points-label">${t('community_pts_label')}</div>
-                </div>
-                <div class="community-points-details">
-                    <div class="community-points-detail">
-                        <span class="community-points-detail-value" style="color:var(--accent-gold)">${exactCount}</span>
-                        <span class="community-points-detail-label">${t('community_pts_exact')}</span>
-                    </div>
-                    <div class="community-points-detail">
-                        <span class="community-points-detail-value" style="color:var(--accent-green)">${correctCount}</span>
-                        <span class="community-points-detail-label">${t('community_pts_correct')}</span>
-                    </div>
-                    <div class="community-points-detail">
-                        <span class="community-points-detail-value" style="color:var(--accent-blue)">${predCount}</span>
-                        <span class="community-points-detail-label">${t('community_pts_matches')}</span>
-                    </div>
-                </div>
-            ` : ''}
-            <div class="community-summary-stats">
-                <div class="community-summary-stat">
-                    <div class="community-summary-value">${matchesWithPredictions.length}</div>
-                    <div class="community-summary-label">${t('community_stat_pred_matches')}</div>
-                </div>
-                <div class="community-summary-stat">
-                    <div class="community-summary-value">${totalPredictions}</div>
-                    <div class="community-summary-label">${t('community_stat_total_preds')}</div>
-                </div>
-                <div class="community-summary-stat">
-                    <div class="community-summary-value">${avgPredictionsPerMatch}</div>
-                    <div class="community-summary-label">${t('community_stat_avg')}</div>
-                </div>
-            </div>
-        </div>
-
         <h2 style="margin-bottom: var(--space-md);">Leaderboard</h2>
         ${renderLeaderboardTable(leaderboard, currentUser, currentLeaderboardPage)}
 

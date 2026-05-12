@@ -29,22 +29,22 @@ export async function homePage() {
                     : `<a href="#/register" class="btn btn-primary btn-lg">${t('home_btn_get_started')}</a><a href="#/matches" class="btn btn-secondary btn-lg">${t('home_btn_view_matches')}</a>`
                 }
             </div>
-            <div class="hero-stats">
-                <div class="hero-stat">
-                    <div class="hero-stat-value">48</div>
-                    <div class="hero-stat-label">${t('home_stat_teams')}</div>
-                </div>
-                <div class="hero-stat">
-                    <div class="hero-stat-value">104</div>
-                    <div class="hero-stat-label">${t('home_stat_matches')}</div>
-                </div>
-                <div class="hero-stat">
-                    <div class="hero-stat-value">16</div>
-                    <div class="hero-stat-label">${t('home_stat_venues')}</div>
-                </div>
-                <div class="hero-stat">
-                    <div class="hero-stat-value">5</div>
-                    <div class="hero-stat-label">${t('home_stat_points')}</div>
+
+            <div class="card" style="text-align:center;padding:var(--space-xl); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); margin-top: var(--space-xl)">
+                <h3 style="margin-bottom:var(--space-md); font-size: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">${t('home_scoring_works')}</h3>
+                <div class="points-preview-grid" style="max-width:500px;margin:0 auto; display: flex; justify-content: center; gap: var(--space-xl); flex-wrap: wrap;">
+                    <div class="points-preview-item">
+                        <div class="points-preview-value" style="color:var(--accent-gold); font-size: 1.5rem; font-weight: 800;">5 ${t('common_pts')}</div>
+                        <div class="points-preview-label" style="font-size: 0.8rem; color: var(--text-muted);">${t('home_exact_score')}</div>
+                    </div>
+                    <div class="points-preview-item">
+                        <div class="points-preview-value" style="color:var(--accent-green); font-size: 1.5rem; font-weight: 800;">3 ${t('common_pts')}</div>
+                        <div class="points-preview-label" style="font-size: 0.8rem; color: var(--text-muted);">${t('home_result_gd')}</div>
+                    </div>
+                    <div class="points-preview-item">
+                        <div class="points-preview-value" style="color:var(--accent-blue); font-size: 1.5rem; font-weight: 800;">1 ${t('common_pt')}</div>
+                        <div class="points-preview-label" style="font-size: 0.8rem; color: var(--text-muted);">${t('home_correct_outcome')}</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -94,26 +94,6 @@ export async function homePage() {
                 </div>
             </section>
         ` : ''}
-
-        <section class="fade-in" style="margin-top: var(--space-2xl)">
-            <div class="card" style="text-align:center;padding:var(--space-2xl)">
-                <h3 style="margin-bottom:var(--space-md)">${t('home_scoring_works')}</h3>
-                <div class="points-preview-grid" style="max-width:500px;margin:0 auto">
-                    <div class="points-preview-item">
-                        <div class="points-preview-value" style="color:var(--accent-gold)">5 ${t('common_pts')}</div>
-                        <div class="points-preview-label">${t('home_exact_score')}</div>
-                    </div>
-                    <div class="points-preview-item">
-                        <div class="points-preview-value" style="color:var(--accent-green)">3 ${t('common_pts')}</div>
-                        <div class="points-preview-label">${t('home_result_gd')}</div>
-                    </div>
-                    <div class="points-preview-item">
-                        <div class="points-preview-value" style="color:var(--accent-blue)">1 ${t('common_pt')}</div>
-                        <div class="points-preview-label">${t('home_correct_outcome')}</div>
-                    </div>
-                </div>
-            </div>
-        </section>
     `;
 
     return html;
