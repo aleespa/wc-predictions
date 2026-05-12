@@ -6,8 +6,8 @@ import { t } from '../i18n.js';
 export async function matchesPage() {
     const FILTERS = [
         { label: t('matches_filter_all'), type: 'all', val: 'All' },
-        { label: t('matches_filter_thirds'), type: 'thirds', val: 'thirds' },
         ...['A','B','C','D','E','F','G','H','I','J','K','L'].map(g => ({ label: t('matches_filter_grp', { group: g }), type: 'group', val: g })),
+        { label: t('matches_filter_thirds'), type: 'thirds', val: 'thirds' },
         { label: t('matches_filter_r32'), type: 'stage', val: 'Round of 32' },
         { label: t('matches_filter_r16'), type: 'stage', val: 'Round of 16' },
         { label: t('matches_filter_qf'), type: 'stage', val: 'Quarter-finals' },

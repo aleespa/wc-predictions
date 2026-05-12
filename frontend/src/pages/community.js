@@ -5,6 +5,7 @@ import { t } from '../i18n.js';
 const getFilters = () => [
     { label: t('matches_filter_all'), type: 'all', val: 'All' },
     ...['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'].map(g => ({ label: t('matches_filter_grp', { group: g }), type: 'group', val: g })),
+    { label: t('matches_filter_thirds'), type: 'thirds', val: 'thirds' },
     { label: t('matches_filter_r32'), type: 'stage', val: 'Round of 32' },
     { label: t('matches_filter_r16'), type: 'stage', val: 'Round of 16' },
     { label: t('matches_filter_qf'), type: 'stage', val: 'Quarter-finals' },
@@ -337,37 +338,39 @@ export async function communityPage() {
         }
 
         return `
-            <div class="community-controls card fade-in" style="margin-bottom: var(--space-xl); display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-lg); padding: var(--space-lg); background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+            <div class="community-controls card fade-in" style="margin-bottom: var(--space-xl); display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-lg); padding: var(--space-lg); background: var(--bg-card); border: 1px solid var(--border-medium); border-radius: var(--radius-lg); box-shadow: var(--shadow-md);">
                 <div class="community-selector-block" style="display: flex; flex-direction: column; gap: var(--space-sm);">
-                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">${t('community_viewing')}</label>
-                    <div style="display: flex; gap: var(--space-sm); align-items: center;">
-                        <select id="community-select" class="form-input" style="flex: 1; max-width: 350px; cursor: pointer; font-weight: 600; font-size: 1rem; border-radius: 8px;">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">${t('community_viewing')}</label>
+                    <div style="display: flex; gap: var(--space-sm); align-items: center; flex-wrap: wrap;">
+                        <select id="community-select" class="form-input" style="flex: 1; min-width: 200px; cursor: pointer; font-weight: 600; font-size: 0.95rem;">
                             ${opts}
                         </select>
-                        <button id="btn-invite" class="btn btn-secondary" style="display: ${currentCommunityId ? 'inline-flex' : 'none'}; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px;" title="${t('community_invite_btn')}">
-                            ${t('community_invite_btn')}
-                        </button>
-                        <button id="btn-leave" class="btn btn-danger" style="display: ${currentCommunityId ? 'inline-flex' : 'none'}; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px;" title="${t('community_leave_btn')}">
-                            ${t('community_leave_btn')}
-                        </button>
+                        <div style="display: flex; gap: var(--space-xs);">
+                            <button id="btn-invite" class="btn btn-secondary btn-sm" style="display: ${currentCommunityId ? 'inline-flex' : 'none'};" title="${t('community_invite_btn')}">
+                                ${t('community_invite_btn')}
+                            </button>
+                            <button id="btn-leave" class="btn btn-danger btn-sm" style="display: ${currentCommunityId ? 'inline-flex' : 'none'}; opacity: 0.8;" title="${t('community_leave_btn')}">
+                                ${t('community_leave_btn')}
+                            </button>
+                        </div>
                     </div>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 4px 0 0; opacity: 0.8;">${t('community_switch_desc')}</p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">${t('community_switch_desc')}</p>
                 </div>
                 
                 ${isAuthenticated() ? `
-                <div class="community-create-block" style="display: flex; flex-direction: column; gap: var(--space-sm); border-left: 1px solid rgba(255,255,255,0.1); padding-left: var(--space-lg);">
-                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">${t('community_create_new')}</label>
+                <div class="community-create-block" style="display: flex; flex-direction: column; gap: var(--space-sm);">
+                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">${t('community_create_new')}</label>
                     <div style="display: flex; gap: var(--space-sm);">
-                        <input type="text" id="new-community-name" class="form-input" placeholder="${t('community_name_ph')}" style="flex: 1; border-radius: 8px; padding: 10px 14px;">
-                        <button id="btn-create-community" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <input type="text" id="new-community-name" class="form-input" placeholder="${t('community_name_ph')}" style="flex: 1;">
+                        <button id="btn-create-community" class="btn btn-primary btn-sm">
                             ${t('community_btn_create')}
                         </button>
                     </div>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 4px 0 0; opacity: 0.8;">${t('community_create_desc')}</p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">${t('community_create_desc')}</p>
                 </div>
                 ` : `
-                <div class="community-create-block" style="display: flex; flex-direction: column; justify-content: center; border-left: 1px solid rgba(255,255,255,0.1); padding-left: var(--space-lg);">
-                    <p style="color: var(--text-muted); font-size: 0.95rem; margin: 0; font-weight: 500; display: flex; align-items: center; gap: 8px;">${t('community_login_req')}</p>
+                <div class="community-create-block" style="display: flex; flex-direction: column; justify-content: center;">
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; font-weight: 500;">${t('community_login_req')}</p>
                 </div>
                 `}
             </div>
