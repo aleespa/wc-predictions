@@ -540,7 +540,14 @@ function renderLeaderboardTable(leaderboard, currentUser, page = 1) {
         return `
             <tr class="${rowClass} ${stickyClass}">
                 <td class="leaderboard-rank ${entry.rank <= 3 ? 'top-' + entry.rank : ''}">${entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : entry.rank}</td>
-                <td class="leaderboard-user ${isMe ? 'is-me' : ''}">${nameDisplay}</td>
+                <td class="leaderboard-user ${isMe ? 'is-me' : ''}">
+                    ${nameDisplay}
+                    <div class="leaderboard-mobile-stats">
+                        <span>🎯 ${entry.exact_scores}</span>
+                        <span>✓ ${entry.correct_outcomes}</span>
+                        <span>👥 ${entry.predictions_count}</span>
+                    </div>
+                </td>
                 <td class="leaderboard-points ${isCommunity ? 'leaderboard-community-points' : ''}">${entry.total_points}</td>
                 <td class="leaderboard-stat">${entry.exact_scores}</td>
                 <td class="leaderboard-stat">${entry.correct_outcomes}</td>

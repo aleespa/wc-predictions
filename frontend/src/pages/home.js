@@ -84,7 +84,12 @@ export async function homePage() {
                                 return `
                                 <tr>
                                     <td class="leaderboard-rank ${entry.rank <= 3 ? 'top-' + entry.rank : ''}">${entry.rank}</td>
-                                    <td class="leaderboard-user">${nameHtml}</td>
+                                    <td class="leaderboard-user">
+                                        ${nameHtml}
+                                        <div class="leaderboard-mobile-stats">
+                                            <span>👥 ${entry.predictions_count}</span>
+                                        </div>
+                                    </td>
                                     <td class="leaderboard-points">${entry.total_points}</td>
                                     <td class="leaderboard-stat">${entry.predictions_count}</td>
                                 </tr>

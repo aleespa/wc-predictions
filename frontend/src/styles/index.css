@@ -1193,6 +1193,10 @@ select.form-input option {
     border: none !important;
 }
 
+.leaderboard-mobile-stats {
+    display: none;
+}
+
 /* Mobile optimizations for Leaderboard */
 @media (max-width: 640px) {
     .leaderboard-table th:nth-child(4),
@@ -1204,17 +1208,26 @@ select.form-input option {
         display: none;
     }
     
+    .leaderboard-mobile-stats {
+        display: flex;
+        gap: var(--space-md);
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+    
     .leaderboard-table td {
-        padding: var(--space-sm) var(--space-sm);
-        font-size: 0.9rem;
+        padding: var(--space-md) var(--space-sm);
+        font-size: 0.95rem;
     }
     
     .leaderboard-rank {
-        width: 30px;
+        width: 32px;
+        font-size: 0.9rem;
     }
     
     .leaderboard-points {
-        font-size: 1rem;
+        font-size: 1.1rem;
     }
 }
 
