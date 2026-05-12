@@ -9,6 +9,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from app.database import SessionLocal
 from app.models import User, Match, Prediction, Team
 from app.routers.knockout import resolve_bracket_teams, resolve_bracket_slot
+from app.routers.admin import invalidate_user_brackets
+from app.cache import user_cache
 
 FOOTBALL_USERNAMES = [
     ("el_toro_blanco", "El Toro Blanco"),
@@ -31,9 +33,9 @@ def create_simulated_users(db, num_users=5):
         # Ensure uniqueness with a short suffix just in case
         unique_username = f"{username}_{uuid.uuid4().hex[:4]}"
         user = User(
-            clerk_id=f"sim_{uuid.uuid4()}",
+            google_sub=f"sim_{uuid.uuid4()}",
             username=unique_username,
-            display_name=display_name,
+            email=f"{unique_username}@example.com",
             is_admin=False
         )
         db.add(user)
@@ -122,6 +124,13 @@ if __name__ == "__main__":
         for user in users:
             simulate_predictions_for_user(db, user)
         print("Successfully generated simulated users and predictions.")
+        
+        print("Invalidating user brackets...")
+        invalidate_user_brackets(db)
+        
+        print("Clearing cache...")
+        user_cache.clear_all()
+        
     except Exception as e:
         db.rollback()
         print(f"Error during simulation: {e}")

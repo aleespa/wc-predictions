@@ -22,11 +22,11 @@ def simulate_admin_results(db, limit=71):
     for i, match in enumerate(to_process):
         home_score = random.randint(0, 4)
         away_score = random.randint(0, 4)
-        
-        # In 2026 format, group matches don't have penalties
         penalty_winner_id = None
         
-        print(f"[{i+1}/{limit}] Match {match.match_number}: {match.home_team.code if match.home_team else '??'} {home_score} - {away_score} {match.away_team.code if match.away_team else '??'}")
+        is_ko = match.stage != "Group Stage"
+        
+        print(f"[{i+1}/{limit}] Match {match.match_number} ({match.stage}): {match.home_team.code if match.home_team else '??'} {home_score} - {away_score} {match.away_team.code if match.away_team else '??'}")
         
         match.home_score = home_score
         match.away_score = away_score
@@ -45,8 +45,16 @@ def simulate_admin_results(db, limit=71):
                 actual_pen_winner=penalty_winner_id,
                 home_team_id=match.home_team_id,
                 away_team_id=match.away_team_id,
-                is_knockout=False
+                is_knockout=is_ko
             )
+            
+            # Add bracket points for knockout matches
+            if is_ko:
+                actual_teams = {match.home_team_id, match.away_team_id}
+                predicted_teams = {pred.predicted_home_team_id, pred.predicted_away_team_id}
+                if actual_teams == predicted_teams and None not in actual_teams and None not in predicted_teams:
+                    points += 5
+                    
             pred.points_awarded = points
             
         # Commit every few matches to avoid huge transactions
@@ -55,6 +63,10 @@ def simulate_admin_results(db, limit=71):
             
     db.commit()
     print("Results committed.")
+    
+    # Invalidate brackets to ensure R32 propagation if group stage is finished
+    print("Invalidating user brackets...")
+    invalidate_user_brackets(db)
     
     # Clear cache
     user_cache.clear_all()
