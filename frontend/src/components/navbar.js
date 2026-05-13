@@ -43,7 +43,7 @@ export async function renderNavbar() {
     nav.innerHTML = `
         <div class="nav-inner">
             <div class="nav-brand" onclick="location.hash='#/'" id="nav-brand">
-                <span class="nav-brand-icon">⚽</span>
+                <img src="/icons/icon-192x192.png" class="nav-brand-logo" alt="Logo">
                 <span class="nav-brand-text">WC 2026</span>
             </div>
 

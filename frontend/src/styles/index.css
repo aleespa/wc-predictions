@@ -189,8 +189,10 @@ a:hover {
     opacity: 0.85;
 }
 
-.nav-brand-icon {
-    font-size: 1.5rem;
+.nav-brand-logo {
+    height: 32px;
+    width: 32px;
+    object-fit: contain;
 }
 
 .nav-brand-text {
