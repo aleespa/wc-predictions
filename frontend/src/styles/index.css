@@ -24,6 +24,8 @@
     --accent-purple: #8b5cf6;
     --accent-purple-light: #a78bfa;
     --accent-cyan: #06b6d4;
+    --logo-color-border: #9f7502;
+    --logo-color-main: #002e5d;
 
     /* Text */
     --text-primary: #0f172a;
@@ -39,7 +41,7 @@
     /* Gradients */
     --gradient-hero: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%);
     --gradient-card: linear-gradient(145deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
-    --gradient-gold: linear-gradient(135deg, #f59e0b, #d97706);
+    --gradient-gold: linear-gradient(135deg, #fcd25e, #d97706);
     --gradient-green: linear-gradient(135deg, #10b981, #059669);
     --gradient-red: linear-gradient(135deg, #ef4444, #dc2626);
     --gradient-blue: linear-gradient(135deg, #3b82f6, #2563eb);
@@ -193,10 +195,11 @@ a:hover {
     height: 32px;
     width: 32px;
     object-fit: contain;
+    border-radius: 50%;
 }
 
 .nav-brand-text {
-    background: linear-gradient(135deg, var(--accent-red), var(--accent-gold-light));
+    background: linear-gradient(135deg, var(--logo-color-main), var(--logo-color-border));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -313,7 +316,7 @@ a:hover {
 }
 
 .hero h1 .gradient-text {
-    background: linear-gradient(135deg, var(--accent-gold), var(--accent-purple-light), var(--accent-cyan));
+    background: linear-gradient(135deg, var(--accent-gold), var(--accent-purple), var(--accent-blue));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
