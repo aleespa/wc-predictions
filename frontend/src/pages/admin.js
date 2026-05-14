@@ -45,11 +45,11 @@ export async function adminPage() {
     const groupMatchesCount = matches.filter(m => m.stage === 'Group Stage').length;
     const groupFinishedCount = matches.filter(m => m.stage === 'Group Stage' && m.is_finished).length;
 
-    const teamOptions = teams.map(t => `<option value="${t.id}">${t.code} ${t.name}</option>`).join('');
+    const teamOptions = teams.map(tm => `<option value="${tm.id}">${tm.code} ${t(tm.name)}</option>`).join('');
 
     const matchRow = (m) => {
-        const homeName = m.home_team ? m.home_team.name : (m.home_slot ? `[${m.home_slot}]` : t('common_tbd'));
-        const awayName = m.away_team ? m.away_team.name : (m.away_slot ? `[${m.away_slot}]` : t('common_tbd'));
+        const homeName = m.home_team ? t(m.home_team.name) : (m.home_slot ? `[${m.home_slot}]` : t('common_tbd'));
+        const awayName = m.away_team ? t(m.away_team.name) : (m.away_slot ? `[${m.away_slot}]` : t('common_tbd'));
         const homeFlag = m.home_team ? `<img src="${getFlagURL(m.home_team.code)}" class="match-team-flag-svg" style="width:20px;vertical-align:middle;margin-right:4px;">` : '';
         const awayFlag = m.away_team ? `<img src="${getFlagURL(m.away_team.code)}" class="match-team-flag-svg" style="width:20px;vertical-align:middle;margin-left:4px;">` : '';
         
@@ -130,7 +130,7 @@ export async function adminPage() {
                         <label class="form-label" style="display:block;margin-bottom:0.5rem">${t('admin_select_match')}</label>
                         <select id="am-match-id" class="form-input" required>
                             <option value="" disabled selected>${t('admin_select_match')}</option>
-                            ${matches.map(m => `<option value="${m.id}">[${t('stage_' + m.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || m.stage}] ${m.home_team?.name || m.home_slot || t('common_tbd')} vs ${m.away_team?.name || m.away_slot || t('common_tbd')} (${t('match_number_label', { num: m.match_number || m.id })})</option>`).join('')}
+                            ${matches.map(m => `<option value="${m.id}">[${t('stage_' + m.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || m.stage}] ${m.home_team ? t(m.home_team.name) : (m.home_slot || t('common_tbd'))} vs ${m.away_team ? t(m.away_team.name) : (m.away_slot || t('common_tbd'))} (${t('match_number_label', { num: m.match_number || m.id })})</option>`).join('')}
                         </select>
                     </div>
                     <div class="admin-form-group small">

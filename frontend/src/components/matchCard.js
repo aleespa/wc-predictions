@@ -87,7 +87,7 @@ export function renderMatchCard(match, options = {}) {
                 <div class="match-team">
                     ${match.home_team ? `
                         <img src="${getFlagURL(match.home_team.code)}" alt="${match.home_team.code}" class="match-team-flag-svg" />
-                        <span class="match-team-name">${match.home_team.name}</span>
+                        <span class="match-team-name">${t(match.home_team.name)}</span>
                     ` : `
                         <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.home_slot || t('common_tbd')}</span>
                     `}
@@ -98,7 +98,7 @@ export function renderMatchCard(match, options = {}) {
                 <div class="match-team">
                     ${match.away_team ? `
                         <img src="${getFlagURL(match.away_team.code)}" alt="${match.away_team.code}" class="match-team-flag-svg" />
-                        <span class="match-team-name">${match.away_team.name}</span>
+                        <span class="match-team-name">${t(match.away_team.name)}</span>
                     ` : `
                         <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.away_slot || t('common_tbd')}</span>
                     `}

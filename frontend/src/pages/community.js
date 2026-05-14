@@ -62,10 +62,10 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
         let impliedResult = '';
         let impliedColor = '';
         if (roundedHome > roundedAway) {
-            impliedResult = t('community_win', { team: match.home_team?.name || t('common_home') });
+            impliedResult = t('community_win', { team: match.home_team?.name ? t(match.home_team.name) : t('common_home') });
             impliedColor = 'var(--accent-green)';
         } else if (roundedAway > roundedHome) {
-            impliedResult = t('community_win', { team: match.away_team?.name || t('common_away') });
+            impliedResult = t('community_win', { team: match.away_team?.name ? t(match.away_team.name) : t('common_away') });
             impliedColor = 'var(--accent-blue)';
         } else {
             impliedResult = t('community_draw');
@@ -145,7 +145,7 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
                 <div class="match-team">
                     ${match.home_team ? `
                         <img src="${getFlagURL(match.home_team.code)}" alt="${match.home_team.code}" class="match-team-flag-svg" />
-                        <span class="match-team-name">${match.home_team.name}</span>
+                        <span class="match-team-name">${t(match.home_team.name)}</span>
                     ` : `
                         <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.home_slot || t('common_tbd')}</span>
                     `}
@@ -156,7 +156,7 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
                 <div class="match-team">
                     ${match.away_team ? `
                         <img src="${getFlagURL(match.away_team.code)}" alt="${match.away_team.code}" class="match-team-flag-svg" />
-                        <span class="match-team-name">${match.away_team.name}</span>
+                        <span class="match-team-name">${t(match.away_team.name)}</span>
                     ` : `
                         <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.away_slot || t('common_tbd')}</span>
                     `}
@@ -180,7 +180,7 @@ function renderStandingsTable(standings, groupLetter, label = t('community_avg_l
     const trs = standings.map((s, idx) => `
         <tr style="border-bottom:1px solid var(--border-light)">
             <td style="padding:12px 4px;text-align:center;font-weight:700;color:var(--text-muted)">${idx + 1}</td>
-            <td style="padding:12px 4px;"><img src="${getFlagURL(s.team_code)}" class="match-team-flag-svg" style="width:24px; height:16px; margin-right:8px">${s.team_name}</td>
+            <td style="padding:12px 4px;"><img src="${getFlagURL(s.team_code)}" class="match-team-flag-svg" style="width:24px; height:16px; margin-right:8px">${t(s.team_name)}</td>
             <td style="padding:12px 4px;text-align:center">${s.played}</td>
             <td style="padding:12px 4px;text-align:center">${s.won}</td>
             <td style="padding:12px 4px;text-align:center">${s.drawn}</td>
@@ -243,7 +243,7 @@ function renderCommunityBracketMatch(match) {
         return `
             <div class="bracket-team ${isWinner ? 'community-winner' : ''}">
                 <img src="${getFlagURL(slot.team.code)}" alt="${slot.team.code}" class="bracket-team-flag" />
-                <span class="bracket-team-name">${slot.team.name}</span>
+                <span class="bracket-team-name">${t(slot.team.name)}</span>
                 ${isWinner ? '<span class="community-winner-badge">✓</span>' : ''}
             </div>
         `;

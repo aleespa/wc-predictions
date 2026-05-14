@@ -43,12 +43,12 @@ export async function predictPage(params) {
             <div class="prediction-teams-row" style="margin-top:var(--space-md); margin-bottom:var(--space-xl)">
                 <div class="prediction-team">
                     <img src="${getFlagURL(match.home_team.code)}" class="match-team-flag-svg" />
-                    <span class="match-team-name">${match.home_team.name}</span>
+                    <span class="match-team-name">${t(match.home_team.name)}</span>
                 </div>
                 <div class="prediction-vs-label">${t('common_vs')}</div>
                 <div class="prediction-team">
                     <img src="${getFlagURL(match.away_team.code)}" class="match-team-flag-svg" />
-                    <span class="match-team-name">${match.away_team.name}</span>
+                    <span class="match-team-name">${t(match.away_team.name)}</span>
                 </div>
             </div>
         `;

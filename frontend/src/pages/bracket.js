@@ -30,7 +30,7 @@ export function renderSlotTeam(slot, side, profileName) {
     return `
         <div class="bracket-team ${predictedClass}" data-side="${side}">
             <img src="${getFlagURL(slot.team.code)}" alt="${slot.team.code}" class="bracket-team-flag" />
-            <span class="bracket-team-name">${slot.team.name}</span>
+            <span class="bracket-team-name">${t(slot.team.name)}</span>
             ${slot.is_predicted ? `<span class="bracket-predicted-badge" title="${titleText}">⟡</span>` : ''}
         </div>
     `;
