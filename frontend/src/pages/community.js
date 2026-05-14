@@ -45,7 +45,7 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
         `;
     } else {
         scoreHtml = `
-            <span class="match-vs-label">VS</span>
+            <span class="match-vs-label">${t('common_vs')}</span>
             <div style="display:flex;flex-direction:column;align-items:center;line-height:1">
                 <span style="font-size:0.6rem;color:var(--text-muted);margin-bottom:2px">${dateStr}</span>
                 <span style="font-size:0.7rem;color:var(--text-muted);font-weight:500">${timeStr}</span>
@@ -62,10 +62,10 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
         let impliedResult = '';
         let impliedColor = '';
         if (roundedHome > roundedAway) {
-            impliedResult = t('community_win', { team: match.home_team?.name || 'Home' });
+            impliedResult = t('community_win', { team: match.home_team?.name || t('common_home') });
             impliedColor = 'var(--accent-green)';
         } else if (roundedAway > roundedHome) {
-            impliedResult = t('community_win', { team: match.away_team?.name || 'Away' });
+            impliedResult = t('community_win', { team: match.away_team?.name || t('common_away') });
             impliedColor = 'var(--accent-blue)';
         } else {
             impliedResult = t('community_draw');
@@ -147,7 +147,7 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
                         <img src="${getFlagURL(match.home_team.code)}" alt="${match.home_team.code}" class="match-team-flag-svg" />
                         <span class="match-team-name">${match.home_team.name}</span>
                     ` : `
-                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.home_slot || 'TBD'}</span>
+                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.home_slot || t('common_tbd')}</span>
                     `}
                 </div>
                 <div class="match-vs">
@@ -158,12 +158,12 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
                         <img src="${getFlagURL(match.away_team.code)}" alt="${match.away_team.code}" class="match-team-flag-svg" />
                         <span class="match-team-name">${match.away_team.name}</span>
                     ` : `
-                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.away_slot || 'TBD'}</span>
+                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.away_slot || t('common_tbd')}</span>
                     `}
                 </div>
             </div>
             <div class="match-card-footer">
-                <span class="match-venue">🏟️ ${match.venue || 'TBD'}</span>
+                <span class="match-venue">🏟️ ${match.venue || t('common_tbd')}</span>
             </div>
             ${communitySection}
         </div>
@@ -202,13 +202,13 @@ function renderStandingsTable(standings, groupLetter, label = 'Community Predict
                 <thead>
                     <tr style="border-bottom:2px solid var(--border-medium);color:var(--text-muted)">
                         <th style="padding:8px 4px;text-align:center">#</th>
-                        <th style="padding:8px 4px;text-align:left">Team</th>
-                        <th style="padding:8px 4px;text-align:center">MP</th>
-                        <th style="padding:8px 4px;text-align:center">W</th>
-                        <th style="padding:8px 4px;text-align:center">D</th>
-                        <th style="padding:8px 4px;text-align:center">L</th>
-                        <th style="padding:8px 4px;text-align:center">GD</th>
-                        <th style="padding:8px 4px;text-align:center">Pts</th>
+                        <th style="padding:8px 4px;text-align:left">${t('standings_th_team')}</th>
+                        <th style="padding:8px 4px;text-align:center">${t('standings_th_mp')}</th>
+                        <th style="padding:8px 4px;text-align:center">${t('standings_th_w')}</th>
+                        <th style="padding:8px 4px;text-align:center">${t('standings_th_d')}</th>
+                        <th style="padding:8px 4px;text-align:center">${t('standings_th_l')}</th>
+                        <th style="padding:8px 4px;text-align:center">${t('standings_th_gd')}</th>
+                        <th style="padding:8px 4px;text-align:center">${t('standings_th_pts')}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -488,7 +488,7 @@ export async function communityPage() {
                     if (c) {
                         const link = window.location.origin + window.location.pathname + '#/join/' + c.invite_code;
                         navigator.clipboard.writeText(link);
-                        alert("Invite link copied to clipboard!");
+                        alert(t('community_toast_invite_copied'));
                     }
                 });
             }
@@ -618,10 +618,10 @@ function renderCommunityContent(matches, communityPoints, leaderboard, currentUs
     ).join('');
 
     return `
-        <h2 style="margin-bottom: var(--space-md);">Leaderboard</h2>
+        <h2 style="margin-bottom: var(--space-md);">${t('community_leaderboard')}</h2>
         ${renderLeaderboardTable(leaderboard, currentUser, currentLeaderboardPage)}
 
-        <h2 style="margin-bottom: var(--space-md);">Average Predictions</h2>
+        <h2 style="margin-bottom: var(--space-md);">${t('community_avg_preds')}</h2>
         <div class="group-tabs" id="community-tabs">
             ${tabs}
         </div>
@@ -681,7 +681,7 @@ function initCommunityContent(matches, communityPoints, suffix) {
 
         if (filtered.length === 0) {
             if (filterType === 'stage') {
-                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🏆</div><div class="empty-state-text">Awaiting Bracket</div></div>`;
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🏆</div><div class="empty-state-text">${t('community_awaiting_bracket')}</div></div>`;
             } else {
                 grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">📭</div><div class="empty-state-text">${t('matches_no_matches')}</div></div>`;
             }
@@ -740,16 +740,16 @@ export async function joinCommunityPage(params) {
     return {
         html: `
             <div class="fade-in card" style="max-width: 400px; margin: 40px auto; text-align: center;">
-                <h2>Join Private Community</h2>
-                <p>You have been invited to join a private community.</p>
-                <button id="btn-confirm-join" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Join Community</button>
+                <h2>${t('community_join_title')}</h2>
+                <p>${t('community_join_desc')}</p>
+                <button id="btn-confirm-join" class="btn btn-primary" style="width: 100%; margin-top: 20px;">${t('community_join_btn')}</button>
             </div>
         `,
         init: () => {
             document.getElementById('btn-confirm-join').addEventListener('click', async () => {
                 const { isAuthenticated, fetchAPI } = await import('../api.js');
                 if (!isAuthenticated()) {
-                    alert("Please log in first to join a community.");
+                    alert(t('community_join_login_req'));
                     window.location.hash = '#/login';
                     return;
                 }

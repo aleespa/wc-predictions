@@ -48,8 +48,8 @@ export async function adminPage() {
     const teamOptions = teams.map(t => `<option value="${t.id}">${t.code} ${t.name}</option>`).join('');
 
     const matchRow = (m) => {
-        const homeName = m.home_team ? m.home_team.name : (m.home_slot ? `[${m.home_slot}]` : 'TBD');
-        const awayName = m.away_team ? m.away_team.name : (m.away_slot ? `[${m.away_slot}]` : 'TBD');
+        const homeName = m.home_team ? m.home_team.name : (m.home_slot ? `[${m.home_slot}]` : t('common_tbd'));
+        const awayName = m.away_team ? m.away_team.name : (m.away_slot ? `[${m.away_slot}]` : t('common_tbd'));
         const homeFlag = m.home_team ? `<img src="${getFlagURL(m.home_team.code)}" class="match-team-flag-svg" style="width:20px;vertical-align:middle;margin-right:4px;">` : '';
         const awayFlag = m.away_team ? `<img src="${getFlagURL(m.away_team.code)}" class="match-team-flag-svg" style="width:20px;vertical-align:middle;margin-left:4px;">` : '';
         
@@ -58,7 +58,7 @@ export async function adminPage() {
         return `
         <div class="admin-match-row ${!isReady ? 'admin-match-not-ready' : ''}" id="admin-match-${m.id}">
             <div class="admin-match-info">
-                <span class="match-group-badge">${m.group_letter ? 'Grp ' + m.group_letter : m.stage}</span>
+                <span class="match-group-badge">${m.group_letter ? t('matches_filter_grp', { group: m.group_letter }) : t('stage_' + m.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || m.stage}</span>
                 <span class="admin-match-number">#${m.match_number || m.id}</span>
             </div>
             <span class="admin-match-teams">
@@ -83,14 +83,14 @@ export async function adminPage() {
                     ${m.stage !== 'Group Stage' ? `
                     <div id="admin-pen-wrapper-${m.id}" style="display:${m.home_score === m.away_score && m.home_score !== null ? 'block' : 'none'}">
                         <select id="admin-pen-${m.id}" class="form-input" style="font-size:0.75rem; padding:2px 4px; height:auto; width:120px">
-                            <option value="">-- PK Winner --</option>
-                            <option value="${m.home_team?.id}" ${m.penalty_winner_id === m.home_team?.id ? 'selected' : ''}>${m.home_team?.code || 'Home'} wins</option>
-                            <option value="${m.away_team?.id}" ${m.penalty_winner_id === m.away_team?.id ? 'selected' : ''}>${m.away_team?.code || 'Away'} wins</option>
+                            <option value="">${t('admin_pk_winner_none')}</option>
+                            <option value="${m.home_team?.id}" ${m.penalty_winner_id === m.home_team?.id ? 'selected' : ''}>${m.home_team?.code || t('common_home')} ${t('admin_wins')}</option>
+                            <option value="${m.away_team?.id}" ${m.penalty_winner_id === m.away_team?.id ? 'selected' : ''}>${m.away_team?.code || t('common_away')} ${t('admin_wins')}</option>
                         </select>
                     </div>
                     ` : ''}
                 </div>
-                ` : `<span class="status-badge status-locked">Awaiting Teams</span>`}
+                ` : `<span class="status-badge status-locked">${t('admin_awaiting_teams')}</span>`}
             </div>
             <button class="btn btn-sm ${m.is_finished ? 'btn-secondary' : 'btn-success'}" 
                     onclick="window.__setResult(${m.id})" 
@@ -111,13 +111,13 @@ export async function adminPage() {
                 </div>
                 <div class="admin-status-box">
                     <div class="status-item">
-                        <span class="status-label">Group Progress</span>
+                        <span class="status-label">${t('admin_group_progress')}</span>
                         <span class="status-value">${groupFinishedCount} / ${groupMatchesCount}</span>
                         <div class="status-bar"><div class="status-bar-fill" style="width: ${(groupFinishedCount/groupMatchesCount)*100}%"></div></div>
                     </div>
                     ${groupFinishedCount === groupMatchesCount ? `
                         <div class="status-badge status-unlocked" style="margin-top:var(--space-sm)">
-                            <span class="status-icon">✅</span> Knockout Stages Active
+                            <span class="status-icon">✅</span> ${t('admin_ko_active')}
                         </div>
                     ` : ''}
                 </div>
@@ -130,7 +130,7 @@ export async function adminPage() {
                         <label class="form-label" style="display:block;margin-bottom:0.5rem">${t('admin_select_match')}</label>
                         <select id="am-match-id" class="form-input" required>
                             <option value="" disabled selected>${t('admin_select_match')}</option>
-                            ${matches.map(m => `<option value="${m.id}">[${m.stage}] ${m.home_team?.name || m.home_slot || 'TBD'} vs ${m.away_team?.name || m.away_slot || 'TBD'} (Match ${m.match_number || m.id})</option>`).join('')}
+                            ${matches.map(m => `<option value="${m.id}">[${t('stage_' + m.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || m.stage}] ${m.home_team?.name || m.home_slot || t('common_tbd')} vs ${m.away_team?.name || m.away_slot || t('common_tbd')} (${t('match_number_label', { num: m.match_number || m.id })})</option>`).join('')}
                         </select>
                     </div>
                     <div style="flex:1;min-width:150px">

@@ -77,7 +77,7 @@ export async function matchesPage() {
                 // 1. Apply Group/Stage filter
                 if (currentFilterType === 'thirds') {
                     filtered = []; // No matches for "thirds" view itself
-                    grid.innerHTML = '<div class="loading" style="grid-column: 1/-1; text-align: center; padding: 2rem;">⌛ Loading Best Thirds...</div>';
+                    grid.innerHTML = `<div class="loading" style="grid-column: 1/-1; text-align: center; padding: 2rem;">${t('matches_loading_thirds')}</div>`;
                     try {
                         const stds = await fetchAPI('/matches/thirds');
                         grid.innerHTML = ''; // Clear loading message
@@ -149,7 +149,7 @@ export async function matchesPage() {
                         grid.innerHTML = `
                             <div class="empty-state" style="grid-column:1/-1">
                                 <div class="empty-state-icon">⚠️</div>
-                                <div class="empty-state-text">Failed to load Best Thirds: ${err.message}</div>
+                                <div class="empty-state-text">${t('matches_error_thirds', { msg: err.message })}</div>
                             </div>
                         `;
                     }

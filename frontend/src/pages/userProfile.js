@@ -132,7 +132,7 @@ export async function userProfilePage(params) {
                 shareBtn.addEventListener('click', () => {
                     const url = window.location.origin + window.location.pathname + '#/user/' + profile.username;
                     navigator.clipboard.writeText(url).then(() => {
-                        shareBtn.textContent = '✓ Copied!';
+                        shareBtn.textContent = '✓ ' + t('user_profile_copied');
                         setTimeout(() => { shareBtn.textContent = '🔗 ' + t('user_profile_share'); }, 2000);
                     }).catch(() => {
                         prompt('Copy this link:', url);
@@ -159,7 +159,7 @@ export async function userProfilePage(params) {
                 // 1. Apply Group/Stage filter
                 if (currentFilterType === 'thirds') {
                     filtered = []; // No matches for "thirds" view itself
-                    grid.innerHTML = '<div class="loading" style="grid-column: 1/-1; text-align: center; padding: 2rem;">⌛ Loading Best Thirds...</div>';
+                    grid.innerHTML = `<div class="loading" style="grid-column: 1/-1; text-align: center; padding: 2rem;">${t('matches_loading_thirds')}</div>`;
                     try {
                         const stds = await fetchAPI(`/matches/thirds?username=${encodeURIComponent(username)}`);
                         grid.innerHTML = '';
@@ -227,7 +227,7 @@ export async function userProfilePage(params) {
                             </div>
                         `;
                     } catch (err) {
-                        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Failed to load Best Thirds: ${err.message}</div></div>`;
+                        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${t('matches_error_thirds', { msg: err.message })}</div></div>`;
                     }
                 } else if (currentFilterType === 'group') {
                     filtered = matches.filter(m => m.group_letter === currentFilterVal);
@@ -294,7 +294,7 @@ export async function userProfilePage(params) {
                     const lockedMsg = !bracket.is_unlocked ? `
                         <div class="empty-state" style="grid-column:1/-1; margin-bottom: var(--space-lg);">
                             <div class="empty-state-icon">🔒</div>
-                            <div class="empty-state-text">${bracket.unlock_reason || "Bracket is locked"}</div>
+                            <div class="empty-state-text">${bracket.unlock_reason || t('bracket_locked_msg')}</div>
                         </div>
                     ` : '';
 

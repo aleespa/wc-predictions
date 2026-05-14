@@ -43,8 +43,8 @@ export async function renderNavbar() {
     nav.innerHTML = `
         <div class="nav-inner">
             <div class="nav-brand" onclick="location.hash='#/'" id="nav-brand">
-                <img src="/icons/icon-192x192.png" class="nav-brand-logo" alt="Logo">
-                <span class="nav-brand-text">WC 2026</span>
+                <img src="/icons/icon-192x192.png" class="nav-brand-logo" alt="${t('nav_logo_alt')}">
+                <span class="nav-brand-text">${t('nav_brand')}</span>
             </div>
 
             <button class="nav-mobile-toggle" id="nav-toggle" aria-label="Toggle navigation">☰</button>
@@ -57,7 +57,7 @@ export async function renderNavbar() {
                     ${user?.is_admin ? `<button class="nav-link" data-route="/admin" onclick="location.hash='#/admin'">⚙️ ${t('nav_admin')}</button>` : ''}
                     <button class="nav-link nav-user-info" data-route="/profile" onclick="location.hash='#/profile'">
                         ${googleUser?.picture
-                            ? `<img src="${googleUser.picture}" class="nav-user-avatar" alt="User avatar" referrerpolicy="no-referrer">`
+                            ? `<img src="${googleUser.picture}" class="nav-user-avatar" alt="${t('nav_avatar_alt')}" referrerpolicy="no-referrer">`
                             : `<div class="nav-user-avatar nav-user-avatar--placeholder">${(googleUser?.name || googleUser?.email || '?')[0].toUpperCase()}</div>`
                         }
                         <span class="nav-user-name" id="nav-username"></span>

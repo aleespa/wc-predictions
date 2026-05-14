@@ -45,7 +45,7 @@ export async function predictPage(params) {
                     <img src="${getFlagURL(match.home_team.code)}" class="match-team-flag-svg" />
                     <span class="match-team-name">${match.home_team.name}</span>
                 </div>
-                <div class="prediction-vs-label">VS</div>
+                <div class="prediction-vs-label">${t('common_vs')}</div>
                 <div class="prediction-team">
                     <img src="${getFlagURL(match.away_team.code)}" class="match-team-flag-svg" />
                     <span class="match-team-name">${match.away_team.name}</span>
@@ -60,7 +60,7 @@ export async function predictPage(params) {
                 <div class="prediction-team">
                     <span class="match-team-name" style="color:var(--text-muted);font-style:italic">${homeLabel}</span>
                 </div>
-                <div class="prediction-vs-label">VS</div>
+                <div class="prediction-vs-label">${t('common_vs')}</div>
                 <div class="prediction-team">
                     <span class="match-team-name" style="color:var(--text-muted);font-style:italic">${awayLabel}</span>
                 </div>
@@ -237,7 +237,7 @@ export async function predictPage(params) {
 
                 <div class="predict-info">
                     <div class="match-date">${dateStr} · ${timeStr}</div>
-                    <div class="match-venue" style="white-space:normal">🏟️ ${match.venue || 'TBD'}</div>
+                    <div class="match-venue" style="white-space:normal">🏟️ ${match.venue || t('common_tbd')}</div>
                 </div>
 
                 ${formSection}

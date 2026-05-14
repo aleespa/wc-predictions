@@ -192,12 +192,12 @@ export async function profilePage() {
                                         <tr>
                                             <th>#</th>
                                             <th>${t('standings_th_team')}</th>
-                                            <th>P</th>
-                                            <th>W</th>
-                                            <th>D</th>
-                                            <th>L</th>
-                                            <th>GD</th>
-                                            <th>Pts</th>
+                                            <th>${t('standings_th_mp')}</th>
+                                            <th>${t('standings_th_w')}</th>
+                                            <th>${t('standings_th_d')}</th>
+                                            <th>${t('standings_th_l')}</th>
+                                            <th>${t('standings_th_gd')}</th>
+                                            <th>${t('standings_th_pts')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>

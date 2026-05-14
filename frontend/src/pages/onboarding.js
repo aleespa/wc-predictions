@@ -26,7 +26,7 @@ export async function onboardingPage() {
                                 minlength="3" 
                                 maxlength="30"
                                 pattern="^[a-zA-Z0-9_]+$"
-                                title="Only letters, numbers, and underscores allowed"
+                                title="${t('onboarding_username_help')}"
                             >
                             <p class="form-help">${t('onboarding_username_help')}</p>
                         </div>
