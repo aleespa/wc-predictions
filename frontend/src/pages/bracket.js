@@ -264,7 +264,7 @@ export async function bracketPage() {
                     <div class="bracket-lock-banner">
                         <span class="lock-icon">🔒</span>
                         <div class="lock-details">
-                            <span class="lock-message">${bracket.unlock_reason || t('bracket_locked_msg')}</span>
+                            <span class="lock-message">${t(bracket.unlock_reason) || t('bracket_locked_msg')}</span>
                             <span class="lock-hint">${t('bracket_lock_hint')}</span>
                         </div>
                         <button class="btn btn-primary" onclick="location.hash='#/predict'">${t('bracket_go_predict')}</button>
@@ -284,7 +284,7 @@ export async function bracketPage() {
                             <div style="display:flex; flex-wrap:wrap; gap:var(--space-sm)">
                                 ${invalidMatches.map(m => `
                                     <a href="#/predict/${m.match_id}" class="btn btn-secondary btn-sm" style="border-color:var(--accent-red); color:var(--accent-red)">
-                                        M${m.match_number}: ${m.home.team ? m.home.team.code : '?'} vs ${m.away.team ? m.away.team.code : '?'}
+                                        M${m.match_number}: ${m.home.team ? m.home.team.code : '?'} ${t('common_vs')} ${m.away.team ? m.away.team.code : '?'}
                                     </a>
                                 `).join('')}
                             </div>

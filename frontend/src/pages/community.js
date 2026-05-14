@@ -174,7 +174,7 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
 /**
  * Render standings table (reused for community predicted standings).
  */
-function renderStandingsTable(standings, groupLetter, label = 'Community Predicted') {
+function renderStandingsTable(standings, groupLetter, label = t('community_avg_label')) {
     if (!standings || standings.length === 0) return '';
 
     const trs = standings.map((s, idx) => `
@@ -300,7 +300,7 @@ function renderBracketRound(title, matches) {
         <div class="bracket-round">
             <div class="bracket-round-header">
                 <h3 class="bracket-round-title">${title}</h3>
-                <span class="bracket-round-count">${matches.length} match${matches.length !== 1 ? 'es' : ''}</span>
+                <span class="bracket-round-count">${matches.length === 1 ? t('bracket_round_match', { count: matches.length }) : t('bracket_round_matches', { count: matches.length })}</span>
             </div>
             <div class="bracket-round-matches">
                 ${matches.map(m => renderCommunityBracketMatch(m)).join('')}

@@ -406,11 +406,11 @@ def get_bracket(
     is_unlocked = all_finished or user_predicted_all
     unlock_reason = None
     if not is_unlocked:
-        unlock_reason = "Complete all group-stage predictions to unlock the bracket"
+        unlock_reason = "bracket_locked_msg"
     elif all_finished:
-        unlock_reason = "Round of 32 is officially defined"
+        unlock_reason = "bracket_unlocked_official"
     else:
-        unlock_reason = "All group stage matches predicted"
+        unlock_reason = "bracket_unlocked_user"
 
     target_user_id = None
     if username:
@@ -425,7 +425,7 @@ def get_bracket(
             ).count()
             is_unlocked = all_finished or (group_preds_count >= len(group_matches))
             if not is_unlocked:
-                unlock_reason = "This user hasn't unlocked their bracket yet"
+                unlock_reason = "bracket_user_locked_msg"
     elif current_user:
         target_user_id = current_user.id
 

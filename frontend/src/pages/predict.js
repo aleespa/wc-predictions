@@ -53,8 +53,8 @@ export async function predictPage(params) {
             </div>
         `;
     } else {
-        const homeLabel = match.home_slot || 'TBD';
-        const awayLabel = match.away_slot || 'TBD';
+        const homeLabel = match.home_slot || t('common_tbd');
+        const awayLabel = match.away_slot || t('common_tbd');
         teamsHeader = `
             <div class="prediction-teams-row" style="margin-top:var(--space-md); margin-bottom:var(--space-xl)">
                 <div class="prediction-team">

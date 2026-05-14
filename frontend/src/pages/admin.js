@@ -66,7 +66,7 @@ export async function adminPage() {
                     ${homeFlag}
                     <span class="${!m.home_team ? 'tbd-team' : ''}">${homeName}</span>
                 </div>
-                <span class="vs-divider">vs</span>
+                <span class="vs-divider">${t('common_vs')}</span>
                 <div class="admin-team-item">
                     <span class="${!m.away_team ? 'tbd-team' : ''}">${awayName}</span>
                     ${awayFlag}

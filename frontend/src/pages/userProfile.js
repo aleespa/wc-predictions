@@ -294,7 +294,7 @@ export async function userProfilePage(params) {
                     const lockedMsg = !bracket.is_unlocked ? `
                         <div class="empty-state" style="grid-column:1/-1; margin-bottom: var(--space-lg);">
                             <div class="empty-state-icon">🔒</div>
-                            <div class="empty-state-text">${bracket.unlock_reason || t('bracket_locked_msg')}</div>
+                            <div class="empty-state-text">${t(bracket.unlock_reason) || t('bracket_locked_msg')}</div>
                         </div>
                     ` : '';
 

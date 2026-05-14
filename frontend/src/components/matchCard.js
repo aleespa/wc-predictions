@@ -33,7 +33,7 @@ export function renderMatchCard(match, options = {}) {
         `;
     } else {
         scoreHtml = `
-            <span class="match-vs-label">VS</span>
+            <span class="match-vs-label">${t('common_vs')}</span>
             <div style="display:flex;flex-direction:column;align-items:center;line-height:1">
                 <span style="font-size:0.6rem;color:var(--text-muted);margin-bottom:2px">${dateStr}</span>
                 <span style="font-size:0.7rem;color:var(--text-muted);font-weight:500">${timeStr}</span>
@@ -89,7 +89,7 @@ export function renderMatchCard(match, options = {}) {
                         <img src="${getFlagURL(match.home_team.code)}" alt="${match.home_team.code}" class="match-team-flag-svg" />
                         <span class="match-team-name">${match.home_team.name}</span>
                     ` : `
-                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.home_slot || 'TBD'}</span>
+                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.home_slot || t('common_tbd')}</span>
                     `}
                 </div>
                 <div class="match-vs">
@@ -100,7 +100,7 @@ export function renderMatchCard(match, options = {}) {
                         <img src="${getFlagURL(match.away_team.code)}" alt="${match.away_team.code}" class="match-team-flag-svg" />
                         <span class="match-team-name">${match.away_team.name}</span>
                     ` : `
-                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.away_slot || 'TBD'}</span>
+                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.away_slot || t('common_tbd')}</span>
                     `}
                 </div>
             </div>
