@@ -125,33 +125,33 @@ export async function adminPage() {
 
             <div class="card" style="margin: var(--space-xl) 0;">
                 <h3 style="margin-top:0;margin-bottom:var(--space-md);color:var(--accent-gold)">${t('admin_edit_title')}</h3>
-                <form id="admin-edit-match-form" style="display:flex;gap:var(--space-md);flex-wrap:wrap;align-items:flex-end;">
-                    <div style="flex:1;min-width:250px">
+                <form id="admin-edit-match-form">
+                    <div class="admin-form-group" style="min-width:250px">
                         <label class="form-label" style="display:block;margin-bottom:0.5rem">${t('admin_select_match')}</label>
                         <select id="am-match-id" class="form-input" required>
                             <option value="" disabled selected>${t('admin_select_match')}</option>
                             ${matches.map(m => `<option value="${m.id}">[${t('stage_' + m.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || m.stage}] ${m.home_team?.name || m.home_slot || t('common_tbd')} vs ${m.away_team?.name || m.away_slot || t('common_tbd')} (${t('match_number_label', { num: m.match_number || m.id })})</option>`).join('')}
                         </select>
                     </div>
-                    <div style="flex:1;min-width:150px">
+                    <div class="admin-form-group small">
                         <label class="form-label" style="display:block;margin-bottom:0.5rem">${t('admin_override_home')}</label>
                         <select id="am-home" class="form-input">
                             <option value="">${t('admin_no_change')}</option>
                             ${teamOptions}
                         </select>
                     </div>
-                    <div style="flex:1;min-width:150px">
+                    <div class="admin-form-group small">
                         <label class="form-label" style="display:block;margin-bottom:0.5rem">${t('admin_override_away')}</label>
                         <select id="am-away" class="form-input">
                             <option value="">${t('admin_no_change')}</option>
                             ${teamOptions}
                         </select>
                     </div>
-                    <div style="flex:1;min-width:180px">
+                    <div class="admin-form-group">
                         <label class="form-label" style="display:block;margin-bottom:0.5rem">${t('admin_datetime')}</label>
                         <input type="datetime-local" id="am-date" class="form-input" />
                     </div>
-                    <div style="flex:1;min-width:150px">
+                    <div class="admin-form-group">
                         <label class="form-label" style="display:block;margin-bottom:0.5rem">${t('admin_venue')}</label>
                         <input type="text" id="am-venue" class="form-input" placeholder="${t('admin_no_change')}" />
                     </div>
