@@ -140,35 +140,25 @@ export async function predictPage(params) {
                     ` : ''}
                     
                     <div class="prediction-inputs-row">
-                        ${isTouch && !isLocked ? `
-                            <div class="wheel-picker-container" id="home-score-wheel" data-value="${homeScore || 0}">
-                                <div class="wheel-picker-center-highlight"></div>
-                                <div class="wheel-picker-scroll">
-                                    ${Array.from({ length: 21 }, (_, i) => `<div class="wheel-picker-item" data-val="${i}">${i}</div>`).join('')}
-                                </div>
-                                <input type="hidden" id="home-score" value="${homeScore !== '' ? homeScore : 0}" />
-                            </div>
-                        ` : `
+                        <div class="score-selector">
+                            ${!isLocked ? `<button type="button" class="score-btn plus" data-target="home-score">+</button>` : ''}
                             <div class="prediction-input-wrapper">
                                 <input type="number" class="score-input-field" id="home-score" min="0" max="20"
-                                    value="${homeScore}" placeholder="0" ${isLocked ? 'disabled' : ''} required />
+                                    value="${homeScore !== '' ? homeScore : 0}" placeholder="0" ${isLocked ? 'disabled' : ''} readonly required />
                             </div>
-                        `}
+                            ${!isLocked ? `<button type="button" class="score-btn minus" data-target="home-score">-</button>` : ''}
+                        </div>
+                        
                         <span class="score-input-separator">—</span>
-                        ${isTouch && !isLocked ? `
-                            <div class="wheel-picker-container" id="away-score-wheel" data-value="${awayScore || 0}">
-                                <div class="wheel-picker-center-highlight"></div>
-                                <div class="wheel-picker-scroll">
-                                    ${Array.from({ length: 21 }, (_, i) => `<div class="wheel-picker-item" data-val="${i}">${i}</div>`).join('')}
-                                </div>
-                                <input type="hidden" id="away-score" value="${awayScore !== '' ? awayScore : 0}" />
-                            </div>
-                        ` : `
+                        
+                        <div class="score-selector">
+                            ${!isLocked ? `<button type="button" class="score-btn plus" data-target="away-score">+</button>` : ''}
                             <div class="prediction-input-wrapper">
                                 <input type="number" class="score-input-field" id="away-score" min="0" max="20"
-                                    value="${awayScore}" placeholder="0" ${isLocked ? 'disabled' : ''} required />
+                                    value="${awayScore !== '' ? awayScore : 0}" placeholder="0" ${isLocked ? 'disabled' : ''} readonly required />
                             </div>
-                        `}
+                            ${!isLocked ? `<button type="button" class="score-btn minus" data-target="away-score">-</button>` : ''}
+                        </div>
                     </div>
 
                     ${isKnockout ? `
@@ -269,67 +259,29 @@ export async function predictPage(params) {
                 }
             };
 
-            const initWheel = (containerId, inputId) => {
-                const container = document.getElementById(containerId);
-                const input = document.getElementById(inputId);
-                const scroll = container?.querySelector('.wheel-picker-scroll');
-                const items = container?.querySelectorAll('.wheel-picker-item');
-                if (!container || !scroll) return;
-
-                let startY, currentTranslate = 0, prevTranslate = 0;
-                const itemHeight = 40;
-
-                const updateSelection = (y) => {
-                    const index = Math.round(-y / itemHeight);
-                    const clampedIndex = Math.max(0, Math.min(20, index));
-                    const finalY = -clampedIndex * itemHeight;
-
-                    scroll.style.transform = `translateY(${finalY}px)`;
-                    currentTranslate = finalY;
-                    prevTranslate = finalY;
-                    input.value = clampedIndex;
-
-                    items.forEach((item, idx) => {
-                        item.classList.toggle('active', idx === clampedIndex);
+            const initScoreButtons = () => {
+                document.querySelectorAll('.score-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (isLocked) return;
+                        
+                        const targetId = btn.dataset.target;
+                        const input = document.getElementById(targetId);
+                        let val = parseInt(input.value) || 0;
+                        
+                        if (btn.classList.contains('plus')) {
+                            if (val < 20) val++;
+                        } else {
+                            if (val > 0) val--;
+                        }
+                        
+                        input.value = val;
+                        updatePenaltyUI();
                     });
-                    updatePenaltyUI();
-                };
-
-                // Set initial position
-                const initialVal = parseInt(container.dataset.value) || 0;
-                updateSelection(-initialVal * itemHeight);
-
-                container.addEventListener('touchstart', (e) => {
-                    startY = e.touches[0].clientY;
-                    scroll.style.transition = 'none';
-                    container.classList.add('focused');
-                });
-
-                container.addEventListener('touchmove', (e) => {
-                    const y = e.touches[0].clientY;
-                    const diff = y - startY;
-                    currentTranslate = prevTranslate + diff;
-                    // Dampen resistance at edges
-                    if (currentTranslate > 20) currentTranslate = 20 + (currentTranslate - 20) * 0.3;
-                    if (currentTranslate < -20 * itemHeight - 20) currentTranslate = -20 * itemHeight - 20 + (currentTranslate + 20 * itemHeight + 20) * 0.3;
-
-                    scroll.style.transform = `translateY(${currentTranslate}px)`;
-                });
-
-                container.addEventListener('touchend', () => {
-                    scroll.style.transition = 'transform 0.15s cubic-bezier(0.2, 0, 0.2, 1)';
-                    updateSelection(currentTranslate);
-                    container.classList.remove('focused');
                 });
             };
 
-            if (isTouch) {
-                initWheel('home-score-wheel', 'home-score');
-                initWheel('away-score-wheel', 'away-score');
-            } else {
-                homeInput?.addEventListener('input', updatePenaltyUI);
-                awayInput?.addEventListener('input', updatePenaltyUI);
-            }
+            initScoreButtons();
 
             document.querySelectorAll('.penalty-team-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
