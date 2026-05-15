@@ -29,21 +29,21 @@ def seed_database(db: Session):
         return
 
     # 1. Create Admin User (if not exists)
-    admin = db.query(User).filter(User.username == "admin").first()
-    if not admin:
-        try:
-            admin = User(
-                google_sub="admin_placeholder_id",
-                email="admin@example.com",
-                username="admin",
-                is_admin=True,
-            )
-            db.add(admin)
-            db.commit() # Commit admin immediately to avoid duplicate key in other workers
-        except Exception:
-            db.rollback()
-            # If another worker created it, just fetch it
-            admin = db.query(User).filter(User.username == "admin").first()
+    # admin = db.query(User).filter(User.username == "admin").first()
+    # if not admin:
+    #     try:
+    #         admin = User(
+    #             google_sub="admin_placeholder_id",
+    #             email="admin@example.com",
+    #             username="admin",
+    #             is_admin=True,
+    #         )
+    #         db.add(admin)
+    #         db.commit() # Commit admin immediately to avoid duplicate key in other workers
+    #     except Exception:
+    #         db.rollback()
+    #         # If another worker created it, just fetch it
+    #         admin = db.query(User).filter(User.username == "admin").first()
 
     # Determine paths
     base_dir = os.path.dirname(__file__)
