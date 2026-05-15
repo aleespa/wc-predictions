@@ -12,24 +12,13 @@ from app.routers.knockout import resolve_bracket_teams, resolve_bracket_slot
 from app.routers.admin import invalidate_user_brackets
 from app.cache import user_cache
 
-FOOTBALL_USERNAMES = [
-    ("el_toro_blanco", "El Toro Blanco"),
-    ("penalty_king", "Penalty King"),
-    ("offside_trap", "Offside Trap"),
-    ("golden_boot", "Golden Boot"),
-    ("free_kick_maestro", "Free Kick Maestro"),
-    ("tiki_taka_fan", "Tiki Taka Fan"),
-    ("the_sweeper", "The Sweeper"),
-    ("bicycle_kick", "Bicycle Kick"),
-    ("ultras_norte", "Ultras Norte"),
-    ("pressing_machine", "Pressing Machine"),
-]
+FOOTBALL_USERNAMES = ["random_prediction"]
 
 
 def create_simulated_users(db, num_users=5):
     users = []
     for i in range(min(num_users, len(FOOTBALL_USERNAMES))):
-        username, display_name = FOOTBALL_USERNAMES[i]
+        username = FOOTBALL_USERNAMES[i]
         # Ensure uniqueness with a short suffix just in case
         unique_username = f"{username}_{uuid.uuid4().hex[:4]}"
         user = User(
@@ -120,7 +109,7 @@ def simulate_predictions_for_user(db, user):
 if __name__ == "__main__":
     db = SessionLocal()
     try:
-        users = create_simulated_users(db, num_users=5)
+        users = create_simulated_users(db, num_users=1)
         for user in users:
             simulate_predictions_for_user(db, user)
         print("Successfully generated simulated users and predictions.")
