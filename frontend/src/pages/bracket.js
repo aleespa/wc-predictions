@@ -184,7 +184,7 @@ export async function bracketPage() {
     try {
         bracket = await fetchAPI('/knockout/bracket');
     } catch (e) {
-        return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${e.message}</div></div>`;
+        return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${t(e.message)}</div></div>`;
     }
 
     const authed = isAuthenticated();

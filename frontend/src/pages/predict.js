@@ -14,7 +14,7 @@ export async function predictPage(params) {
             authed ? fetchAPI('/me') : Promise.resolve(null)
         ]);
     } catch (e) {
-        return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${e.message}</div></div>`;
+        return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${t(e.message)}</div></div>`;
     }
 
     const matchDate = new Date(match.match_date);
@@ -356,7 +356,7 @@ export async function predictPage(params) {
                         location.hash = match.group_letter ? '#/matches' : '#/bracket';
                     }
                 } catch (err) {
-                    showToast(err.message, 'error');
+                    showToast(t(err.message), 'error');
                     submitBtn.disabled = false;
                     submitBtn.textContent = existingPred ? t('predict_btn_update') : t('predict_btn_submit');
                 }

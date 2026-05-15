@@ -36,7 +36,7 @@ export async function adminPage() {
         teams = tRes;
         bracket = bRes;
     } catch (e) {
-        return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${e.message}</div></div>`;
+        return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${t(e.message)}</div></div>`;
     }
 
 
@@ -245,7 +245,7 @@ export async function adminPage() {
                         window.dispatchEvent(new HashChangeEvent("hashchange"));
                     }, 800);
                 } catch (err) {
-                    showToast(err.message, 'error');
+                    showToast(t(err.message), 'error');
                     btn.disabled = false;
                     btn.textContent = 'Set Result';
                 }
@@ -303,7 +303,7 @@ export async function adminPage() {
                            window.dispatchEvent(new HashChangeEvent("hashchange"));
                         }, 600);
                     } catch (err) {
-                        showToast(err.message, 'error');
+                        showToast(t(err.message), 'error');
                         btn.disabled = false;
                         btn.textContent = t('admin_btn_update');
                     }

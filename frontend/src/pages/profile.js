@@ -46,7 +46,7 @@ export async function profilePage() {
         // Merge public stats into user object
         user = { ...user, ...p };
     } catch (e) {
-        return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${e.message}</div></div>`;
+        return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${t(e.message)}</div></div>`;
     }
 
     const initial = user.username.charAt(0).toUpperCase();
@@ -135,7 +135,7 @@ export async function profilePage() {
                         alert(t('profile_delete_success'));
                         window.location.href = '/'; 
                     } catch (err) {
-                        alert(err.message);
+                        alert(t(err.message));
                     }
                 }
             });

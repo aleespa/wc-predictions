@@ -417,7 +417,7 @@ export async function communityPage() {
                     currentLeaderboardPage = 1;
                     render();
                 } catch (e) {
-                    contentArea.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${e.message}</div></div>`;
+                    contentArea.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${t(e.message)}</div></div>`;
                 }
             };
 
@@ -477,7 +477,7 @@ export async function communityPage() {
                         handleRoute();
 
                     } catch (e) {
-                        alert(e.message);
+                        alert(t(e.message));
                     }
                 });
             }
@@ -503,7 +503,7 @@ export async function communityPage() {
                             const { handleRoute } = await import('../router.js');
                             handleRoute();
                         } catch (e) {
-                            alert(e.message);
+                            alert(t(e.message));
                         }
                     }
                 });
@@ -761,7 +761,7 @@ export async function joinCommunityPage(params) {
                     const { navigate } = await import('../router.js');
                     navigate('/community');
                 } catch (e) {
-                    alert(e.message);
+                    alert(t(e.message));
                 }
             });
         }
