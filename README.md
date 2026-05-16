@@ -1,147 +1,247 @@
 # 🏆 World Cup 2026 Predictions Dashboard
 
-A high-performance, full-stack web application built to predict, track, and manage matches for the FIFA World Cup 2026. Designed with a premium glassmorphic UI, dynamic knockout bracket generation, and a fully decoupled backend architecture.
+A full-stack web app to predict, track, and compete on FIFA World Cup 2026 match results. Features a glassmorphic UI, dynamic knockout bracket generation, community prediction aggregates, and a decoupled FastAPI backend.
 
 ## ⚡ Tech Stack
 
 ### Backend
 - **Framework**: FastAPI (Python 3.13)
-- **Database**: PostgreSQL via Docker
-- **Authentication**: Clerk Backend SDK (JWT validation & session management)
-- **Package Manager**: `uv` (Fast Python package installer and resolver)
-- **Migrations**: Alembic
+- **Database**: PostgreSQL (Docker locally, Neon in production)
+- **ORM & Migrations**: SQLAlchemy + Alembic
+- **Package Manager**: `uv`
+- **Caching**: In-process TTL caches for user stats, matches, and community data
 
 ### Frontend
 - **Framework**: Vanilla JS + Vite
-- **Authentication**: Clerk Frontend SDK (@clerk/clerk-js)
-- **Styling**: Pure CSS (Modern Glassmorphism, CSS Variables, Flexbox/Grid)
-- **Icons/Visuals**: SVGs hosted via CDN (FlagCDN)
+- **Styling**: Pure CSS (glassmorphism, CSS variables, responsive Flexbox/Grid)
+- **i18n**: Client-side translations (English & Spanish)
+- **PWA**: Web app manifest, installable icons, Apple touch icon
+- **Flags**: SVG flags via [FlagCDN](https://flagcdn.com)
+
+### Authentication & Proxy
+- **Auth**: Google OAuth 2.0 with server-side sessions stored in **Cloudflare KV**
+- **API Proxy**: Cloudflare Pages Functions (`frontend/functions/`) inject a trusted `X-User-Sub` header on every authenticated request to the backend
 
 ### Infrastructure
-- **Containerization**: Docker & Docker Compose
-- **Web Server / Reverse Proxy**: NGINX
+| Environment | Frontend | Backend | Database |
+|---|---|---|---|
+| **Production** | Cloudflare Pages | Oracle Cloud (Docker + NGINX) | Neon (managed PostgreSQL) |
+| **Local** | Vite / Docker | FastAPI via Docker Compose | PostgreSQL via Docker Compose |
+
+---
+
+## 📱 Features
+
+### Match Predictions
+- Browse all 72 group-stage fixtures across Groups A–L, plus knockout rounds (R32 → Final)
+- Filter by group, stage, or prediction status (with / without prediction)
+- Submit exact-score predictions locked at kickoff
+- Button-based score selectors with penalty-shootout winner selection for knockout draws
+- Live group standings blended from confirmed results and your predictions
+
+### Knockout Bracket
+- Full interactive bracket with FIFA 2026 Annex C third-place team resolution
+- Teams resolve dynamically from your group-stage predictions
+- Invalid-prediction detection when bracket teams change after you predict
+
+### Leaderboard & Profiles
+- Global leaderboard with rank, points, exact scores, and correct outcomes
+- Public user profiles at `#/user/:username` (predictions visible only after match kickoff)
+- Personal profile page with stats and prediction history
+
+### Community
+- Aggregated crowd predictions: average scores, win/draw/loss percentages per match
+- Create private communities with invite links (`#/join/:code`) and scoped leaderboards
+- Community virtual user scored from rounded average predictions
+
+### Admin
+- Admin dashboard (gear icon) to enter final scores and advance knockout stages
+- Admins auto-assigned at registration via `ADMIN_EMAILS` or `ADMIN_GOOGLE_SUBS`
+
+### Localization & UX
+- English / Spanish UI with in-navbar language switcher
+- Translated team names and all user-facing strings
+- Mobile-optimized leaderboard, community, and admin layouts
+- Installable PWA on supported devices
+
+### Scoring
+| Points | Condition |
+|---|---|
+| **5** | Exact scoreline |
+| **3** | Correct outcome + correct goal difference |
+| **1** | Correct outcome (win / draw / loss) |
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart LR
+    Browser -->|HTTPS| CF[Cloudflare Pages]
+    CF -->|"/api/auth/*"| AuthFn[Auth Functions]
+    CF -->|"/api/*"| ProxyFn[Proxy Function]
+    AuthFn -->|OAuth| Google[Google OAuth]
+    AuthFn -->|session| KV[(Cloudflare KV)]
+    ProxyFn -->|X-User-Sub header| Backend[FastAPI on Oracle Cloud]
+    Backend --> DB[(Neon PostgreSQL)]
+```
+
+1. The user signs in via Google OAuth; a session ID is stored in Cloudflare KV and set as an `HttpOnly` cookie.
+2. All `/api/*` requests (except `/api/auth/*`) pass through the Cloudflare proxy function, which resolves the session and forwards the request to the backend with `X-User-Sub` / `X-User-Email` headers.
+3. The FastAPI backend trusts these headers because they are set server-side by Cloudflare, never by the browser.
 
 ---
 
 ## 🛠️ Prerequisites
 
-Before you begin, ensure you have the following installed on your machine:
-- **Docker** and **Docker Compose**
-- **Clerk Account**: You will need a Clerk application to handle authentication.
+- **Docker** and **Docker Compose** (for local backend + database)
+- **Node.js 20+** (optional, for running the Vite dev server)
+- **Google Cloud Console** project with OAuth 2.0 credentials (for production auth)
+- **Cloudflare** account with Pages, KV namespace, and Functions (for production frontend + auth)
 
 ---
 
 ## 🔐 Environment Variables
 
-The application requires specific environment variables to connect with your Clerk instance and configure the PostgreSQL database.
-
-Copy `.env.example` to `.env` in the root directory and populate it with your Clerk API keys and database credentials:
+### Local development (`.env` at project root)
 
 ```env
+# PostgreSQL (Docker Compose)
 POSTGRES_USER=admin
 POSTGRES_PASSWORD=admin
 POSTGRES_DB=wc_db
 DATABASE_URL=postgresql://admin:admin@db:5432/wc_db
-CLERK_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Admin access (comma-separated, applied at user registration)
+ADMIN_EMAILS=you@example.com
+ADMIN_GOOGLE_SUBS=          # optional: Google sub IDs
 ```
+
+> **Note:** Full Google OAuth login only works when deployed to Cloudflare Pages (Functions + KV). Local Docker gives you the API and database for development; use the simulation scripts below to populate test data without signing in.
+
+### Production — Backend (Oracle Cloud)
+
+```
+DATABASE_URL          # Neon PostgreSQL connection string
+ADMIN_EMAILS          # Comma-separated admin emails
+ADMIN_GOOGLE_SUBS     # Optional comma-separated Google sub IDs
+FRONTEND_URL          # Cloudflare Pages URL (for CORS)
+```
+
+### Production — Frontend (Cloudflare Pages)
+
+| Variable / Binding | Purpose |
+|---|---|
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
+| `SESSIONS` (KV binding) | Server-side session storage |
+
+Cloudflare Pages Functions in `frontend/functions/` handle auth and proxy all API traffic to the backend.
 
 ---
 
-## 🚀 How to Run the Project locally
+## 🚀 Running Locally
 
-The application is fully containerized using Docker Compose. A bridge network securely connects the PostgreSQL database, FastAPI backend, Vite frontend, and NGINX reverse proxy.
-
-### 1. Start the Docker Cluster
-
-Ensure Docker is running, then execute the following command at the project root:
+The app runs via Docker Compose with PostgreSQL, FastAPI, Vite-built frontend, and NGINX on port 80.
 
 ```bash
 docker compose up -d --build
 ```
 
-*Note: The first time the backend boots, Alembic will apply database migrations, and the backend will automatically execute `seed.py` to populate the PostgreSQL database with all 48 World Cup teams and the 72 group-stage fixtures.*
+On first boot, Alembic applies migrations and `seed.py` populates 48 teams and 72 group-stage fixtures.
 
-### 2. Access the Application
+| Service | URL |
+|---|---|
+| Web app | `http://localhost/` |
+| API | `http://localhost/api/` |
+| Health check | `http://localhost/api/health` |
 
-The frontend and API are both cleanly served via the NGINX proxy on port 80:
-- **Web App:** `http://localhost/`
-- **Backend API:** `http://localhost/api/`
+To stop:
+
+```bash
+docker compose down
+```
+
+### Populating test data
+
+Mount scripts are available inside the backend container:
+
+```bash
+# Create simulated users with random predictions
+docker compose exec backend python simulate_data.py
+
+# Simulate admin-entered results for the first N group matches
+docker compose exec backend python simulate_results.py
+```
 
 ---
 
-## 👤 User Management & Admin Access
+## 👤 User Management
 
-### Authentication Flow
-The application uses **Clerk** for secure user management. 
-- **Auto-Sync**: When a user logs in via Clerk for the first time, a local profile is automatically created in the SQLite database to track their predictions and score.
-- **Onboarding**: Users are prompted to choose a unique username upon their first visit to ensure a personalized experience on the leaderboard.
+### Sign-up flow
+1. User signs in with Google → session created in Cloudflare KV.
+2. On first visit, unregistered users are redirected to **onboarding** to pick a unique username.
+3. `POST /api/users/register` creates the local PostgreSQL profile linked to their Google `sub`.
 
-### Administrator Access
-Admin privileges are granted via the `is_admin` flag in the local database.
-- To promote a user to Admin, manually update the `is_admin` column to `1` for that user's record in the `users` table.
-- Admins can access the dashboard (via the Gear Icon) to finalize scores and manage knockout stages.
-
----
-
-## 📱 Features List
-
-- **Real-time Match Filtering**: Traverse from Group A through Group L, or dive directly into Knockout brackets.
-- **Dynamic Live Standings**: Instantly calculates Points, Goal Differences, and Matches Played per group as scores are finalized.
-- **Secure Predictions**: Integrated Clerk authentication allowing users to submit exact-score predictions right up until the literal Match Kickoff time.
-- **Points Architecture**:
-  - `5 Points`: Exact scoreline guessed perfectly.
-  - `3 Points`: Correct outcome + correct goal difference.
-  - `1 Point`: Correct match outcome (Win/Draw/Loss).
+### Admin access
+Admins are granted automatically at registration if their Google email is listed in `ADMIN_EMAILS` or their `sub` is in `ADMIN_GOOGLE_SUBS`. You can also promote a user manually by setting `is_admin = true` in the `users` table.
 
 ---
 
 ## ☁️ Deployment
 
-The production application is split across three services:
-
-- **Frontend** — Cloudflare Pages
-- **Backend** — Oracle Cloud Free Tier (VM)
-- **Database** — Neon (managed PostgreSQL)
-
-### Environment Variables
-
-**Backend (Oracle Cloud):**
-```
-DATABASE_URL        # PostgreSQL connection string from Neon
-CLERK_SECRET_KEY    # Clerk backend secret key
-ADMIN_EMAILS        # Comma-separated list of admin emails
-FRONTEND_URL        # Cloudflare Pages URL (for CORS)
-```
-
-**Frontend (Cloudflare Pages):**
-```
-VITE_CLERK_PUBLISHABLE_KEY    # Clerk publishable key
-VITE_API_URL                  # Oracle backend URL
-```
-
-### Deploying Changes
-
-Cloudflare Pages deploys automatically on every push to `main`.
-For the backend on Oracle Cloud, deployment is manual:
-1. SSH into the server.
-2. Run `./update.sh` to pull the latest changes and rebuild the Docker containers.
-
-| Service | Deploy time | Downtime |
+| Service | Host | Deploy method |
 |---|---|---|
-| Oracle Cloud (backend) | ~1-2 min (manual) | Brief restart |
-| Cloudflare Pages (frontend) | ~1 min (auto) | None |
-| Neon (database) | Not affected | — |
+| Frontend | Cloudflare Pages | Auto-deploy on push to `main` |
+| Backend | Oracle Cloud Free Tier | Manual: SSH + `./update.sh` |
+| Database | Neon | Managed (not affected by deploys) |
 
-Database migrations run automatically on every backend deploy via `alembic upgrade head`.
-
-### Database Management
-
-Connect to the Neon database using any PostgreSQL client (TablePlus, DBeaver, pgAdmin) with the Neon connection string. To reset the database completely:
+### Deploying backend changes
 
 ```bash
-alembic downgrade base  # roll back all migrations
-alembic upgrade head    # recreate schema fresh
+ssh ubuntu@<your-server-ip>
+cd ~/wc-predictions
+./update.sh
 ```
 
-> ⚠️ Resetting the database will permanently delete all data.
+This pulls the latest code and rebuilds the production containers (`docker-compose.prod.yml`). Migrations run automatically via `alembic upgrade head` on container start. Expect ~10–30 seconds of downtime.
+
+### Database management
+
+Connect to Neon with any PostgreSQL client using the `DATABASE_URL` from your server `.env`.
+
+```bash
+# Roll back and recreate schema (⚠️ deletes all data)
+alembic downgrade base
+alembic upgrade head
+```
+
+For day-to-day server operations (logs, SSL renewal, restarts), see [MAINTENANCE.md](MAINTENANCE.md).
+
+---
+
+## 📂 Project Structure
+
+```
+wc-predictions/
+├── backend/
+│   ├── app/
+│   │   ├── routers/       # API endpoints (matches, predictions, knockout, community, admin…)
+│   │   ├── data/          # teams.csv, matches.csv, annex_c.json
+│   │   ├── models.py      # SQLAlchemy models
+│   │   └── seed.py        # Database seeder
+│   ├── alembic/           # Migrations
+│   ├── simulate_data.py   # Generate test users + predictions
+│   └── simulate_results.py
+├── frontend/
+│   ├── src/
+│   │   ├── pages/         # Route handlers (home, matches, bracket, community…)
+│   │   ├── components/    # navbar, matchCard, toast, flags
+│   │   └── i18n.js        # EN / ES translations
+│   └── functions/api/     # Cloudflare Pages Functions (auth + proxy)
+├── nginx/                 # Reverse proxy configs (local + production)
+├── docker-compose.yml     # Local full stack
+├── docker-compose.prod.yml
+├── update.sh              # Production deploy script
+└── MAINTENANCE.md         # Server ops guide
+```
