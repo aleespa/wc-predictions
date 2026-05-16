@@ -78,7 +78,8 @@ export async function onRequest(context) {
   const headers = new Headers();
   // Copy relevant headers from original request
   for (const [key, value] of request.headers.entries()) {
-    if (!['cookie', 'host', 'cf-ray', 'cf-connecting-ip'].includes(key.toLowerCase())) {
+    const lowerKey = key.toLowerCase();
+    if (!['cookie', 'host', 'cf-ray', 'cf-connecting-ip', 'x-user-sub', 'x-user-email', 'x-user-name'].includes(lowerKey)) {
       headers.set(key, value);
     }
   }

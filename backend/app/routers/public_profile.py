@@ -58,6 +58,9 @@ def get_user_public_profile(username: str, db: Session = Depends(get_db)):
     correct_outcomes = 0
     finished_count = 0
 
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+
     result_predictions = []
     for p in predictions:
         m = p.match
@@ -91,6 +94,15 @@ def get_user_public_profile(username: str, db: Session = Depends(get_db)):
                 "flag_emoji": m.away_team.flag_emoji,
             }
 
+        # Hide prediction details for matches that haven't started yet
+        match_dt = m.match_date
+        if isinstance(match_dt, str):
+            match_dt = datetime.fromisoformat(match_dt)
+        if match_dt.tzinfo is None:
+            match_dt = match_dt.replace(tzinfo=timezone.utc)
+
+        is_started = match_dt <= now
+
         result_predictions.append({
             "prediction_id": p.id,
             "match_id": m.id,
@@ -106,8 +118,8 @@ def get_user_public_profile(username: str, db: Session = Depends(get_db)):
             "home_score": m.home_score,
             "away_score": m.away_score,
             "is_finished": m.is_finished,
-            "predicted_home_score": p.predicted_home_score,
-            "predicted_away_score": p.predicted_away_score,
+            "predicted_home_score": p.predicted_home_score if is_started else None,
+            "predicted_away_score": p.predicted_away_score if is_started else None,
             "points_awarded": p.points_awarded,
             "is_invalid": p.is_invalid,
         })

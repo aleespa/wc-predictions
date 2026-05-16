@@ -1,9 +1,8 @@
 import { fetchAPI, isAuthenticated } from '../api.js';
-import { getCurrentUser, clearUserCache } from '../components/navbar.js';
+import { getCurrentUser } from '../components/navbar.js';
 import { renderMatchCard } from '../components/matchCard.js';
 import { renderRound } from './bracket.js';
 import { getFlagURL } from '../components/flags.js';
-import { showToast } from '../components/toast.js';
 import { t } from '../i18n.js';
 
 export async function profilePage() {

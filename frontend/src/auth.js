@@ -51,10 +51,6 @@ export function isAuthenticated() {
   return initialised && currentUser !== null;
 }
 
-/** Returns true if the auth state has been checked at least once. */
-export function isAuthInitialised() {
-  return initialised;
-}
 
 /** Redirects the browser to the Google OAuth consent screen. */
 export function signIn() {

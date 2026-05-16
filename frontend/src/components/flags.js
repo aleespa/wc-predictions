@@ -1,4 +1,4 @@
-export const isoMap = {
+const isoMap = {
     "MEX": "mx", "RSA": "za", "KOR": "kr", "CZE": "cz",
     "CAN": "ca", "SUI": "ch", "QAT": "qa", "BIH": "ba",
     "BRA": "br", "MAR": "ma", "HAI": "ht", "SCO": "gb-sct",
