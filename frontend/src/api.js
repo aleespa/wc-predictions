@@ -28,9 +28,9 @@ export async function fetchAPI(endpoint, options = {}) {
     console.log(`API Call to ${endpoint} took ${duration.toFixed(2)}ms${serverTimeStr}`);
 
     if (response.status === 401) {
-        // Special case: if it's not the /me endpoint, we might want to redirect, 
-        // but it's cleaner to let the router or component handle it based on the error.
-        // For now, we just throw so the caller can catch it.
+        // Automatically redirect to the sign in page
+        window.location.hash = '#/login';
+        
         const detail = await response.json().then(d => d.detail).catch(() => 'Unauthorized');
         const error = new Error(detail);
         error.status = 401;
@@ -48,6 +48,9 @@ export async function fetchAPI(endpoint, options = {}) {
     }
 
     if (!response.ok) {
+        if (data && (data.detail === 'Not authenticated' || data.detail === 'Unauthorized')) {
+            window.location.hash = '#/login';
+        }
         throw new Error(data.detail || 'Something went wrong');
     }
 

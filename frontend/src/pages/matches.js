@@ -226,8 +226,10 @@ export async function matchesPage() {
                     filtered = filtered.filter(m => m.is_finished);
                 }
                 
-                // 3. Sort: Always show the next upcoming match at the top, sorted chronologically ascending.
-                // Past/started matches are listed below, sorted chronologically descending (most recent first).
+                // 3. Sort:
+                // Priority 1: Upcoming future matches with NO predictions (sorted chronologically ascending)
+                // Priority 2: Upcoming future matches WITH predictions (sorted chronologically ascending)
+                // Priority 3: Past or ongoing matches (sorted chronologically descending - most recent first)
                 const nowTime = new Date().getTime();
                 filtered.sort((a, b) => {
                     const aDate = new Date(a.match_date).getTime();
@@ -236,14 +238,33 @@ export async function matchesPage() {
                     const aIsFuture = aDate > nowTime && !a.is_finished;
                     const bIsFuture = bDate > nowTime && !b.is_finished;
                     
-                    if (aIsFuture && !bIsFuture) return -1;
-                    if (!aIsFuture && bIsFuture) return 1;
+                    const aHasPred = a.user_prediction != null;
+                    const bHasPred = b.user_prediction != null;
                     
-                    if (aIsFuture && bIsFuture) {
-                        return aDate - bDate; // Chronological ascending (closest upcoming first)
-                    } else {
-                        return bDate - aDate; // Chronological descending (most recent past first)
+                    // Priority 1: Future and NO prediction
+                    const aIsFutureUnpred = aIsFuture && !aHasPred;
+                    const bIsFutureUnpred = bIsFuture && !bHasPred;
+                    
+                    if (aIsFutureUnpred && !bIsFutureUnpred) return -1;
+                    if (!aIsFutureUnpred && bIsFutureUnpred) return 1;
+                    
+                    if (aIsFutureUnpred && bIsFutureUnpred) {
+                        return aDate - bDate; // Chronological ascending (closest first)
                     }
+                    
+                    // Priority 2: Future and HAS prediction
+                    const aIsFuturePred = aIsFuture && aHasPred;
+                    const bIsFuturePred = bIsFuture && bHasPred;
+                    
+                    if (aIsFuturePred && !bIsFuturePred) return -1;
+                    if (!aIsFuturePred && bIsFuturePred) return 1;
+                    
+                    if (aIsFuturePred && bIsFuturePred) {
+                        return aDate - bDate; // Chronological ascending (closest first)
+                    }
+                    
+                    // Priority 3: Past matches (started or finished)
+                    return bDate - aDate; // Chronological descending (most recent past first)
                 });
 
                 if (filtered.length === 0) {

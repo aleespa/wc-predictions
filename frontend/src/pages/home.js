@@ -25,7 +25,7 @@ export async function homePage() {
             <p>${t('home_hero_desc')}</p>
             <div class="hero-actions">
                 ${authed
-                    ? `<a href="#/matches" class="btn btn-primary btn-lg">${t('home_btn_browse')}</a><a href="#/bracket" class="btn btn-secondary btn-lg">${t('home_btn_bracket')}</a><a href="#/leaderboard" class="btn btn-secondary btn-lg">${t('home_btn_leaderboard')}</a>`
+                    ? `<a href="#/matches" class="btn btn-primary btn-lg">${t('home_btn_browse')}</a><a href="#/bracket" class="btn btn-secondary btn-lg">${t('home_btn_bracket')}</a><a href="#/community" class="btn btn-secondary btn-lg">${t('home_btn_leaderboard')}</a>`
                     : `<a href="#/register" class="btn btn-primary btn-lg">${t('home_btn_get_started')}</a><a href="#/matches" class="btn btn-secondary btn-lg">${t('home_btn_view_matches')}</a>`
                 }
             </div>
@@ -63,7 +63,7 @@ export async function homePage() {
             <section class="fade-in" style="margin-top: var(--space-2xl)">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-lg)">
                     <h2 class="page-title" style="margin-bottom:0">${t('home_top_players')}</h2>
-                    <a href="#/leaderboard" class="btn btn-secondary btn-sm">${t('home_full_rankings')}</a>
+                    <a href="#/community" class="btn btn-secondary btn-sm">${t('home_full_rankings')}</a>
                 </div>
                 <div class="card">
                     <table class="leaderboard-table">
