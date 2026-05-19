@@ -21,6 +21,13 @@ export async function predictPage(params) {
     const now = new Date();
     const isLocked = matchDate <= now || match.is_finished;
 
+    const matchStartTime = matchDate.getTime();
+    const matchEndTime = matchStartTime + 2 * 60 * 60 * 1000;
+    const currentTime = now.getTime();
+
+    const isLive = !match.is_finished && currentTime >= matchStartTime && currentTime < matchEndTime;
+    const isWaiting = !match.is_finished && currentTime >= matchEndTime;
+
     const diffMs = matchDate - now;
     let remainingTimeStr = '';
     if (diffMs > 0 && !match.is_finished) {
@@ -243,7 +250,9 @@ export async function predictPage(params) {
                     <span class="match-group-badge">${match.group_letter ? t('stage_group', { group: match.group_letter }) : t('stage_' + match.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || match.stage}</span>
                     <div style="display:flex; gap:6px; align-items:center">
                         ${remainingTimeStr ? `<span class="match-time-remaining">🕒 ${remainingTimeStr}</span>` : ''}
-                        <span class="match-status ${match.is_finished ? 'finished' : 'upcoming'}">${match.is_finished ? t('predict_status_finished') : t('predict_status_upcoming')}</span>
+                        <span class="match-status ${match.is_finished ? 'finished' : (isLive ? 'live' : (isWaiting ? 'waiting' : 'upcoming'))}">
+                            ${match.is_finished ? t('predict_status_finished') : (isLive ? t('match_status_live') : (isWaiting ? t('match_status_waiting') : t('predict_status_upcoming')))}
+                        </span>
                     </div>
                 </div>
 

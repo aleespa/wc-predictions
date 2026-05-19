@@ -31,6 +31,14 @@ export function renderMatchCard(match, options = {}) {
     const hasPrediction = match.user_prediction != null;
     const matchDate = new Date(match.match_date);
 
+    const now = new Date();
+    const matchStartTime = matchDate.getTime();
+    const matchEndTime = matchStartTime + 2 * 60 * 60 * 1000;
+    const currentTime = now.getTime();
+
+    const isLive = !isFinished && currentTime >= matchStartTime && currentTime < matchEndTime;
+    const isWaiting = !isFinished && currentTime >= matchEndTime;
+
     const dateStr = matchDate.toLocaleDateString(undefined, {
         month: 'short', day: 'numeric', year: 'numeric'
     });
@@ -41,6 +49,10 @@ export function renderMatchCard(match, options = {}) {
     let statusHtml = '';
     if (isFinished) {
         statusHtml = `<span class="match-status finished">${t('match_status_finished')}</span>`;
+    } else if (isLive) {
+        statusHtml = `<span class="match-status live">${t('match_status_live')}</span>`;
+    } else if (isWaiting) {
+        statusHtml = `<span class="match-status waiting">${t('match_status_waiting')}</span>`;
     } else {
         const remainingTimeStr = getRemainingTimeStr(matchDate);
         const timeChipHtml = remainingTimeStr ? `<span class="match-time-remaining">🕒 ${remainingTimeStr}</span>` : '';

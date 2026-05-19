@@ -572,6 +572,31 @@ a:hover {
     color: var(--accent-gold-light);
 }
 
+.match-status.live {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--accent-red-light);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    animation: live-blink 1.5s infinite ease-in-out;
+}
+
+.match-status.waiting {
+    background: rgba(148, 163, 184, 0.15);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-medium);
+}
+
+@keyframes live-blink {
+    0%, 100% {
+        opacity: 0.95;
+        box-shadow: 0 0 6px rgba(239, 68, 68, 0.15);
+    }
+    50% {
+        opacity: 1;
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.35);
+        background: rgba(239, 68, 68, 0.22);
+    }
+}
+
 .match-teams {
     display: flex;
     align-items: center;
