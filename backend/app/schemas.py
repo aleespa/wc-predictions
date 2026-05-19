@@ -206,6 +206,7 @@ class BracketMatchOut(BaseModel):
     # Source match IDs for building the tree
     home_source_match_id: Optional[int] = None
     away_source_match_id: Optional[int] = None
+    is_confirmed: bool = False  # Whether teams are officially known and match is predictable
 
 
 class BracketOut(BaseModel):

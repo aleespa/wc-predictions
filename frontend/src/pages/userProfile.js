@@ -291,23 +291,15 @@ export async function userProfilePage(params) {
                 } else if (currentFilterType === 'bracket') {
                     standingsContainer.innerHTML = '';
                     
-                    const lockedMsg = !bracket.is_unlocked ? `
-                        <div class="empty-state" style="grid-column:1/-1; margin-bottom: var(--space-lg);">
-                            <div class="empty-state-icon">🔒</div>
-                            <div class="empty-state-text">${t(bracket.unlock_reason) || t('bracket_locked_msg')}</div>
-                        </div>
-                    ` : '';
-
                     grid.innerHTML = `
                         <div style="grid-column:1/-1; overflow-x:auto;">
-                            ${lockedMsg}
-                            <div id="bracket-rounds-view" class="bracket-container ${!bracket.is_unlocked ? 'bracket-container-locked' : ''}">
-                                ${renderRound(t('stage_roundof32'), bracket.round_of_32, { isLocked: !bracket.is_unlocked, profileName: profile.username })}
-                                ${renderRound(t('stage_roundof16'), bracket.round_of_16, { compact: true, isLocked: !bracket.is_unlocked, profileName: profile.username })}
-                                ${renderRound(t('stage_quarterfinals'), bracket.quarter_finals, { compact: true, isLocked: !bracket.is_unlocked, profileName: profile.username })}
-                                ${renderRound(t('stage_semifinals'), bracket.semi_finals, { compact: true, isLocked: !bracket.is_unlocked, profileName: profile.username })}
-                                ${bracket.third_place ? renderRound(t('stage_thirdplace'), [bracket.third_place], { compact: true, isLocked: !bracket.is_unlocked, profileName: profile.username }) : ''}
-                                ${bracket.final ? renderRound(t('stage_final'), [bracket.final], { isLocked: !bracket.is_unlocked, profileName: profile.username }) : ''}
+                            <div id="bracket-rounds-view" class="bracket-container">
+                                ${renderRound(t('stage_roundof32'), bracket.round_of_32, { profileName: profile.username })}
+                                ${renderRound(t('stage_roundof16'), bracket.round_of_16, { compact: true, profileName: profile.username })}
+                                ${renderRound(t('stage_quarterfinals'), bracket.quarter_finals, { compact: true, profileName: profile.username })}
+                                ${renderRound(t('stage_semifinals'), bracket.semi_finals, { compact: true, profileName: profile.username })}
+                                ${bracket.third_place ? renderRound(t('stage_thirdplace'), [bracket.third_place], { compact: true, profileName: profile.username }) : ''}
+                                ${bracket.final ? renderRound(t('stage_final'), [bracket.final], { profileName: profile.username }) : ''}
                             </div>
                         </div>
                     `;

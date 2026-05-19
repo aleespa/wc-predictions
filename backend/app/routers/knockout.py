@@ -316,6 +316,8 @@ def build_bracket_match_data(
     match_num_map: dict,
     match_id_to_num: dict,
     username: Optional[str] = None,
+    all_groups_finished: bool = False,
+    ko_match_id_map: Optional[dict] = None,
 ) -> schemas.BracketMatchOut:
     pred = user_preds.get(match.id)
 
@@ -350,6 +352,23 @@ def build_bracket_match_data(
         pred_out = schemas.PredictionOut.model_validate(pred)
         pred_out.is_invalid = is_invalid
 
+    # Determine if this match is confirmed (eligible for prediction)
+    is_confirmed = False
+    if all_groups_finished:
+        # Check if source matches are finished
+        src_ids = [match.home_source_match_id, match.away_source_match_id]
+        src_ids = [s for s in src_ids if s]
+        if not src_ids:
+            # R32 matches — confirmed once groups are done
+            is_confirmed = True
+        elif ko_match_id_map:
+            is_confirmed = all(
+                ko_match_id_map.get(sid, match).is_finished
+                for sid in src_ids
+            )
+        else:
+            is_confirmed = True
+
     return schemas.BracketMatchOut(
         match_id=match.id,
         match_number=match.match_number,
@@ -365,6 +384,7 @@ def build_bracket_match_data(
         is_invalid_prediction=is_invalid,
         home_source_match_id=match.home_source_match_id,
         away_source_match_id=match.away_source_match_id,
+        is_confirmed=is_confirmed,
     )
 
 
@@ -485,6 +505,7 @@ def get_bracket(
     # Build a map: match_number -> match for source lookups
     match_num_map = {m.match_number: m for m in knockout_matches}
     match_id_to_num = {m.id: m.match_number for m in knockout_matches}
+    ko_match_id_map = {m.id: m for m in knockout_matches}
 
     # Get user predictions for knockout matches
     user_preds = {}
@@ -500,30 +521,36 @@ def get_bracket(
         )
         user_preds = {p.match_id: p for p in preds}
 
+    # Common kwargs for per-match confirmed calculation
+    build_kwargs = dict(
+        all_groups_finished=all_finished,
+        ko_match_id_map=ko_match_id_map,
+    )
+
     # Categorize matches by stage
     r32 = [
-        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username)
+        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username, **build_kwargs)
         for m in knockout_matches
         if m.stage == "Round of 32"
     ]
     r16 = [
-        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username)
+        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username, **build_kwargs)
         for m in knockout_matches
         if m.stage == "Round of 16"
     ]
     qf = [
-        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username)
+        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username, **build_kwargs)
         for m in knockout_matches
         if m.stage == "Quarter-finals"
     ]
     sf = [
-        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username)
+        build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username, **build_kwargs)
         for m in knockout_matches
         if m.stage == "Semi-finals"
     ]
     third = next(
         (
-            build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username)
+            build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username, **build_kwargs)
             for m in knockout_matches
             if m.stage == "Third-place"
         ),
@@ -531,7 +558,7 @@ def get_bracket(
     )
     final = next(
         (
-            build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username)
+            build_bracket_match_data(m, user_preds, resolved, match_num_map, match_id_to_num, username, **build_kwargs)
             for m in knockout_matches
             if m.stage == "Final"
         ),
@@ -545,7 +572,7 @@ def get_bracket(
         semi_finals=sf,
         third_place=third,
         final=final,
-        is_unlocked=is_unlocked,
+        is_unlocked=True,
         unlock_reason=unlock_reason
     )
 

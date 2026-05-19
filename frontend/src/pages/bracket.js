@@ -72,16 +72,19 @@ export function renderBracketMatch(match, options = {}) {
     } else if (hasPrediction) {
         statusClass = 'bracket-has-prediction';
         statusIcon = '⚡';
-    } else if (bothTeamsKnown) {
+    } else if (bothTeamsKnown && match.is_confirmed) {
         statusClass = 'bracket-predictable';
         statusIcon = '🔮';
+    } else if (bothTeamsKnown && !match.is_confirmed) {
+        statusIcon = '🔒';
     }
 
-    const isLocked = options.isLocked;
+    const isConfirmed = match.is_confirmed;
     const finalMatchId = match.match_id || match.id;
-    const clickable = bothTeamsKnown && !isFinished && !isLocked ? `onclick="location.hash='#/predict/${finalMatchId}'"` : '';
-    const clickableClass = bothTeamsKnown && !isFinished && !isLocked ? 'bracket-match-clickable' : '';
-    const lockedClass = isLocked ? 'bracket-match-locked' : '';
+    const canPredict = bothTeamsKnown && !isFinished && isConfirmed;
+    const clickable = canPredict ? `onclick="location.hash='#/predict/${finalMatchId}'"` : '';
+    const clickableClass = canPredict ? 'bracket-match-clickable' : '';
+    const lockedClass = !isConfirmed && !isFinished ? 'bracket-match-locked' : '';
     const showConnectors = options.showConnectors !== false;
 
     return `
@@ -222,9 +225,7 @@ export async function bracketPage() {
                     <h4 class="bracket-column-title">${title}</h4>
                 </div>
                 <div class="bracket-column-content">
-                    ${matchesList.map((m, i) => renderBracketMatch(m, {
-            isLocked: !bracket.is_unlocked
-        })).join('')}
+                    ${matchesList.map((m, i) => renderBracketMatch(m, {})).join('')}
                 </div>
             </div>
         `;
@@ -257,17 +258,6 @@ export async function bracketPage() {
                             <span class="bracket-stat-value">${totalKO}</span>
                             <span class="bracket-stat-label">${t('bracket_stat_total')}</span>
                         </div>
-                    </div>
-                ` : ''}
-                
-                ${!bracket.is_unlocked ? `
-                    <div class="bracket-lock-banner">
-                        <span class="lock-icon">🔒</span>
-                        <div class="lock-details">
-                            <span class="lock-message">${t(bracket.unlock_reason) || t('bracket_locked_msg')}</span>
-                            <span class="lock-hint">${t('bracket_lock_hint')}</span>
-                        </div>
-                        <button class="btn btn-primary" onclick="location.hash='#/predict'">${t('bracket_go_predict')}</button>
                     </div>
                 ` : ''}
             </div>
@@ -308,7 +298,7 @@ export async function bracketPage() {
                 </div>
             </div>
 
-            <div id="bracket-content" class="${!bracket.is_unlocked ? 'bracket-container-locked' : ''}">
+            <div id="bracket-content">
                 <div class="bracket-header-nav" id="bracket-header-nav">
                     ${rounds.map(r => `
                         <button class="bracket-round-btn ${r.id === 0 ? 'active' : ''}" data-index="${r.id}">
@@ -329,7 +319,7 @@ export async function bracketPage() {
                 ${bracket.third_place ? `
                     <div class="bracket-small-finals">
                         <div class="bracket-small-finals-title">${t('stage_thirdplace')}</div>
-                        ${renderBracketMatch(bracket.third_place, { isLocked: !bracket.is_unlocked, showConnectors: false })}
+                        ${renderBracketMatch(bracket.third_place, { showConnectors: false })}
                     </div>
                 ` : ''}
             </div>
