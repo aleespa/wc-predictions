@@ -1,6 +1,30 @@
 import { getFlagURL } from './flags.js';
 import { t } from '../i18n.js';
 
+function getRemainingTimeStr(matchDate) {
+    const now = new Date();
+    const diffMs = matchDate - now;
+
+    if (diffMs <= 0) {
+        return null;
+    }
+
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    const mins = diffMins % 60;
+    const hours = diffHours % 24;
+
+    if (diffDays > 0) {
+        return `${diffDays}d ${hours}h`;
+    } else if (diffHours > 0) {
+        return `${diffHours}h ${mins}m`;
+    } else {
+        return `${diffMins}m`;
+    }
+}
+
 export function renderMatchCard(match, options = {}) {
     const { onClick, showPrediction = true, profileName } = options;
     const isFinished = match.is_finished;
@@ -17,10 +41,25 @@ export function renderMatchCard(match, options = {}) {
     let statusHtml = '';
     if (isFinished) {
         statusHtml = `<span class="match-status finished">${t('match_status_finished')}</span>`;
-    } else if (hasPrediction) {
-        statusHtml = `<span class="match-status predicted">${t('match_status_predicted')}</span>`;
     } else {
-        statusHtml = `<span class="match-status upcoming">${t('match_status_upcoming')}</span>`;
+        const remainingTimeStr = getRemainingTimeStr(matchDate);
+        const timeChipHtml = remainingTimeStr ? `<span class="match-time-remaining">🕒 ${remainingTimeStr}</span>` : '';
+        
+        if (hasPrediction) {
+            statusHtml = `
+                <div style="display:flex; gap:6px; align-items:center">
+                    ${timeChipHtml}
+                    <span class="match-status predicted">${t('match_status_predicted')}</span>
+                </div>
+            `;
+        } else {
+            statusHtml = `
+                <div style="display:flex; gap:6px; align-items:center">
+                    ${timeChipHtml}
+                    <span class="match-status upcoming">${t('match_status_upcoming')}</span>
+                </div>
+            `;
+        }
     }
 
     let scoreHtml;

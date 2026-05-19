@@ -20,6 +20,25 @@ export async function predictPage(params) {
     const matchDate = new Date(match.match_date);
     const now = new Date();
     const isLocked = matchDate <= now || match.is_finished;
+
+    const diffMs = matchDate - now;
+    let remainingTimeStr = '';
+    if (diffMs > 0 && !match.is_finished) {
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+        const mins = diffMins % 60;
+        const hours = diffHours % 24;
+
+        if (diffDays > 0) {
+            remainingTimeStr = `${diffDays}d ${hours}h`;
+        } else if (diffHours > 0) {
+            remainingTimeStr = `${diffHours}h ${mins}m`;
+        } else {
+            remainingTimeStr = `${diffMins}m`;
+        }
+    }
+
     const teamsKnown = match.home_team && match.away_team;
     const isKnockout = match.stage !== 'Group Stage';
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -222,7 +241,10 @@ export async function predictPage(params) {
             <div class="card">
                 <div class="match-card-header" style="margin-bottom:var(--space-sm)">
                     <span class="match-group-badge">${match.group_letter ? t('stage_group', { group: match.group_letter }) : t('stage_' + match.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || match.stage}</span>
-                    <span class="match-status ${match.is_finished ? 'finished' : 'upcoming'}">${match.is_finished ? t('predict_status_finished') : t('predict_status_upcoming')}</span>
+                    <div style="display:flex; gap:6px; align-items:center">
+                        ${remainingTimeStr ? `<span class="match-time-remaining">🕒 ${remainingTimeStr}</span>` : ''}
+                        <span class="match-status ${match.is_finished ? 'finished' : 'upcoming'}">${match.is_finished ? t('predict_status_finished') : t('predict_status_upcoming')}</span>
+                    </div>
                 </div>
 
                 <div class="predict-info">

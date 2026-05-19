@@ -2821,3 +2821,33 @@ select.form-input option {
     color: #fff;
     flex-shrink: 0;
 }
+
+/* ── Time Remaining Chip ──────────────────────────────── */
+.match-time-remaining {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: var(--radius-full);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.05);
+    animation: pulse-subtle 2.5s infinite ease-in-out;
+    white-space: nowrap;
+}
+
+@keyframes pulse-subtle {
+    0%, 100% {
+        opacity: 0.9;
+        transform: scale(1);
+        box-shadow: 0 0 8px rgba(245, 158, 11, 0.05);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.02);
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+    }
+}
