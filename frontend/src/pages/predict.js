@@ -336,7 +336,7 @@ export async function predictPage(params) {
 
                 // Confirmation for editing a group stage match if KO predictions exist
                 if (!isKnockout && user?.has_knockout_predictions) {
-                    const confirmed = confirm(t('predict_group_edit_warning') || "WARNING: Editing a group-stage prediction will completely wipe and invalidate all of your knockout bracket predictions. You will need to re-predict the knockout bracket from scratch.\\n\\nDo you want to proceed?");
+                    const confirmed = confirm(t('predict_group_edit_warning') || "WARNING: Changing a group-stage prediction may alter the group positions and invalidate affected knockout bracket predictions.\n\nDo you want to proceed?");
                     if (!confirmed) return;
                 }
 

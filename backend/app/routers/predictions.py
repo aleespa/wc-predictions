@@ -32,24 +32,6 @@ def get_group_count_cached():
         db.close()
 
 
-def invalidate_dependent_predictions(db: Session, user_id: int, source_match_id: int):
-    """Recursively delete predictions that depend on the outcome of a changed match."""
-    dependent_matches = db.query(models.Match).filter(
-        (models.Match.home_source_match_id == source_match_id) |
-        (models.Match.away_source_match_id == source_match_id)
-    ).all()
-    
-    for match in dependent_matches:
-        # Find and delete user prediction for this dependent match
-        pred = db.query(models.Prediction).filter(
-            models.Prediction.user_id == user_id,
-            models.Prediction.match_id == match.id
-        ).first()
-        if pred:
-            db.delete(pred)
-            # Recursively invalidate further down the tree
-            invalidate_dependent_predictions(db, user_id, match.id)
-
 @router.post("", response_model=schemas.PredictionOut)
 def submit_prediction(
     data: schemas.PredictionCreate,
@@ -74,24 +56,6 @@ def submit_prediction(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot predict after match has started")
     if match.is_finished:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Match is already finished")
-
-    # 3. Handle Gating for Knockout
-    if match.stage != "Group Stage":
-        group_total = get_group_count_cached()
-        
-        group_finished = db.query(models.Match).filter(
-            models.Match.stage == "Group Stage",
-            models.Match.is_finished == True
-        ).count()
-        
-        if group_finished < group_total:
-            user_group_preds = db.query(models.Prediction).join(models.Match).filter(
-                models.Prediction.user_id == current_user.id,
-                models.Match.stage == "Group Stage"
-            ).count()
-            
-            if user_group_preds < group_total:
-                raise HTTPException(status_code=403, detail="Complete all group-stage predictions to unlock knockout bracket.")
 
     # 4. Determine teams for the prediction
     p_home_id = data.predicted_home_team_id or match.home_team_id
@@ -140,19 +104,10 @@ def submit_prediction(
         db.add(existing)
         outcome_changed = True # New prediction always "changes" the outcome from None
 
-    # 6. Recursive Invalidation (Knockout only) or Wiping Knockout (Group Stage edit)
+    # 6. Run unified bracket invalidation pass for the user
     if outcome_changed:
-        if match.stage != "Group Stage":
-            # Knockout round change: invalidate recursively down the tree
-            invalidate_dependent_predictions(db, current_user.id, match.id)
-        else:
-            # Group Stage change: completely wipe all knockout predictions
-            db.query(models.Prediction).filter(
-                models.Prediction.user_id == current_user.id,
-                models.Prediction.match_id.in_(
-                    db.query(models.Match.id).filter(models.Match.stage != "Group Stage")
-                )
-            ).delete(synchronize_session=False)
+        from .knockout import invalidate_single_user_bracket
+        invalidate_single_user_bracket(db, current_user.id)
 
     db.commit()
     db.refresh(existing)

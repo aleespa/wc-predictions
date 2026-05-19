@@ -333,11 +333,13 @@ def build_bracket_match_data(
         resolved_home_id = home_slot.team.id if home_slot.team else None
         resolved_away_id = away_slot.team.id if away_slot.team else None
 
-        if resolved_home_id and resolved_away_id:
+        if resolved_home_id and resolved_away_id and pred_home_id and pred_away_id:
             pred_set = {pred_home_id, pred_away_id}
             res_set = {resolved_home_id, resolved_away_id}
             if pred_set != res_set:
                 is_invalid = True
+        else:
+            is_invalid = True
         
         # Also check the persisted flag
         if pred.is_invalid:
@@ -372,6 +374,72 @@ def team_to_out(team: Optional[models.Team]) -> Optional[schemas.TeamOut]:
     return schemas.TeamOut.model_validate(team)
 
 
+def invalidate_single_user_bracket(db: Session, user_id: int):
+    """
+    Recalculates invalidation for all knockout predictions of a specific user.
+    Uses the user's speculative/blended resolved bracket teams.
+    """
+    # 1. Resolve speculative/blended bracket teams for this user
+    resolved = resolve_bracket_teams(db, user_id=user_id)
+    
+    # 2. Load all knockout matches
+    knockout_matches = (
+        db.query(models.Match)
+        .filter(models.Match.stage != "Group Stage")
+        .order_by(models.Match.match_number)
+        .all()
+    )
+    
+    # Build maps for source lookups
+    match_num_map = {m.match_number: m for m in knockout_matches}
+    match_id_to_num = {m.id: m.match_number for m in knockout_matches}
+    
+    # 3. Get all user predictions for knockout matches
+    ko_ids = [m.id for m in knockout_matches]
+    preds = (
+        db.query(models.Prediction)
+        .filter(
+            models.Prediction.user_id == user_id,
+            models.Prediction.match_id.in_(ko_ids)
+        )
+        .all()
+    )
+    user_preds = {p.match_id: p for p in preds}
+    
+    # 4. Iterate and determine invalidation
+    for m in knockout_matches:
+        if m.id in user_preds:
+            pred = user_preds[m.id]
+            
+            # Resolve the teams that should play in this match according to user's bracket
+            home_slot = resolve_bracket_slot(m, "home", resolved, match_num_map, match_id_to_num, user_preds)
+            away_slot = resolve_bracket_slot(m, "away", resolved, match_num_map, match_id_to_num, user_preds)
+            
+            r_home = home_slot.team.id if home_slot.team else None
+            r_away = away_slot.team.id if away_slot.team else None
+            
+            is_now_invalid = False
+            
+            # If teams are not determined yet, or they don't match the prediction's teams
+            if not r_home or not r_away:
+                is_now_invalid = True
+            elif pred.predicted_home_team_id != r_home or pred.predicted_away_team_id != r_away:
+                is_now_invalid = True
+                
+            # If source match prediction is invalid, then this prediction is invalid
+            if not is_now_invalid:
+                if m.home_source_match_id and m.home_source_match_id in user_preds:
+                    if user_preds[m.home_source_match_id].is_invalid:
+                        is_now_invalid = True
+                if m.away_source_match_id and m.away_source_match_id in user_preds:
+                    if user_preds[m.away_source_match_id].is_invalid:
+                        is_now_invalid = True
+            
+            pred.is_invalid = is_now_invalid
+            
+    db.commit()
+
+
 @router.get("/bracket", response_model=schemas.BracketOut)
 def get_bracket(
     username: Optional[str] = Query(None, description="Fetch bracket for a specific user"),
@@ -383,31 +451,12 @@ def get_bracket(
     predicted standings (or real results where available).
     """
     # Determine if bracket is unlocked
-    # 1. Check if all group stage matches are finished
     group_matches = db.query(models.Match).filter(models.Match.stage == "Group Stage").all()
     all_finished = all(m.is_finished for m in group_matches)
     
-    # 2. Check if user has predicted all group stage matches
-    user_predicted_all = False
-    if current_user:
-        group_match_ids = [m.id for m in group_matches]
-        group_preds_count = (
-            db.query(models.Prediction)
-            .filter(
-                models.Prediction.user_id == current_user.id,
-                models.Prediction.match_id.in_(group_match_ids)
-            )
-            .count()
-        )
-        user_predicted_all = group_preds_count >= len(group_matches)
-
-        user_predicted_all = group_preds_count >= len(group_matches)
-
-    is_unlocked = all_finished or user_predicted_all
+    is_unlocked = True
     unlock_reason = None
-    if not is_unlocked:
-        unlock_reason = "bracket_locked_msg"
-    elif all_finished:
+    if all_finished:
         unlock_reason = "bracket_unlocked_official"
     else:
         unlock_reason = "bracket_unlocked_user"
@@ -416,16 +465,6 @@ def get_bracket(
     if username:
         target_user = db.query(models.User).filter(models.User.username == username).first()
         if target_user: target_user_id = target_user.id
-        # For public profiles, consider the bracket unlocked if the user has predicted all matches
-        if target_user_id:
-            group_match_ids = [m.id for m in group_matches]
-            group_preds_count = db.query(models.Prediction).filter(
-                models.Prediction.user_id == target_user_id,
-                models.Prediction.match_id.in_(group_match_ids)
-            ).count()
-            is_unlocked = all_finished or (group_preds_count >= len(group_matches))
-            if not is_unlocked:
-                unlock_reason = "bracket_user_locked_msg"
     elif current_user:
         target_user_id = current_user.id
 
