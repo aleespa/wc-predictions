@@ -450,12 +450,11 @@ def get_bracket(
     Get the full knockout bracket with teams resolved from the user's
     predicted standings (or real results where available).
     """
-    # Determine if bracket is unlocked
+    # Determine if bracket is unlocked: only when all group stage matches are finished
     group_matches = db.query(models.Match).filter(models.Match.stage == "Group Stage").all()
     all_finished = all(m.is_finished for m in group_matches)
     
-    is_unlocked = True
-    unlock_reason = None
+    is_unlocked = all_finished
     if all_finished:
         unlock_reason = "bracket_unlocked_official"
     else:

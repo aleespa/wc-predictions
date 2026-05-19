@@ -39,6 +39,10 @@ export function renderMatchCard(match, options = {}) {
     const isLive = !isFinished && currentTime >= matchStartTime && currentTime < matchEndTime;
     const isWaiting = !isFinished && currentTime >= matchEndTime;
 
+    // Determine if match is confirmed (teams resolved)
+    const isConfirmed = match.home && match.home.team && match.away && match.away.team;
+
+
     const dateStr = matchDate.toLocaleDateString(undefined, {
         month: 'short', day: 'numeric', year: 'numeric'
     });

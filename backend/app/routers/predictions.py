@@ -26,10 +26,10 @@ def get_match_cached(m_id: int):
 def get_group_count_cached():
     from ..database import SessionLocal
     db = SessionLocal()
-    try:
-        return db.query(models.Match).filter(models.Match.stage == "Group Stage").count()
-    finally:
-        db.close()
+    # Determine if bracket is unlocked: only when all group stage matches are finished
+    group_matches = db.query(models.Match).filter(models.Match.stage == "Group Stage").all()
+    all_finished = all(m.is_finished for m in group_matches)
+    return all_finished
 
 
 @router.post("", response_model=schemas.PredictionOut)
@@ -48,10 +48,27 @@ def submit_prediction(
     match_dt = match.match_date
     if isinstance(match_dt, str):
         match_dt = datetime.fromisoformat(match_dt)
-        
     if match_dt.tzinfo is None:
         match_dt = match_dt.replace(tzinfo=timezone.utc)
     
+    # Disallow prediction for knockout matches until all group stage matches are finished
+    if match.stage != "Group Stage":
+        # Ensure all group stage matches are finished
+        if not get_group_count_cached():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Match is not yet confirmed for prediction")
+        # Ensure source matches (if any) are finished
+        src_ids = [match.home_source_match_id, match.away_source_match_id]
+        if any(src_ids):
+            src_matches = (
+                db.query(models.Match)
+                .filter(models.Match.id.in_([i for i in src_ids if i]))
+                .all()
+            )
+            if not all(sm.is_finished for sm in src_matches):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Match is not yet confirmed for prediction")
+    # Group stage matches are always allowed (subject to start time checks)
+
+
     if match_dt <= now:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot predict after match has started")
     if match.is_finished:
