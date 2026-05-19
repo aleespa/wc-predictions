@@ -26,7 +26,7 @@ export function getCurrentPath() {
     return path;
 }
 
-const PUBLIC_ROUTES = ['/', '/login', '/register', '/matches', '/bracket', '/community', '/onboarding'];
+const PUBLIC_ROUTES = ['/', '/login', '/register', '/matches', '/onboarding'];
 
 export async function handleRoute() {
     const path = getCurrentPath();
