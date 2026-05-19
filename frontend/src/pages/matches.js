@@ -226,16 +226,24 @@ export async function matchesPage() {
                     filtered = filtered.filter(m => m.is_finished);
                 }
                 
-                // 3. Sort: Move predicted matches to the bottom
-                // If it's a specific stage, it might be better to keep the bracket order, 
-                // but based on request we will sort all views.
+                // 3. Sort: Always show the next upcoming match at the top, sorted chronologically ascending.
+                // Past/started matches are listed below, sorted chronologically descending (most recent first).
+                const nowTime = new Date().getTime();
                 filtered.sort((a, b) => {
-                    const aHasPred = a.user_prediction != null;
-                    const bHasPred = b.user_prediction != null;
-                    if (aHasPred && !bHasPred) return 1;
-                    if (!aHasPred && bHasPred) return -1;
-                    // If both have or both don't have predictions, keep original order (which is usually chronological/match_number)
-                    return a.id - b.id; 
+                    const aDate = new Date(a.match_date).getTime();
+                    const bDate = new Date(b.match_date).getTime();
+                    
+                    const aIsFuture = aDate > nowTime && !a.is_finished;
+                    const bIsFuture = bDate > nowTime && !b.is_finished;
+                    
+                    if (aIsFuture && !bIsFuture) return -1;
+                    if (!aIsFuture && bIsFuture) return 1;
+                    
+                    if (aIsFuture && bIsFuture) {
+                        return aDate - bDate; // Chronological ascending (closest upcoming first)
+                    } else {
+                        return bDate - aDate; // Chronological descending (most recent past first)
+                    }
                 });
 
                 if (filtered.length === 0) {
