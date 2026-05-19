@@ -709,6 +709,13 @@ a:hover {
     color: var(--accent-red);
 }
 
+.match-prediction-badge.no-prediction {
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px dashed var(--border-medium);
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
 .bracket-match-invalid {
     border-color: var(--accent-red) !important;
     background: rgba(239, 68, 68, 0.05) !important;

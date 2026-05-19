@@ -120,6 +120,15 @@ export function renderMatchCard(match, options = {}) {
                 <span class="badge-label">${labelText}</span>
             </div>
         `;
+    } else if (showPrediction && !hasPrediction && (isFinished || now.getTime() > matchDate.getTime())) {
+        const labelText = profileName ? 
+            t('match_user_no_prediction', { name: profileName }) : 
+            t('match_no_prediction');
+        predictionBadge = `
+            <div class="match-prediction-badge no-prediction">
+                <span class="badge-label">${labelText}</span>
+            </div>
+        `;
     }
 
     const classes = ['match-card'];

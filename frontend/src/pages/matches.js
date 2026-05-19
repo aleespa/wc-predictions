@@ -18,7 +18,8 @@ export async function matchesPage() {
     const PREDICTION_FILTERS = [
         { label: t('matches_pred_filter_all') || 'All', val: 'all' },
         { label: t('matches_pred_filter_with') || 'With Prediction', val: 'with' },
-        { label: t('matches_pred_filter_without') || 'Without Prediction', val: 'without' }
+        { label: t('matches_pred_filter_without') || 'Without Prediction', val: 'without' },
+        { label: t('matches_pred_filter_finished') || 'Finished', val: 'finished' }
     ];
 
     let matches = [];
@@ -221,6 +222,8 @@ export async function matchesPage() {
                     filtered = filtered.filter(m => m.user_prediction != null);
                 } else if (currentPredFilter === 'without') {
                     filtered = filtered.filter(m => m.user_prediction == null);
+                } else if (currentPredFilter === 'finished') {
+                    filtered = filtered.filter(m => m.is_finished);
                 }
                 
                 // 3. Sort: Move predicted matches to the bottom
