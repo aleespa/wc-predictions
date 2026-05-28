@@ -102,6 +102,7 @@ class MatchOut(BaseModel):
     away_source_match_id: Optional[int] = None
     is_home_predicted: bool = False
     is_away_predicted: bool = False
+    is_confirmed: bool = False
 
     class Config:
         from_attributes = True

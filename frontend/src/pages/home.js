@@ -26,7 +26,7 @@ export async function homePage() {
             <div class="hero-actions">
                 ${authed
                     ? `<a href="#/matches" class="btn btn-primary btn-lg">${t('home_btn_browse')}</a><a href="#/bracket" class="btn btn-secondary btn-lg">${t('home_btn_bracket')}</a><a href="#/community" class="btn btn-secondary btn-lg">${t('home_btn_leaderboard')}</a>`
-                    : `<a href="#/register" class="btn btn-primary btn-lg">${t('home_btn_get_started')}</a><a href="#/matches" class="btn btn-secondary btn-lg">${t('home_btn_view_matches')}</a>`
+                    : `<a href="#/register" class="btn btn-primary btn-lg">${t('home_btn_get_started')}</a>`
                 }
             </div>
 

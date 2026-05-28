@@ -69,6 +69,12 @@ def list_matches(
         match_num_map = {m.match_number: m for m in ko_matches}
         match_id_to_num = {m.id: m.match_number for m in ko_matches}
 
+    all_groups_finished = not db.query(models.Match).filter(
+        models.Match.stage == "Group Stage",
+        models.Match.is_finished == False
+    ).first()
+    finished_map = {m_id: is_fin for m_id, is_fin in db.query(models.Match.id, models.Match.is_finished).all()}
+
     result = []
     for match in matches:
         match_data = schemas.MatchOut.model_validate(match)
@@ -76,6 +82,18 @@ def list_matches(
         # Attach prediction
         if match.id in user_predictions:
             match_data.user_prediction = schemas.PredictionOut.model_validate(user_predictions[match.id])
+            
+        # Compute is_confirmed
+        is_confirmed = True
+        if match.stage != "Group Stage":
+            if not all_groups_finished:
+                is_confirmed = False
+            else:
+                src_ids = [match.home_source_match_id, match.away_source_match_id]
+                for sid in src_ids:
+                    if sid and not finished_map.get(sid, False):
+                        is_confirmed = False
+        match_data.is_confirmed = is_confirmed
             
         # Speculative resolution for knockout matches
         if match.stage != "Group Stage" and (not match.home_team_id or not match.away_team_id) and target_user_id:
@@ -305,5 +323,22 @@ def get_match(
                 # If prediction exists but teams are no longer resolved, it's definitely invalid
                 match_data.user_prediction.is_invalid = True
                 match_data.is_invalid_prediction = True
+
+    all_groups_finished = not db.query(models.Match).filter(
+        models.Match.stage == "Group Stage",
+        models.Match.is_finished == False
+    ).first()
+    is_confirmed = True
+    if match.stage != "Group Stage":
+        if not all_groups_finished:
+            is_confirmed = False
+        else:
+            src_ids = [match.home_source_match_id, match.away_source_match_id]
+            for sid in src_ids:
+                if sid:
+                    src_match = db.query(models.Match).filter(models.Match.id == sid).first()
+                    if not src_match or not src_match.is_finished:
+                        is_confirmed = False
+    match_data.is_confirmed = is_confirmed
 
     return match_data

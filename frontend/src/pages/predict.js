@@ -126,6 +126,18 @@ export async function predictPage(params) {
     let formSection = '';
     if (match.is_finished) {
         formSection = resultSection;
+    } else if (!match.is_confirmed && match.stage !== 'Group Stage') {
+        // Knockout match where teams are resolved speculatively, but it's not confirmed yet
+        formSection = `
+            ${teamsHeader}
+            <div style="text-align:center;padding:var(--space-xl);margin-top:var(--space-md);background:var(--bg-glass);border-radius:var(--radius-lg);border:1px dashed var(--border-medium)">
+                <div style="font-size:1.5rem;margin-bottom:var(--space-sm)">🔒</div>
+                <div style="font-weight:600;margin-bottom:var(--space-sm)">${t('predict_not_confirmed_title')}</div>
+                <div style="font-size:0.85rem;color:var(--text-muted)">
+                    ${t('predict_not_confirmed_sub')}
+                </div>
+            </div>
+        `;
     } else if (!teamsKnown) {
         // Knockout match where teams are not yet determined
         formSection = `
@@ -250,8 +262,8 @@ export async function predictPage(params) {
                     <span class="match-group-badge">${match.group_letter ? t('stage_group', { group: match.group_letter }) : t('stage_' + match.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || match.stage}</span>
                     <div style="display:flex; gap:6px; align-items:center">
                         ${remainingTimeStr ? `<span class="match-time-remaining">🕒 ${remainingTimeStr}</span>` : ''}
-                        <span class="match-status ${match.is_finished ? 'finished' : (isLive ? 'live' : (isWaiting ? 'waiting' : 'upcoming'))}">
-                            ${match.is_finished ? t('predict_status_finished') : (isLive ? t('match_status_live') : (isWaiting ? t('match_status_waiting') : t('predict_status_upcoming')))}
+                        <span class="match-status ${match.is_finished ? 'finished' : (isLive ? 'live' : (isWaiting ? 'waiting' : (!match.is_confirmed ? 'waiting' : 'upcoming')))}">
+                            ${match.is_finished ? t('predict_status_finished') : (isLive ? t('match_status_live') : (isWaiting ? t('match_status_waiting') : (!match.is_confirmed ? t('predict_status_not_confirmed') : t('predict_status_upcoming'))))}
                         </span>
                     </div>
                 </div>

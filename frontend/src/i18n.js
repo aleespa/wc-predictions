@@ -1,3 +1,5 @@
+import { isAuthenticated } from './auth.js';
+
 export const translations = {
     en: {
         nav_matches: "Matches",
@@ -71,12 +73,15 @@ export const translations = {
         predict_btn_update: "✏️ Update Prediction",
         predict_btn_submit: "⚡ Submit Prediction",
         predict_invalid_teams: "The teams in the bracket have changed since you made this prediction. Please update it.",
+        predict_not_confirmed_title: "Match Not Confirmed",
+        predict_not_confirmed_sub: "This match is not yet officially confirmed for predictions. Please wait until the group stage matches are completed and the qualifiers are officially set.",
         predict_penalty_winner: "Penalty Shootout Winner",
         predict_penalty_desc: "Who wins on penalties?",
         predict_back_matches: "← Back to Matches",
         predict_back_bracket: "← Back to Bracket",
         predict_status_finished: "✓ Finished",
         predict_status_upcoming: "● Upcoming",
+        predict_status_not_confirmed: "● Not confirmed",
         leaderboard_title: "🏆 Leaderboard",
         leaderboard_subtitle: "See who's leading the prediction game",
         leaderboard_pts: "pts",
@@ -196,6 +201,7 @@ export const translations = {
         match_status_finished: "✓ Finished",
         match_status_predicted: "⚡ Predicted",
         match_status_upcoming: "● Upcoming",
+        match_status_not_confirmed: "● Not confirmed",
         match_status_live: "● Live",
         match_status_waiting: "⌛ Waiting confirmation",
         match_badge_exact: "{h}-{a} · 5 pts 🎯",
@@ -405,12 +411,15 @@ export const translations = {
         predict_btn_update: "✏️ Actualizar Quiniela",
         predict_btn_submit: "⚡ Guardar Quiniela",
         predict_invalid_teams: "Los equipos en los cruces han cambiado desde que guardaste esta quiniela. Por favor, actualízala.",
+        predict_not_confirmed_title: "Partido no confirmado",
+        predict_not_confirmed_sub: "Este partido aún no está confirmado oficialmente para pronósticos. Por favor, espera a que los clasificados estén definidos oficialmente.",
         predict_penalty_winner: "Ganador en Penales",
         predict_penalty_desc: "¿Quién gana en los penales?",
         predict_back_matches: "← Volver a Partidos",
         predict_back_bracket: "← Volver a Eliminatorias",
         predict_status_finished: "✓ Terminado",
         predict_status_upcoming: "● Próximo",
+        predict_status_not_confirmed: "● No confirmado",
         leaderboard_title: "🏆 Tabla General",
         leaderboard_subtitle: "Checa quién va ganando la quiniela",
         leaderboard_pts: "pts",
@@ -530,6 +539,7 @@ export const translations = {
         match_status_finished: "✓ Terminado",
         match_status_predicted: "⚡ Guardado",
         match_status_upcoming: "● Próximo",
+        match_status_not_confirmed: "● No confirmado",
         match_status_live: "● En vivo",
         match_status_waiting: "⌛ Esperando confirmación",
         match_badge_exact: "{h}-{a} · 5 pts 🎯",
@@ -679,6 +689,15 @@ if (!currentLanguage) {
 
 export function t(key, params = {}) {
     let str = translations[currentLanguage]?.[key] || translations['en'][key] || key;
+    
+    if (isAuthenticated && isAuthenticated()) {
+        if (key === 'home_btn_leaderboard' || key === 'community_leaderboard' || key === 'nav_leaderboard') {
+            str = currentLanguage === 'es' ? 'Comunidad' : 'Community';
+        } else if (key === 'leaderboard_title') {
+            str = currentLanguage === 'es' ? '🏆 Comunidad' : '🏆 Community';
+        }
+    }
+
     Object.keys(params).forEach(p => {
         str = str.replace(`{${p}}`, params[p]);
     });

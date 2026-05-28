@@ -68,6 +68,13 @@ export function renderMatchCard(match, options = {}) {
                     <span class="match-status predicted">${t('match_status_predicted')}</span>
                 </div>
             `;
+        } else if (!match.is_confirmed) {
+            statusHtml = `
+                <div style="display:flex; gap:6px; align-items:center">
+                    ${timeChipHtml}
+                    <span class="match-status waiting">${t('match_status_not_confirmed')}</span>
+                </div>
+            `;
         } else {
             statusHtml = `
                 <div style="display:flex; gap:6px; align-items:center">
@@ -138,8 +145,15 @@ export function renderMatchCard(match, options = {}) {
     const classes = ['match-card'];
     if (isFinished) classes.push('finished');
     if (hasPrediction) classes.push('predicted');
+    
+    const isLocked = !match.is_confirmed && !isFinished;
+    if (isLocked) {
+        classes.push('locked');
+    }
 
-    const clickAttr = onClick ? `onclick="${onClick}(${match.id})"` : `onclick="location.hash='#/predict/${match.id}'"`;
+    const clickAttr = isLocked 
+        ? '' 
+        : (onClick ? `onclick="${onClick}(${match.id})"` : `onclick="location.hash='#/predict/${match.id}'"`);
 
     return `
         <div class="${classes.join(' ')}" ${clickAttr} id="match-card-${match.id}">
