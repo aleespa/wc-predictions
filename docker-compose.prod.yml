@@ -12,6 +12,7 @@ services:
     volumes:
       - ./backend/simulate_results.py:/app/simulate_results.py
       - ./backend/simulate_data.py:/app/simulate_data.py
+      - ./backend/simulate_tournament.py:/app/simulate_tournament.py
 
   nginx:
     build:
