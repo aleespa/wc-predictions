@@ -2894,3 +2894,128 @@ select.form-input option {
         box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
     }
 }
+
+/* ── Community Card Section Styles ────────────────────────── */
+.community-stats-section {
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    width: 100%;
+}
+
+.community-avg-score {
+    text-align: center;
+    width: 100%;
+}
+
+.community-avg-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.community-avg-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin: 4px 0;
+    background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.community-implied {
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.community-outcome-bars {
+    width: 100%;
+    max-width: 240px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.community-bar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+}
+
+.community-bar-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    min-width: 65px;
+    text-align: left;
+}
+
+.community-bar-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--border-subtle);
+}
+
+.community-bar-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 0.6s ease-out;
+}
+
+.community-bar-home {
+    background: var(--gradient-green);
+    box-shadow: var(--shadow-glow-green);
+}
+
+.community-bar-draw {
+    background: var(--gradient-gold);
+    box-shadow: var(--shadow-glow-gold);
+}
+
+.community-bar-away {
+    background: var(--gradient-blue);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+.community-match-points {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 6px 16px;
+    border-radius: var(--radius-full);
+    background: var(--bg-glass);
+    border: 1px solid var(--border-subtle);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    justify-content: center;
+}
+
+.community-count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: var(--space-xs) var(--space-md);
+    background: var(--bg-glass);
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-subtle);
+}
+
+.community-count-icon {
+    font-size: 0.85rem;
+}
