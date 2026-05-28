@@ -225,6 +225,54 @@ def get_community_standings(group_letter: str, community_id: Optional[int] = Non
     return compute_standings(teams, matches, get_avg_scores)
 
 
+@router.get("/thirds", response_model=list[schemas.StandingOut])
+def get_community_thirds_standings(
+    community_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Compute implied best third-placed teams from the community's average predicted scores.
+    """
+    teams = db.query(models.Team).all()
+    group_matches = db.query(models.Match).filter(models.Match.stage == "Group Stage").all()
+
+    match_ids = [m.id for m in group_matches]
+    stats = _compute_match_stats(db, match_ids, community_id)
+
+    # Map teams by ID and group
+    teams_by_group = {}
+    for t in teams:
+        teams_by_group.setdefault(t.group_letter, []).append(t)
+
+    matches_by_group = {}
+    for m in group_matches:
+        matches_by_group.setdefault(m.group_letter, []).append(m)
+
+    from ..utils import compute_standings
+    
+    def get_avg_scores(m):
+        s = stats.get(m.id)
+        if not s or s.get("avg_home") is None:
+            return None
+        return (round(s["avg_home"]), round(s["avg_away"]), True)
+
+    all_thirds = []
+    for gl in "ABCDEFGHIJKL":
+        group_teams = teams_by_group.get(gl, [])
+        group_matches_list = matches_by_group.get(gl, [])
+        standings = compute_standings(group_teams, group_matches_list, get_avg_scores)
+        if len(standings) >= 3:
+            all_finished = all((m.is_finished and m.home_score is not None) for m in group_matches_list if m.home_team_id and m.away_team_id)
+            third = standings[2]
+            third["is_predicted"] = third["is_predicted"] or (not all_finished)
+            third["group_letter"] = gl
+            all_thirds.append(third)
+
+    # Sort ALL 3rd place teams by performance
+    all_thirds.sort(key=lambda x: (x["points"], x["goal_diff"], x["goals_for"]), reverse=True)
+    return all_thirds
+
+
 # ── Community points (virtual user scoring) ──────────
 
 class CommunityMatchPoints(BaseModel):

@@ -6,7 +6,6 @@ const getFilters = () => [
     { label: t('matches_filter_all'), type: 'all', val: 'All' },
     ...['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'].map(g => ({ label: t('matches_filter_grp', { group: g }), type: 'group', val: g })),
     { label: t('matches_filter_thirds'), type: 'thirds', val: 'thirds' },
-    { label: '🏆 ' + (t('nav_bracket') || 'Bracket'), type: 'bracket', val: 'bracket' },
     { label: t('matches_filter_r32'), type: 'stage', val: 'Round of 32' },
     { label: t('matches_filter_r16'), type: 'stage', val: 'Round of 16' },
     { label: t('matches_filter_qf'), type: 'stage', val: 'Quarter-finals' },
@@ -664,19 +663,14 @@ function initCommunityContent(matches, communityPoints, suffix) {
         const filterVal = activeTab.dataset.val;
         const statusFilter = activeStatusTab ? activeStatusTab.dataset.val : 'all';
 
-        // Hide status tabs for bracket view
+        // Hide status tabs for thirds view
         if (statusTabsContainer) {
-            statusTabsContainer.style.display = filterType === 'bracket' ? 'none' : 'inline-flex';
+            statusTabsContainer.style.display = filterType === 'thirds' ? 'none' : 'inline-flex';
         }
 
         standingsContainer.innerHTML = '';
         bracketContainer.innerHTML = '';
         grid.innerHTML = '';
-
-        if (filterType === 'bracket') {
-            loadCommunityBracket(bracketContainer, suffix);
-            return;
-        }
 
         let filtered = matches;
         if (filterType === 'group') {
@@ -691,10 +685,84 @@ function initCommunityContent(matches, communityPoints, suffix) {
             } catch (err) {
                 console.error('Failed to load community standings', err);
             }
+        } else if (filterType === 'thirds') {
+            filtered = [];
+            grid.innerHTML = `<div class="loading" style="grid-column: 1/-1; text-align: center; padding: 2rem;">${t('matches_loading_thirds')}</div>`;
+            try {
+                let url = `/community/thirds`;
+                if (suffix) {
+                    url += suffix;
+                }
+                const stds = await fetchAPI(url);
+                grid.innerHTML = '';
+                if (stds.length === 0) {
+                     grid.innerHTML = `
+                        <div class="empty-state" style="grid-column:1/-1">
+                            <div class="empty-state-icon">📭</div>
+                            <div class="empty-state-text">${t('matches_no_matches')}</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let trs = stds.map((s, idx) => {
+                    const isPredicted = s.is_predicted;
+                    const rowStyle = isPredicted ? 'color: var(--accent-purple-light); font-style: italic;' : '';
+                    const pointsStyle = isPredicted ? 'color: var(--accent-purple);' : 'color: var(--accent-gold);';
+                    const qualStyle = idx < 8 ? 'background: rgba(255,215,0,0.05);' : '';
+
+                    return `
+                        <tr style="border-bottom:1px solid var(--border-light); ${rowStyle} ${qualStyle}">
+                            <td style="padding:12px 4px;text-align:center;font-weight:700;color:var(--text-muted)">${idx+1}</td>
+                            <td style="padding:12px 4px;"><img src="${getFlagURL(s.team_code)}" class="match-team-flag-svg" style="width:24px; height:16px; margin-right:8px">${t(s.team_name)}${isPredicted ? ' *' : ''}</td>
+                            <td style="padding:12px 4px;text-align:center;font-weight:600;color:var(--accent-gold)">${s.group_letter}</td>
+                            <td style="padding:12px 4px;text-align:center">${s.played}</td>
+                            <td style="padding:12px 4px;text-align:center">${s.won}</td>
+                            <td style="padding:12px 4px;text-align:center">${s.drawn}</td>
+                            <td style="padding:12px 4px;text-align:center">${s.lost}</td>
+                            <td style="padding:12px 4px;text-align:center">${s.goal_diff > 0 ? '+'+s.goal_diff : s.goal_diff}</td>
+                            <td style="padding:12px 4px;text-align:center;font-weight:800; ${pointsStyle}">${s.points}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                standingsContainer.innerHTML = `
+                    <div class="card" style="margin-bottom:var(--space-lg);overflow-x:auto;">
+                        <h3 style="margin-top:0;margin-bottom:var(--space-md)">${t('matches_standings_thirds_title')}</h3>
+                        <table style="width:100%;border-collapse:collapse;font-size:0.95rem;white-space:nowrap;">
+                            <thead>
+                                <tr style="border-bottom:2px solid var(--border-medium);color:var(--text-muted)">
+                                    <th style="padding:8px 4px;text-align:center">#</th>
+                                    <th style="padding:8px 4px;text-align:left">${t('matches_standings_team')}</th>
+                                    <th style="padding:8px 4px;text-align:center">${t('matches_filter_grp', { group: '' }).replace(':','').trim()}</th>
+                                    <th style="padding:8px 4px;text-align:center">${t('matches_standings_mp')}</th>
+                                    <th style="padding:8px 4px;text-align:center">${t('matches_standings_w')}</th>
+                                    <th style="padding:8px 4px;text-align:center">${t('matches_standings_d')}</th>
+                                    <th style="padding:8px 4px;text-align:center">${t('matches_standings_l')}</th>
+                                    <th style="padding:8px 4px;text-align:center">${t('matches_standings_gd')}</th>
+                                    <th style="padding:8px 4px;text-align:center">${t('matches_standings_pts')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${trs}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } catch (err) {
+                console.error('Failed to load thirds standings', err);
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column:1/-1">
+                        <div class="empty-state-icon">⚠️</div>
+                        <div class="empty-state-text">${t('matches_error_thirds', { msg: err.message })}</div>
+                    </div>
+                `;
+            }
         } else if (filterType === 'stage') {
             filtered = matches.filter(m => m.stage === filterVal);
         } else {
-            filtered = groupMatches;
+            // "all" filter: display all matches (group + knockout)
+            filtered = matches;
         }
 
         // Apply status filter (finished only)
