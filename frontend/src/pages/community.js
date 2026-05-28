@@ -6,6 +6,7 @@ const getFilters = () => [
     { label: t('matches_filter_all'), type: 'all', val: 'All' },
     ...['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'].map(g => ({ label: t('matches_filter_grp', { group: g }), type: 'group', val: g })),
     { label: t('matches_filter_thirds'), type: 'thirds', val: 'thirds' },
+    { label: '🏆 ' + (t('nav_bracket') || 'Bracket'), type: 'bracket', val: 'bracket' },
     { label: t('matches_filter_r32'), type: 'stage', val: 'Round of 32' },
     { label: t('matches_filter_r16'), type: 'stage', val: 'Round of 16' },
     { label: t('matches_filter_qf'), type: 'stage', val: 'Quarter-finals' },
@@ -605,16 +606,15 @@ function renderLeaderboardTable(leaderboard, currentUser, page = 1) {
 }
 
 function renderCommunityContent(matches, communityPoints, leaderboard, currentUser, suffix) {
-    const matchPointsMap = {};
-    if (communityPoints && communityPoints.match_details) {
-        for (const detail of communityPoints.match_details) {
-            matchPointsMap[detail.match_id] = detail;
-        }
-    }
-    const groupMatches = matches.filter(m => m.stage === 'Group Stage');
-
     const tabs = getFilters().map((f, i) =>
         `<button class="group-tab ${i === 0 ? 'active' : ''}" data-type="${f.type}" data-val="${f.val}">${f.label}</button>`
+    ).join('');
+
+    const statusTabs = [
+        { label: t('matches_pred_filter_all') || 'All', val: 'all' },
+        { label: t('matches_pred_filter_finished') || 'Finished', val: 'finished' }
+    ].map((f, i) =>
+        `<button class="group-tab status-tab ${i === 0 ? 'active' : ''}" data-val="${f.val}">${f.label}</button>`
     ).join('');
 
     return `
@@ -622,18 +622,23 @@ function renderCommunityContent(matches, communityPoints, leaderboard, currentUs
         ${renderLeaderboardTable(leaderboard, currentUser, currentLeaderboardPage)}
 
         <h2 style="margin-bottom: var(--space-md);">${t('community_avg_preds')}</h2>
-        <div class="group-tabs" id="community-tabs">
+        <div class="group-tabs" id="community-tabs" style="margin-bottom: var(--space-sm)">
             ${tabs}
+        </div>
+
+        <div class="group-tabs" id="community-status-tabs" style="margin-bottom: var(--space-lg); padding: 4px; background: rgba(0,0,0,0.05); border-radius: var(--radius-lg); display: inline-flex;">
+            ${statusTabs}
         </div>
 
         <div id="community-standings-container"></div>
         <div id="community-bracket-container"></div>
 
         <div class="matches-grid" id="community-grid">
-            ${groupMatches.map(m => renderCommunityMatchCard(m, matchPointsMap)).join('')}
+            <!-- Matches will be rendered here by init() -->
         </div>
     `;
 }
+
 
 function initCommunityContent(matches, communityPoints, suffix) {
     const matchPointsMap = {};
@@ -645,20 +650,33 @@ function initCommunityContent(matches, communityPoints, suffix) {
     const groupMatches = matches.filter(m => m.stage === 'Group Stage');
     const grid = document.getElementById('community-grid');
     const tabsContainer = document.getElementById('community-tabs');
+    const statusTabsContainer = document.getElementById('community-status-tabs');
     const standingsContainer = document.getElementById('community-standings-container');
     const bracketContainer = document.getElementById('community-bracket-container');
 
-    tabsContainer.addEventListener('click', async (e) => {
-        const tab = e.target.closest('.group-tab');
-        if (!tab) return;
-        tabsContainer.querySelectorAll('.group-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
+    const updateMatchesView = async () => {
+        const activeTab = tabsContainer.querySelector('.group-tab.active');
+        const activeStatusTab = statusTabsContainer?.querySelector('.status-tab.active');
 
-        const filterType = tab.dataset.type;
-        const filterVal = tab.dataset.val;
+        if (!activeTab) return;
+
+        const filterType = activeTab.dataset.type;
+        const filterVal = activeTab.dataset.val;
+        const statusFilter = activeStatusTab ? activeStatusTab.dataset.val : 'all';
+
+        // Hide status tabs for bracket view
+        if (statusTabsContainer) {
+            statusTabsContainer.style.display = filterType === 'bracket' ? 'none' : 'inline-flex';
+        }
 
         standingsContainer.innerHTML = '';
         bracketContainer.innerHTML = '';
+        grid.innerHTML = '';
+
+        if (filterType === 'bracket') {
+            loadCommunityBracket(bracketContainer, suffix);
+            return;
+        }
 
         let filtered = matches;
         if (filterType === 'group') {
@@ -679,6 +697,30 @@ function initCommunityContent(matches, communityPoints, suffix) {
             filtered = groupMatches;
         }
 
+        // Apply status filter (finished only)
+        if (statusFilter === 'finished') {
+            filtered = filtered.filter(m => m.is_finished);
+        }
+
+        // Sort: future matches ascending, past matches descending
+        const nowTime = new Date().getTime();
+        filtered.sort((a, b) => {
+            const aDate = new Date(a.match_date).getTime();
+            const bDate = new Date(b.match_date).getTime();
+            
+            const aIsFuture = aDate > nowTime && !a.is_finished;
+            const bIsFuture = bDate > nowTime && !b.is_finished;
+            
+            if (aIsFuture && !bIsFuture) return -1;
+            if (!aIsFuture && bIsFuture) return 1;
+            
+            if (aIsFuture && bIsFuture) {
+                return aDate - bDate; // Chronological ascending (closest first)
+            }
+            
+            return bDate - aDate; // Chronological descending (most recent past first)
+        });
+
         if (filtered.length === 0) {
             if (filterType === 'stage') {
                 grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🏆</div><div class="empty-state-text">${t('community_awaiting_bracket')}</div></div>`;
@@ -688,9 +730,26 @@ function initCommunityContent(matches, communityPoints, suffix) {
         } else {
             grid.innerHTML = filtered.map(m => renderCommunityMatchCard(m, matchPointsMap)).join('');
         }
+    };
+
+    tabsContainer.addEventListener('click', (e) => {
+        const tab = e.target.closest('.group-tab');
+        if (!tab) return;
+        tabsContainer.querySelectorAll('.group-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        updateMatchesView();
     });
 
-    loadCommunityBracket(bracketContainer, suffix);
+    statusTabsContainer?.addEventListener('click', (e) => {
+        const tab = e.target.closest('.status-tab');
+        if (!tab) return;
+        statusTabsContainer.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        updateMatchesView();
+    });
+
+    // Initial load
+    updateMatchesView();
 }
 
 async function loadCommunityBracket(container, suffix) {
