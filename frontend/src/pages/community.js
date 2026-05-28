@@ -162,9 +162,6 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
                     `}
                 </div>
             </div>
-            <div class="match-card-footer">
-                <span class="match-venue">🏟️ ${match.venue || t('common_tbd')}</span>
-            </div>
             ${communitySection}
         </div>
     `;
