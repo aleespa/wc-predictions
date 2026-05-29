@@ -9,48 +9,78 @@ def calculate_points(
     actual_pen_winner: Optional[int] = None,
     home_team_id: Optional[int] = None,
     away_team_id: Optional[int] = None,
-    is_knockout: bool = False,
+    stage: str = "Group Stage",
 ) -> int:
-    """Calculate points for a prediction."""
-    def get_advancer(h_score, a_score, pen_winner, h_id, a_id):
-        if h_score > a_score: return h_id
-        if a_score > h_score: return a_id
-        return pen_winner
+    """Calculate points for a prediction based on the tournament stage."""
+    
+    # Points table
+    # Event: (Exact Score, Result + GD, Correct Outcome)
+    POINTS_MAP = {
+        "Group Stage": (3, 2, 1),
+        "Round of 32": (6, 4, 2),
+        "Round of 16": (8, 6, 3),
+        "Round of 8": (10, 7, 4), # Not standard WC stage name but mapping it
+        "Quarter-finals": (12, 8, 4),
+        "Semi-finals": (16, 12, 5),
+        "Final": (25, 20, 15),
+        "Third Place Match": (25, 20, 15),
+    }
+    
+    # Handle aliases or variations in stage names
+    stage_key = stage
+    if stage == "Round of 8": stage_key = "Quarter-finals" # If data uses "Round of 8"
+    elif "Quarter" in stage: stage_key = "Quarter-finals"
+    elif "Semi" in stage: stage_key = "Semi-finals"
+    elif "Third" in stage: stage_key = "Third Place Match"
+    elif "Final" in stage and "Semi" not in stage: stage_key = "Final"
+    
+    pts_exact, pts_gd, pts_outcome = POINTS_MAP.get(stage_key, (3, 2, 1))
 
-    if not is_knockout:
-        if predicted_home == actual_home and predicted_away == actual_away:
-            return 5
-            
-        def outcome(h, a):
-            if h > a: return "home"
-            if a > h: return "away"
-            return "draw"
-            
-        if outcome(predicted_home, predicted_away) == outcome(actual_home, actual_away):
-            if (predicted_home - predicted_away) == (actual_home - actual_away):
-                return 3
-            return 1
-        return 0
-    else:
+    is_knockout = stage_key != "Group Stage"
+
+    def outcome(h, a):
+        if h > a: return "home"
+        if a > h: return "away"
+        return "draw"
+
+    # For knockout matches, we must first check if they correctly predicted who advances
+    if is_knockout:
+        def get_advancer(h_score, a_score, pen_winner, h_id, a_id):
+            if h_score > a_score: return h_id
+            if a_score > h_score: return a_id
+            return pen_winner
+
         p_advancer = get_advancer(predicted_home, predicted_away, predicted_pen_winner, home_team_id, away_team_id)
         a_advancer = get_advancer(actual_home, actual_away, actual_pen_winner, home_team_id, away_team_id)
         
         if p_advancer != a_advancer or p_advancer is None:
             return 0
-            
-        points = 1
-        p_penalties = (predicted_home == predicted_away)
-        a_penalties = (actual_home == actual_away)
+
+    # Correct Outcome
+    if outcome(predicted_home, predicted_away) == outcome(actual_home, actual_away):
+        # Exact Score
+        if predicted_home == actual_home and predicted_away == actual_away:
+            # For knockout, if it went to penalties, we check if they predicted the penalty winner too
+            if is_knockout and predicted_home == predicted_away:
+                if predicted_pen_winner == actual_pen_winner and actual_pen_winner is not None:
+                    return pts_exact
+                else:
+                    # Predicted correct draw but wrong penalty winner -> only outcome points? 
+                    # Actually, the logic above says if p_advancer != a_advancer return 0.
+                    # So if they got the draw right but wrong pen winner, they already returned 0.
+                    return pts_exact
+            return pts_exact
         
-        if p_penalties and a_penalties:
-            points = 3
-            if predicted_pen_winner == actual_pen_winner and actual_pen_winner is not None:
-                points = 5
-                
-        return points
+        # Result + Goal Diff
+        if (predicted_home - predicted_away) == (actual_home - actual_away):
+            return pts_gd
+            
+        return pts_outcome
+        
+    return 0
 
 
-def compute_standings(teams: List[Any], matches: List[Any], get_scores_fn: Callable[[Any], Optional[tuple[int, int, bool]]]) -> List[Dict[str, Any]]:
+def compute_standings(teams: List[Any], matches: List[Any], get_scores_fn: Callable) -> List[Dict[str, Any]]:
     """
     Generic standings calculator.
     get_scores_fn(match) should return (home_score, away_score) or None.

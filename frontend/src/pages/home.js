@@ -30,20 +30,74 @@ export async function homePage() {
                 }
             </div>
 
-            <div class="card" style="text-align:center;padding:var(--space-xl); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); margin-top: var(--space-xl)">
-                <h3 style="margin-bottom:var(--space-md); font-size: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">${t('home_scoring_works')}</h3>
-                <div class="points-preview-grid" style="max-width:500px;margin:0 auto; display: flex; justify-content: center; gap: var(--space-xl); flex-wrap: wrap;">
-                    <div class="points-preview-item">
-                        <div class="points-preview-value" style="color:var(--accent-gold); font-size: 1.5rem; font-weight: 800;">5 ${t('common_pts')}</div>
-                        <div class="points-preview-label" style="font-size: 0.8rem; color: var(--text-muted);">${t('home_exact_score')}</div>
+            <div style="margin-top: var(--space-2xl); display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-xl);">
+                <!-- How to Play Section -->
+                <div class="card" style="padding: var(--space-xl); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                    <h3 style="margin-bottom: var(--space-lg); display: flex; align-items: center; gap: 8px;">
+                        📖 ${t('home_how_to_play')}
+                    </h3>
+                    <div style="display: flex; flex-direction: column; gap: var(--space-md); color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+                        <div>${t('home_how_to_play_1')}</div>
+                        <div>${t('home_how_to_play_2')}</div>
+                        <div>${t('home_how_to_play_3')}</div>
+                        <div>${t('home_how_to_play_4')}</div>
                     </div>
-                    <div class="points-preview-item">
-                        <div class="points-preview-value" style="color:var(--accent-green); font-size: 1.5rem; font-weight: 800;">3 ${t('common_pts')}</div>
-                        <div class="points-preview-label" style="font-size: 0.8rem; color: var(--text-muted);">${t('home_result_gd')}</div>
-                    </div>
-                    <div class="points-preview-item">
-                        <div class="points-preview-value" style="color:var(--accent-blue); font-size: 1.5rem; font-weight: 800;">1 ${t('common_pt')}</div>
-                        <div class="points-preview-label" style="font-size: 0.8rem; color: var(--text-muted);">${t('home_correct_outcome')}</div>
+                </div>
+
+                <!-- Points Table Section -->
+                <div class="card" style="padding: var(--space-xl); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                    <h3 style="margin-bottom: var(--space-lg); display: flex; align-items: center; gap: 8px;">
+                        ${t('home_scoring_works')}
+                    </h3>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: center;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-muted);">
+                                    <th style="padding: 8px; text-align: left;">${t('home_table_stage')}</th>
+                                    <th style="padding: 8px; color: var(--accent-gold);">${t('home_table_exact')}</th>
+                                    <th style="padding: 8px; color: var(--accent-green);">${t('home_table_gd')}</th>
+                                    <th style="padding: 8px; color: var(--accent-blue);">${t('home_table_outcome')}</th>
+                                </tr>
+                            </thead>
+                            <tbody style="color: var(--text-primary);">
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 8px; text-align: left; color: var(--text-muted);">${t('matches_filter_all').replace('🌍 ', '')} Stage</td>
+                                    <td style="padding: 8px; font-weight: 700;">3</td>
+                                    <td style="padding: 8px; font-weight: 700;">2</td>
+                                    <td style="padding: 8px; font-weight: 700;">1</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 8px; text-align: left; color: var(--text-muted);">${t('matches_filter_r32')}</td>
+                                    <td style="padding: 8px; font-weight: 700;">6</td>
+                                    <td style="padding: 8px; font-weight: 700;">4</td>
+                                    <td style="padding: 8px; font-weight: 700;">2</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 8px; text-align: left; color: var(--text-muted);">${t('matches_filter_r16')}</td>
+                                    <td style="padding: 8px; font-weight: 700;">8</td>
+                                    <td style="padding: 8px; font-weight: 700;">6</td>
+                                    <td style="padding: 8px; font-weight: 700;">3</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 8px; text-align: left; color: var(--text-muted);">${t('matches_filter_qf')}</td>
+                                    <td style="padding: 8px; font-weight: 700;">12</td>
+                                    <td style="padding: 8px; font-weight: 700;">8</td>
+                                    <td style="padding: 8px; font-weight: 700;">4</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                    <td style="padding: 8px; text-align: left; color: var(--text-muted);">${t('matches_filter_sf')}</td>
+                                    <td style="padding: 8px; font-weight: 700;">16</td>
+                                    <td style="padding: 8px; font-weight: 700;">12</td>
+                                    <td style="padding: 8px; font-weight: 700;">5</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; text-align: left; color: var(--text-muted);">${t('matches_filter_final')}</td>
+                                    <td style="padding: 8px; font-weight: 700;">25</td>
+                                    <td style="padding: 8px; font-weight: 700;">20</td>
+                                    <td style="padding: 8px; font-weight: 700;">15</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

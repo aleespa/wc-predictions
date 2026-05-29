@@ -101,9 +101,9 @@ export async function predictPage(params) {
             const pts = existingPred.points_awarded;
             let color = 'var(--accent-red)';
             let label = t('predict_wrong');
-            if (pts === 5) { color = 'var(--accent-gold)'; label = t('predict_exact'); }
-            else if (pts === 3) { color = 'var(--accent-green)'; label = t('predict_gd'); }
-            else if (pts === 1) { color = 'var(--accent-blue)'; label = t('predict_correct'); }
+            if (pts === stagePts.exact) { color = 'var(--accent-gold)'; label = t('predict_exact'); }
+            else if (pts === stagePts.gd) { color = 'var(--accent-green)'; label = t('predict_gd'); }
+            else if (pts === stagePts.outcome) { color = 'var(--accent-blue)'; label = t('predict_correct'); }
             pointsBadge = `
                 <div style="margin-top:var(--space-lg);padding:var(--space-lg);background:var(--bg-glass);border-radius:var(--radius-lg);text-align:center">
                     <div style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">${t('predict_your_pred')}</div>
@@ -123,6 +123,23 @@ export async function predictPage(params) {
     }
 
     // Build the prediction form section
+    const stage = match.stage || "Group Stage";
+    const POINTS_TABLE = {
+        "Group Stage": { exact: 3, gd: 2, outcome: 1 },
+        "Round of 32": { exact: 6, gd: 4, outcome: 2 },
+        "Round of 16": { exact: 8, gd: 6, outcome: 3 },
+        "Round of 8": { exact: 10, gd: 7, outcome: 4 },
+        "Quarter-finals": { exact: 12, gd: 8, outcome: 4 },
+        "Semi-finals": { exact: 16, gd: 12, outcome: 5 },
+        "Final": { exact: 25, gd: 20, outcome: 15 },
+        "Third Place Match": { exact: 25, gd: 20, outcome: 15 },
+    };
+    const stageKey = stage.includes("Quarter") ? "Quarter-finals" :
+                     stage.includes("Semi") ? "Semi-finals" :
+                     stage.includes("Final") ? "Final" :
+                     stage.includes("Third") ? "Third Place Match" : stage;
+    const stagePts = POINTS_TABLE[stageKey] || POINTS_TABLE["Group Stage"];
+
     let formSection = '';
     if (match.is_finished) {
         formSection = resultSection;
@@ -232,15 +249,15 @@ export async function predictPage(params) {
                         <div class="points-preview-title">${t('predict_pts_earn')}</div>
                         <div class="points-preview-grid">
                             <div class="points-preview-item">
-                                <div class="points-preview-value" style="color:var(--accent-gold)">5</div>
+                                <div class="points-preview-value" style="color:var(--accent-gold)">${stagePts.exact}</div>
                                 <div class="points-preview-label">${t('home_exact_score')}</div>
                             </div>
                             <div class="points-preview-item">
-                                <div class="points-preview-value" style="color:var(--accent-green)">3</div>
+                                <div class="points-preview-value" style="color:var(--accent-green)">${stagePts.gd}</div>
                                 <div class="points-preview-label">${t('home_result_gd')}</div>
                             </div>
                             <div class="points-preview-item">
-                                <div class="points-preview-value" style="color:var(--accent-blue)">1</div>
+                                <div class="points-preview-value" style="color:var(--accent-blue)">${stagePts.outcome}</div>
                                 <div class="points-preview-label">${t('home_correct_outcome')}</div>
                             </div>
                         </div>

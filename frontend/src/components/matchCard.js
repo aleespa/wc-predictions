@@ -136,15 +136,39 @@ export function renderMatchCard(match, options = {}) {
     let predictionScoreHtml = '';
     if (showPrediction && hasPrediction) {
         const pred = match.user_prediction;
-        const pts = pred.points_awarded;
+    const pts = pred.points_awarded;
+        const stage = match.stage || "Group Stage";
         
+        // Define points per stage
+        const POINTS_TABLE = {
+            "Group Stage": { exact: 3, gd: 2, outcome: 1 },
+            "Round of 32": { exact: 6, gd: 4, outcome: 2 },
+            "Round of 16": { exact: 8, gd: 6, outcome: 3 },
+            "Round of 8": { exact: 10, gd: 7, outcome: 4 },
+            "Quarter-finals": { exact: 12, gd: 8, outcome: 4 },
+            "Semi-finals": { exact: 16, gd: 12, outcome: 5 },
+            "Final": { exact: 25, gd: 20, outcome: 15 },
+            "Third Place Match": { exact: 25, gd: 20, outcome: 15 },
+        };
+
+        const stageKey = stage.includes("Quarter") ? "Quarter-finals" :
+                         stage.includes("Semi") ? "Semi-finals" :
+                         stage.includes("Final") ? "Final" :
+                         stage.includes("Third") ? "Third Place Match" : stage;
+
+        const stagePts = POINTS_TABLE[stageKey] || POINTS_TABLE["Group Stage"];
+
         let badgeClass = 'upcoming';
         let ptsText = '';
         if (isFinished) {
-            if (pts === 5) badgeClass = 'exact';
+            if (pts === stagePts.exact) badgeClass = 'exact';
             else if (pts >= 1) badgeClass = 'correct';
             else badgeClass = 'wrong';
             ptsText = `${pts} pts`;
+        } else {
+            // Show potential max points
+            ptsText = `max ${stagePts.exact} pts`;
+            badgeClass = 'potential';
         }
 
         let pkWinnerPredHtml = '';

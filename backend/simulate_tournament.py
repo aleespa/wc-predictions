@@ -168,7 +168,7 @@ def simulate_group_stage_results(db):
                 actual_pen_winner=None,
                 home_team_id=match.home_team_id,
                 away_team_id=match.away_team_id,
-                is_knockout=False
+                stage=match.stage
             )
             pred.points_awarded = points
             
@@ -301,15 +301,9 @@ def simulate_knockout_stage(db, users, stage_name):
                 actual_pen_winner=penalty_winner_id,
                 home_team_id=match.home_team_id,
                 away_team_id=match.away_team_id,
-                is_knockout=True
+                stage=match.stage
             )
             
-            # Award +5 Bracket Points if the user correctly guessed the two teams playing this match (any order)
-            actual_teams = {match.home_team_id, match.away_team_id}
-            predicted_teams = {pred.predicted_home_team_id, pred.predicted_away_team_id}
-            if actual_teams == predicted_teams and None not in actual_teams and None not in predicted_teams:
-                points += 5
-                
             pred.points_awarded = points
             
         db.commit()

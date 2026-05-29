@@ -36,10 +36,30 @@ def _compute_community_points(db: Session, community_id: Optional[int] = None) -
         if not s or s.get("avg_home") is None:
             continue
 
+        # Round to get community prediction
         pred_home = round(s["avg_home"])
         pred_away = round(s["avg_away"])
+        
+        # Determine predicted penalty winner if draw
+        pred_pen_winner = None
+        if pred_home == pred_away:
+            # Simple heuristic: team with higher win %
+            if s.get("home_win_pct", 0) >= s.get("away_win_pct", 0):
+                pred_pen_winner = m.home_team_id
+            else:
+                pred_pen_winner = m.away_team_id
 
-        pts = calculate_points(pred_home, pred_away, m.home_score, m.away_score)
+        pts = calculate_points(
+            pred_home,
+            pred_away,
+            m.home_score,
+            m.away_score,
+            predicted_pen_winner=pred_pen_winner,
+            actual_pen_winner=m.penalty_winner_id,
+            home_team_id=m.home_team_id,
+            away_team_id=m.away_team_id,
+            stage=m.stage,
+        )
         total_points += pts
         predictions_count += 1
         if pts == 5:

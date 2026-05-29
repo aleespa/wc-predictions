@@ -45,16 +45,9 @@ def simulate_admin_results(db, limit=71):
                 actual_pen_winner=penalty_winner_id,
                 home_team_id=match.home_team_id,
                 away_team_id=match.away_team_id,
-                is_knockout=is_ko
+                stage=match.stage
             )
             
-            # Add bracket points for knockout matches
-            if is_ko:
-                actual_teams = {match.home_team_id, match.away_team_id}
-                predicted_teams = {pred.predicted_home_team_id, pred.predicted_away_team_id}
-                if actual_teams == predicted_teams and None not in actual_teams and None not in predicted_teams:
-                    points += 5
-                    
             pred.points_awarded = points
             
         # Commit every few matches to avoid huge transactions
