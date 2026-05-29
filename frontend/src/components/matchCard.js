@@ -85,7 +85,25 @@ export function renderMatchCard(match, options = {}) {
         }
     }
 
-    let scoreHtml;
+    const homeTeamHtml = match.home_team ? `
+        <div class="team-meta home" style="display:flex; align-items:center; gap:8px; justify-content:flex-end">
+            <span class="match-team-name">${t(match.home_team.name)}</span>
+            <img src="${getFlagURL(match.home_team.code)}" alt="${match.home_team.code}" class="match-team-flag-svg" />
+        </div>
+    ` : `
+        <span class="match-team-name TBD" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.home_slot || t('common_tbd')}</span>
+    `;
+
+    const awayTeamHtml = match.away_team ? `
+        <div class="team-meta away" style="display:flex; align-items:center; gap:8px; justify-content:flex-start">
+            <img src="${getFlagURL(match.away_team.code)}" alt="${match.away_team.code}" class="match-team-flag-svg" />
+            <span class="match-team-name">${t(match.away_team.name)}</span>
+        </div>
+    ` : `
+        <span class="match-team-name TBD" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.away_slot || t('common_tbd')}</span>
+    `;
+
+    let actualScoreHtml = '';
     if (isFinished) {
         let pkWinnerHtml = '';
         if (match.stage !== 'Group Stage' && match.home_score === match.away_score && match.penalty_winner_id) {
@@ -97,39 +115,41 @@ export function renderMatchCard(match, options = {}) {
             }
             if (winTeam) {
                 const winsText = getLanguage() === 'es' ? `(${winTeam.code} gana en penales)` : `(${winTeam.code} wins on penalties)`;
-                pkWinnerHtml = `<span class="pk-winner-label" style="font-size:0.6rem;font-weight:700;color:var(--accent-purple);margin-top:2px">${winsText}</span>`;
+                pkWinnerHtml = `<div class="pk-winner-label" style="grid-column: 1 / -1; text-align:center; font-size:0.6rem; font-weight:700; color:var(--accent-purple); margin-top:2px">${winsText}</div>`;
             }
         }
-        scoreHtml = `
-            <div style="display:flex;flex-direction:column;align-items:center;line-height:1.2">
-                <span class="match-score">${match.home_score} — ${match.away_score}</span>
-                ${pkWinnerHtml}
-                <span style="font-size:0.6rem;color:var(--text-muted);margin-top:4px">${dateStr}</span>
-            </div>
+        actualScoreHtml = `
+            <div class="score-value actual home-side" style="text-align:right; font-size:1.4rem; font-weight:800; color:var(--text-primary); padding-right:6px">${match.home_score}</div>
+            <div class="score-divider actual" style="text-align:center; font-size:1.4rem; font-weight:800; color:var(--text-muted)">—</div>
+            <div class="score-value actual away-side" style="text-align:left; font-size:1.4rem; font-weight:800; color:var(--text-primary); padding-left:6px">${match.away_score}</div>
+            ${pkWinnerHtml}
         `;
     } else {
-        scoreHtml = `
-            <span class="match-vs-label">${t('common_vs')}</span>
-            <div style="display:flex;flex-direction:column;align-items:center;line-height:1">
-                <span style="font-size:0.6rem;color:var(--text-muted);margin-bottom:2px">${dateStr}</span>
-                <span style="font-size:0.7rem;color:var(--text-muted);font-weight:500">${timeStr}</span>
+        actualScoreHtml = `
+            <div style="grid-column: 1 / -1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2; margin: 4px 0;">
+                <span style="font-size:0.6rem; color:var(--text-muted); font-weight:600">${dateStr}</span>
+                <span style="font-size:0.65rem; color:var(--text-muted); font-weight:500; opacity:0.8">${timeStr}</span>
             </div>
         `;
     }
 
-    let predictionBadge = '';
-    if (showPrediction && hasPrediction && isFinished) {
-        const pts = match.user_prediction.points_awarded;
+    let predictionScoreHtml = '';
+    if (showPrediction && hasPrediction) {
         const pred = match.user_prediction;
-        let badgeClass = 'wrong';
-        if (pts === 5) badgeClass = 'exact';
-        else if (pts >= 1) badgeClass = 'correct';
+        const pts = pred.points_awarded;
         
-        let labelText = profileName ? 
-            t('match_user_pick', { name: profileName, h: pred.predicted_home_score, a: pred.predicted_away_score }) : 
-            t('match_your_pick', { h: pred.predicted_home_score, a: pred.predicted_away_score });
-            
-        // Check if penalties defined
+        let badgeClass = 'upcoming';
+        let ptsText = '';
+        if (isFinished) {
+            if (pts === 5) badgeClass = 'exact';
+            else if (pts >= 1) badgeClass = 'correct';
+            else badgeClass = 'wrong';
+            ptsText = `${pts} pts`;
+        } else {
+            ptsText = getLanguage() === 'es' ? 'Quiniela' : 'Pick';
+        }
+
+        let pkWinnerPredHtml = '';
         const isKnockout = match.stage !== 'Group Stage';
         if (isKnockout && pred.predicted_home_score === pred.predicted_away_score && pred.penalty_winner_id) {
             let winTeam = null;
@@ -139,50 +159,25 @@ export function renderMatchCard(match, options = {}) {
                 winTeam = match.away_team;
             }
             if (winTeam) {
-                const winsText = getLanguage() === 'es' ? `gana ${winTeam.code}` : `${winTeam.code} wins`;
-                labelText += ` (${winsText})`;
+                const winsText = getLanguage() === 'es' ? `(${winTeam.code} gana)` : `(${winTeam.code} wins)`;
+                pkWinnerPredHtml = `<div class="pk-pred-label" style="grid-column: 1 / -1; text-align:center; font-size:0.6rem; font-weight:700; color:var(--accent-purple-light); margin-top:2px">${winsText}</div>`;
             }
         }
-            
-        predictionBadge = `
-            <div class="match-prediction-badge ${badgeClass}">
-                <span class="badge-points">${pts} pts</span>
-                <span class="badge-label">${labelText}</span>
+
+        const predColor = isFinished ? 'var(--text-muted)' : 'var(--accent-purple-light)';
+
+        predictionScoreHtml = `
+            <div class="score-value predicted home-side" style="text-align:right; font-size:1.1rem; font-weight:700; color:${predColor}; padding-right:6px">${pred.predicted_home_score}</div>
+            <div class="score-divider predicted" style="text-align:center; display: flex; align-items: center; justify-content: center;">
+                <span class="match-prediction-badge-chip ${badgeClass}">${ptsText}</span>
             </div>
+            <div class="score-value predicted away-side" style="text-align:left; font-size:1.1rem; font-weight:700; color:${predColor}; padding-left:6px">${pred.predicted_away_score}</div>
+            ${pkWinnerPredHtml}
         `;
-    } else if (showPrediction && hasPrediction && !isFinished) {
-        const pred = match.user_prediction;
-        let labelText = profileName ? 
-            t('match_user_pick', { name: profileName, h: pred.predicted_home_score, a: pred.predicted_away_score }) : 
-            t('match_your_pick', { h: pred.predicted_home_score, a: pred.predicted_away_score });
-            
-        // Check if penalties defined
-        const isKnockout = match.stage !== 'Group Stage';
-        if (isKnockout && pred.predicted_home_score === pred.predicted_away_score && pred.penalty_winner_id) {
-            let winTeam = null;
-            if (match.home_team && pred.penalty_winner_id === match.home_team.id) {
-                winTeam = match.home_team;
-            } else if (match.away_team && pred.penalty_winner_id === match.away_team.id) {
-                winTeam = match.away_team;
-            }
-            if (winTeam) {
-                const winsText = getLanguage() === 'es' ? `gana ${winTeam.code}` : `${winTeam.code} wins`;
-                labelText += ` (${winsText})`;
-            }
-        }
-            
-        predictionBadge = `
-            <div class="match-prediction-badge upcoming">
-                <span class="badge-label">${labelText}</span>
-            </div>
-        `;
-    } else if (showPrediction && !hasPrediction && (isFinished || now.getTime() > matchDate.getTime())) {
-        const labelText = profileName ? 
-            t('match_user_no_prediction', { name: profileName }) : 
-            t('match_no_prediction');
-        predictionBadge = `
-            <div class="match-prediction-badge no-prediction">
-                <span class="badge-label">${labelText}</span>
+    } else if (showPrediction && !hasPrediction) {
+        predictionScoreHtml = `
+            <div style="grid-column: 1 / -1; text-align: center; font-size: 0.65rem; color: var(--text-muted); font-style: italic; margin-top: 4px; border-top:1px solid var(--border-subtle); padding-top:6px">
+                ${profileName ? t('match_user_no_prediction', { name: profileName }) : t('match_no_prediction')}
             </div>
         `;
     }
@@ -206,32 +201,22 @@ export function renderMatchCard(match, options = {}) {
                 <span class="match-group-badge">${match.group_letter ? t('stage_group', { group: match.group_letter }) : t('stage_' + match.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || match.stage}</span>
                 ${statusHtml}
             </div>
-            <div class="match-teams">
-                <div class="match-team">
-                    ${match.home_team ? `
-                        <img src="${getFlagURL(match.home_team.code)}" alt="${match.home_team.code}" class="match-team-flag-svg" />
-                        <span class="match-team-name">${t(match.home_team.name)}</span>
-                    ` : `
-                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.home_slot || t('common_tbd')}</span>
-                    `}
+            <div class="match-card-grid">
+                <!-- Row 1: Teams (Flags and Names) -->
+                <div class="match-card-grid-column home-side">
+                    ${homeTeamHtml}
                 </div>
-                <div class="match-vs">
-                    ${scoreHtml}
+                <div class="match-card-grid-column vs-side"></div>
+                <div class="match-card-grid-column away-side">
+                    ${awayTeamHtml}
                 </div>
-                <div class="match-team">
-                    ${match.away_team ? `
-                        <img src="${getFlagURL(match.away_team.code)}" alt="${match.away_team.code}" class="match-team-flag-svg" />
-                        <span class="match-team-name">${t(match.away_team.name)}</span>
-                    ` : `
-                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.away_slot || t('common_tbd')}</span>
-                    `}
-                </div>
+                
+                <!-- Row 2: Actual Score -->
+                ${actualScoreHtml}
+                
+                <!-- Row 3: User Prediction -->
+                ${predictionScoreHtml}
             </div>
-            ${predictionBadge ? `
-                <div class="match-card-footer">
-                    ${predictionBadge}
-                </div>
-            ` : ''}
         </div>
     `;
 }
