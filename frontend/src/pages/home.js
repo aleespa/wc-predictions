@@ -32,11 +32,11 @@ export async function homePage() {
 
             <div style="margin-top: var(--space-2xl); display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-xl);">
                 <!-- How to Play Section -->
-                <div class="card" style="padding: var(--space-xl); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
-                    <h3 style="margin-bottom: var(--space-lg); display: flex; align-items: center; gap: 8px;">
+                <div class="card" style="padding: var(--space-xl); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); text-align: left;">
+                    <h3 style="margin-bottom: var(--space-lg); display: flex; align-items: center; gap: 8px; font-size: 1.5rem;">
                         📖 ${t('home_how_to_play')}
                     </h3>
-                    <div style="display: flex; flex-direction: column; gap: var(--space-md); color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+                    <div style="display: flex; flex-direction: column; gap: var(--space-md); color: var(--text-primary); font-size: 1.1rem; line-height: 1.6;">
                         <div>${t('home_how_to_play_1')}</div>
                         <div>${t('home_how_to_play_2')}</div>
                         <div>${t('home_how_to_play_3')}</div>
@@ -46,11 +46,11 @@ export async function homePage() {
 
                 <!-- Points Table Section -->
                 <div class="card" style="padding: var(--space-xl); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
-                    <h3 style="margin-bottom: var(--space-lg); display: flex; align-items: center; gap: 8px;">
+                    <h3 style="margin-bottom: var(--space-lg); display: flex; align-items: center; gap: 8px; font-size: 1.5rem;">
                         ${t('home_scoring_works')}
                     </h3>
                     <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: center;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 1rem; text-align: center;">
                             <thead>
                                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-muted);">
                                     <th style="padding: 8px; text-align: left;">${t('home_table_stage')}</th>
