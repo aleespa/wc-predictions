@@ -145,8 +145,6 @@ export function renderMatchCard(match, options = {}) {
             else if (pts >= 1) badgeClass = 'correct';
             else badgeClass = 'wrong';
             ptsText = `${pts} pts`;
-        } else {
-            ptsText = getLanguage() === 'es' ? 'Quiniela' : 'Pick';
         }
 
         let pkWinnerPredHtml = '';
@@ -170,18 +168,25 @@ export function renderMatchCard(match, options = {}) {
             t('predict_user_pred', { name: profileName }) : 
             t('predict_your_pred');
 
+        let centerDividerHtml = '';
+        if (isFinished) {
+            centerDividerHtml = `<span class="match-prediction-badge-chip ${badgeClass}">${ptsText}</span>`;
+        } else {
+            centerDividerHtml = `<span style="font-size:1.2rem; font-weight:700; color:${predColor}">—</span>`;
+        }
+
         predictionScoreHtml = `
             <div class="match-card-prediction-box" style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: var(--radius-lg); padding: 8px var(--space-sm) var(--space-sm); position: relative; margin-top: var(--space-xs); box-shadow: inset 0 1px 1px rgba(255,255,255,0.02);">
                 <!-- Subtle Top Header Label -->
-                <div style="grid-column: 1 / -1; text-align: center; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.8; margin-bottom: 6px; font-weight: 700;">
+                <div style="grid-column: 1 / -1; text-align: center; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.8; margin-bottom: 6px; font-weight: 700;">
                     🔮 ${labelTitle}
                 </div>
                 
-                <div class="score-value predicted home-side" style="text-align:right; font-size:1.1rem; font-weight:700; color:${predColor}; padding-right:6px">${pred.predicted_home_score}</div>
+                <div class="score-value predicted home-side" style="text-align:right; font-size:1.2rem; font-weight:700; color:${predColor}; padding-right:6px">${pred.predicted_home_score}</div>
                 <div class="score-divider predicted" style="text-align:center; display: flex; align-items: center; justify-content: center;">
-                    <span class="match-prediction-badge-chip ${badgeClass}">${ptsText}</span>
+                    ${centerDividerHtml}
                 </div>
-                <div class="score-value predicted away-side" style="text-align:left; font-size:1.1rem; font-weight:700; color:${predColor}; padding-left:6px">${pred.predicted_away_score}</div>
+                <div class="score-value predicted away-side" style="text-align:left; font-size:1.2rem; font-weight:700; color:${predColor}; padding-left:6px">${pred.predicted_away_score}</div>
                 ${pkWinnerPredHtml}
             </div>
         `;
@@ -192,7 +197,7 @@ export function renderMatchCard(match, options = {}) {
 
         predictionScoreHtml = `
             <div class="match-card-prediction-box" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; background: rgba(255, 255, 255, 0.01); border: 1px dashed rgba(255, 255, 255, 0.08); border-radius: var(--radius-lg); padding: 8px var(--space-sm); margin-top: var(--space-xs);">
-                <div style="text-align: center; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.6; margin-bottom: 4px; font-weight: 700;">
+                <div style="text-align: center; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.6; margin-bottom: 4px; font-weight: 700;">
                     🔮 ${labelTitle}
                 </div>
                 <div style="text-align: center; font-size: 0.65rem; color: var(--text-muted); font-style: italic;">
