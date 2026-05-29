@@ -1345,7 +1345,6 @@ select.form-input option {
 .points-preview-title {
     font-size: 1rem;
     color: var(--text-muted);
-    text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: var(--space-sm);
 }
@@ -1489,7 +1488,6 @@ select.form-input option {
     display: block;
     font-size: 0.95rem;
     color: var(--text-muted);
-    text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 4px;
 }
@@ -1660,7 +1658,6 @@ select.form-input option {
     color: var(--text-muted);
     font-size: 0.95rem;
     font-weight: 700;
-    text-transform: uppercase;
 }
 
 .admin-score-input {
@@ -1966,7 +1963,6 @@ select.form-input option {
 .bracket-stat-label {
     font-size: 0.95rem;
     color: var(--text-muted);
-    text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
@@ -2108,7 +2104,6 @@ select.form-input option {
     font-family: var(--font-sans);
     font-size: 0.95rem;
     font-weight: 700;
-    text-transform: uppercase;
     letter-spacing: 0.1em;
     cursor: pointer;
     border-radius: var(--radius-lg);
@@ -2380,7 +2375,6 @@ select.form-input option {
 .bracket-small-finals-title {
     font-size: 1rem;
     font-weight: 700;
-    text-transform: uppercase;
     color: var(--text-muted);
     text-align: center;
     margin-bottom: var(--space-md);
@@ -2424,7 +2418,6 @@ select.form-input option {
 .community-summary-label {
     font-size: 0.95rem;
     color: var(--text-muted);
-    text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-top: var(--space-xs);
 }
@@ -2446,7 +2439,6 @@ select.form-input option {
 
 .community-avg-label {
     font-size: 0.85rem;
-    text-transform: uppercase;
     color: var(--text-muted);
     margin-bottom: 4px;
 }
@@ -2934,7 +2926,6 @@ select.form-input option {
     font-size: 0.95rem;
     color: var(--text-muted);
     font-weight: 600;
-    text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
@@ -3065,7 +3056,6 @@ select.form-input option {
 .match-prediction-badge-chip {
     font-size: 0.85rem;
     font-weight: 800;
-    text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 2px 8px;
     border-radius: var(--radius-full);

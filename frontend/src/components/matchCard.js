@@ -202,7 +202,7 @@ export function renderMatchCard(match, options = {}) {
         predictionScoreHtml = `
             <div class="match-card-prediction-box" style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: var(--radius-lg); padding: 8px var(--space-sm) var(--space-sm); position: relative; margin-top: var(--space-xs); box-shadow: inset 0 1px 1px rgba(255,255,255,0.02);">
                 <!-- Subtle Top Header Label -->
-                <div style="grid-column: 1 / -1; text-align: center; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.8; margin-bottom: 6px; font-weight: 700;">
+                <div style="grid-column: 1 / -1; text-align: center; font-size: 0.95rem; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.8; margin-bottom: 6px; font-weight: 700;">
                     🔮 ${labelTitle}
                 </div>
                 
@@ -221,7 +221,7 @@ export function renderMatchCard(match, options = {}) {
 
         predictionScoreHtml = `
             <div class="match-card-prediction-box" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; background: rgba(255, 255, 255, 0.01); border: 1px dashed rgba(255, 255, 255, 0.08); border-radius: var(--radius-lg); padding: 8px var(--space-sm); margin-top: var(--space-xs);">
-                <div style="text-align: center; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.6; margin-bottom: 4px; font-weight: 700;">
+                <div style="text-align: center; font-size: 0.95rem; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.6; margin-bottom: 4px; font-weight: 700;">
                     🔮 ${labelTitle}
                 </div>
                 <div style="text-align: center; font-size: 0.95rem; color: var(--text-muted); font-style: italic;">
