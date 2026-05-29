@@ -91,7 +91,7 @@ export function renderMatchCard(match, options = {}) {
             <img src="${getFlagURL(match.home_team.code)}" alt="${match.home_team.code}" class="match-team-flag-svg" />
         </div>
     ` : `
-        <span class="match-team-name TBD" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.home_slot || t('common_tbd')}</span>
+        <span class="match-team-name TBD" style="color:var(--text-muted);font-style:italic;font-size:0.8rem">${match.home_slot || t('common_tbd')}</span>
     `;
 
     const awayTeamHtml = match.away_team ? `
@@ -100,7 +100,7 @@ export function renderMatchCard(match, options = {}) {
             <span class="match-team-name">${t(match.away_team.name)}</span>
         </div>
     ` : `
-        <span class="match-team-name TBD" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.away_slot || t('common_tbd')}</span>
+        <span class="match-team-name TBD" style="color:var(--text-muted);font-style:italic;font-size:0.8rem">${match.away_slot || t('common_tbd')}</span>
     `;
 
     let actualScoreHtml = '';
@@ -119,16 +119,16 @@ export function renderMatchCard(match, options = {}) {
             }
         }
         actualScoreHtml = `
-            <div class="score-value actual home-side" style="text-align:right; font-size:1.4rem; font-weight:800; color:var(--text-primary); padding-right:6px">${match.home_score}</div>
-            <div class="score-divider actual" style="text-align:center; font-size:1.4rem; font-weight:800; color:var(--text-muted)">—</div>
-            <div class="score-value actual away-side" style="text-align:left; font-size:1.4rem; font-weight:800; color:var(--text-primary); padding-left:6px">${match.away_score}</div>
+            <div class="score-value actual home-side" style="text-align:right; font-size:1.55rem; font-weight:800; color:var(--text-primary); padding-right:6px">${match.home_score}</div>
+            <div class="score-divider actual" style="text-align:center; font-size:1.55rem; font-weight:800; color:var(--text-muted)">—</div>
+            <div class="score-value actual away-side" style="text-align:left; font-size:1.55rem; font-weight:800; color:var(--text-primary); padding-left:6px">${match.away_score}</div>
             ${pkWinnerHtml}
         `;
     } else {
         actualScoreHtml = `
-            <div style="grid-column: 1 / -1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2; margin: 4px 0;">
-                <span style="font-size:0.6rem; color:var(--text-muted); font-weight:600">${dateStr}</span>
-                <span style="font-size:0.65rem; color:var(--text-muted); font-weight:500; opacity:0.8">${timeStr}</span>
+            <div style="grid-column: 1 / -1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.25; margin: 4px 0;">
+                <span style="font-size:0.7rem; color:var(--text-muted); font-weight:600">${dateStr}</span>
+                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:500; opacity:0.8">${timeStr}</span>
             </div>
         `;
     }
@@ -172,21 +172,21 @@ export function renderMatchCard(match, options = {}) {
         if (isFinished) {
             centerDividerHtml = `<span class="match-prediction-badge-chip ${badgeClass}">${ptsText}</span>`;
         } else {
-            centerDividerHtml = `<span style="font-size:1.2rem; font-weight:700; color:${predColor}">—</span>`;
+            centerDividerHtml = `<span style="font-size:1.35rem; font-weight:700; color:${predColor}">—</span>`;
         }
 
         predictionScoreHtml = `
             <div class="match-card-prediction-box" style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: var(--radius-lg); padding: 8px var(--space-sm) var(--space-sm); position: relative; margin-top: var(--space-xs); box-shadow: inset 0 1px 1px rgba(255,255,255,0.02);">
                 <!-- Subtle Top Header Label -->
-                <div style="grid-column: 1 / -1; text-align: center; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.8; margin-bottom: 6px; font-weight: 700;">
+                <div style="grid-column: 1 / -1; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.8; margin-bottom: 6px; font-weight: 700;">
                     🔮 ${labelTitle}
                 </div>
                 
-                <div class="score-value predicted home-side" style="text-align:right; font-size:1.2rem; font-weight:700; color:${predColor}; padding-right:6px">${pred.predicted_home_score}</div>
+                <div class="score-value predicted home-side" style="text-align:right; font-size:1.35rem; font-weight:700; color:${predColor}; padding-right:6px">${pred.predicted_home_score}</div>
                 <div class="score-divider predicted" style="text-align:center; display: flex; align-items: center; justify-content: center;">
                     ${centerDividerHtml}
                 </div>
-                <div class="score-value predicted away-side" style="text-align:left; font-size:1.2rem; font-weight:700; color:${predColor}; padding-left:6px">${pred.predicted_away_score}</div>
+                <div class="score-value predicted away-side" style="text-align:left; font-size:1.35rem; font-weight:700; color:${predColor}; padding-left:6px">${pred.predicted_away_score}</div>
                 ${pkWinnerPredHtml}
             </div>
         `;
@@ -197,10 +197,10 @@ export function renderMatchCard(match, options = {}) {
 
         predictionScoreHtml = `
             <div class="match-card-prediction-box" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; background: rgba(255, 255, 255, 0.01); border: 1px dashed rgba(255, 255, 255, 0.08); border-radius: var(--radius-lg); padding: 8px var(--space-sm); margin-top: var(--space-xs);">
-                <div style="text-align: center; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.6; margin-bottom: 4px; font-weight: 700;">
+                <div style="text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.6; margin-bottom: 4px; font-weight: 700;">
                     🔮 ${labelTitle}
                 </div>
-                <div style="text-align: center; font-size: 0.65rem; color: var(--text-muted); font-style: italic;">
+                <div style="text-align: center; font-size: 0.75rem; color: var(--text-muted); font-style: italic;">
                     ${profileName ? t('match_user_no_prediction', { name: profileName }) : t('match_no_prediction')}
                 </div>
             </div>
