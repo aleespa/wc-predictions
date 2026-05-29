@@ -13,6 +13,7 @@ services:
       - ./backend/simulate_results.py:/app/simulate_results.py
       - ./backend/simulate_data.py:/app/simulate_data.py
       - ./backend/simulate_tournament.py:/app/simulate_tournament.py
+      - ./backend/simulate_active_predictions.py:/app/simulate_active_predictions.py
 
   nginx:
     build:
