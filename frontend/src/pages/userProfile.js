@@ -196,7 +196,7 @@ export async function userProfilePage(params) {
                         standingsContainer.innerHTML = `
                             <div class="card" style="margin-bottom:var(--space-lg);overflow-x:auto;">
                                 <h3 style="margin-top:0;margin-bottom:var(--space-md)">${t('matches_standings_thirds_title')}</h3>
-                                <table style="width:100%;border-collapse:collapse;font-size:0.95rem;white-space:nowrap;">
+                                <table style="width:100%;border-collapse:collapse;font-size:1.1rem;white-space:nowrap;">
                                     <thead>
                                         <tr style="border-bottom:2px solid var(--border-medium);color:var(--text-muted)">
                                             <th style="padding:8px 4px;text-align:center">#</th>
@@ -214,7 +214,7 @@ export async function userProfilePage(params) {
                                         ${trs}
                                     </tbody>
                                 </table>
-                                <div style="margin-top:var(--space-md); font-size:0.75rem; color:var(--text-muted); display:flex; gap:var(--space-lg); justify-content: flex-end;">
+                                <div style="margin-top:var(--space-md); font-size:0.95rem; color:var(--text-muted); display:flex; gap:var(--space-lg); justify-content: flex-end;">
                                     <div style="display:flex; align-items:center; gap:4px">
                                         <span style="width:8px; height:8px; border-radius:50%; background:var(--accent-gold)"></span>
                                         ${t('matches_standings_legend_confirmed')}
@@ -256,7 +256,7 @@ export async function userProfilePage(params) {
                         standingsContainer.innerHTML = `
                             <div class="card" style="margin-bottom:var(--space-lg);overflow-x:auto;">
                                 <h3 style="margin-top:0;margin-bottom:var(--space-md)">${t('matches_standings_title', { group: currentFilterVal })}</h3>
-                                <table style="width:100%;border-collapse:collapse;font-size:0.95rem;white-space:nowrap;">
+                                <table style="width:100%;border-collapse:collapse;font-size:1.1rem;white-space:nowrap;">
                                     <thead>
                                         <tr style="border-bottom:2px solid var(--border-medium);color:var(--text-muted)">
                                             <th style="padding:8px 4px;text-align:center">#</th>
@@ -273,7 +273,7 @@ export async function userProfilePage(params) {
                                         ${trs}
                                     </tbody>
                                 </table>
-                                <div style="margin-top:var(--space-md); font-size:0.75rem; color:var(--text-muted); display:flex; gap:var(--space-lg); justify-content: flex-end;">
+                                <div style="margin-top:var(--space-md); font-size:0.95rem; color:var(--text-muted); display:flex; gap:var(--space-lg); justify-content: flex-end;">
                                     <div style="display:flex; align-items:center; gap:4px">
                                         <span style="width:8px; height:8px; border-radius:50%; background:var(--accent-gold)"></span>
                                         ${t('matches_standings_legend_confirmed')}

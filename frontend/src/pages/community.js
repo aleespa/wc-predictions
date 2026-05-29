@@ -40,15 +40,15 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
         scoreHtml = `
             <div style="display:flex;flex-direction:column;align-items:center;line-height:1">
                 <span class="match-score">${match.home_score} — ${match.away_score}</span>
-                <span style="font-size:0.6rem;color:var(--text-muted);margin-top:4px">${dateStr}</span>
+                <span style="font-size:0.9rem;color:var(--text-muted);margin-top:4px">${dateStr}</span>
             </div>
         `;
     } else {
         scoreHtml = `
             <span class="match-vs-label">${t('common_vs')}</span>
             <div style="display:flex;flex-direction:column;align-items:center;line-height:1">
-                <span style="font-size:0.6rem;color:var(--text-muted);margin-bottom:2px">${dateStr}</span>
-                <span style="font-size:0.7rem;color:var(--text-muted);font-weight:500">${timeStr}</span>
+                <span style="font-size:0.9rem;color:var(--text-muted);margin-bottom:2px">${dateStr}</span>
+                <span style="font-size:0.95rem;color:var(--text-muted);font-weight:500">${timeStr}</span>
             </div>
         `;
     }
@@ -147,7 +147,7 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
                         <img src="${getFlagURL(match.home_team.code)}" alt="${match.home_team.code}" class="match-team-flag-svg" />
                         <span class="match-team-name">${t(match.home_team.name)}</span>
                     ` : `
-                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.home_slot || t('common_tbd')}</span>
+                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:1.1rem">${match.home_slot || t('common_tbd')}</span>
                     `}
                 </div>
                 <div class="match-vs">
@@ -158,7 +158,7 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
                         <img src="${getFlagURL(match.away_team.code)}" alt="${match.away_team.code}" class="match-team-flag-svg" />
                         <span class="match-team-name">${t(match.away_team.name)}</span>
                     ` : `
-                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:0.7rem">${match.away_slot || t('common_tbd')}</span>
+                        <span class="match-team-name" style="color:var(--text-muted);font-style:italic;font-size:1.1rem">${match.away_slot || t('common_tbd')}</span>
                     `}
                 </div>
             </div>
@@ -262,10 +262,10 @@ function renderCommunityBracketMatch(match) {
     if (hasPredictions) {
         miniOutcome = `
             <div class="community-mini-outcome">
-                <span style="color:var(--accent-green);font-size:0.65rem">${match.home_win_pct}%</span>
-                <span style="color:var(--accent-gold);font-size:0.65rem">${match.draw_pct}%</span>
-                <span style="color:var(--accent-blue);font-size:0.65rem">${match.away_win_pct}%</span>
-                <span style="color:var(--text-muted);font-size:0.6rem;margin-left:4px">👥 ${match.prediction_count}</span>
+                <span style="color:var(--accent-green);font-size:0.95rem">${match.home_win_pct}%</span>
+                <span style="color:var(--accent-gold);font-size:0.95rem">${match.draw_pct}%</span>
+                <span style="color:var(--accent-blue);font-size:0.95rem">${match.away_win_pct}%</span>
+                <span style="color:var(--text-muted);font-size:0.9rem;margin-left:4px">👥 ${match.prediction_count}</span>
             </div>
         `;
     }
@@ -558,7 +558,7 @@ function renderLeaderboardTable(leaderboard, currentUser, page = 1) {
     if (userEntry && !userInCurrentPage) {
         tableRows += `
             <tr class="leaderboard-separator">
-                <td colspan="6" style="text-align:center; padding: 4px; font-size: 0.8rem; color: var(--text-muted); opacity: 0.5;">•••</td>
+                <td colspan="6" style="text-align:center; padding: 4px; font-size: 1rem; color: var(--text-muted); opacity: 0.5;">•••</td>
             </tr>
             ${renderRow(userEntry, true)}
         `;

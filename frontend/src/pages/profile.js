@@ -108,7 +108,7 @@ export async function profilePage() {
 
             <div class="card danger-zone" style="margin-top:var(--space-2xl); margin-bottom:var(--space-2xl); border: 1px solid rgba(239, 68, 68, 0.2); background:rgba(239, 68, 68, 0.05); padding:var(--space-lg); border-radius:var(--radius-lg)">
                 <h3 style="color:var(--accent-red); margin-top:0">${t('profile_delete_title')}</h3>
-                <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:var(--space-md)">
+                <p style="font-size:1.1rem; color:var(--text-secondary); margin-bottom:var(--space-md)">
                     ${t('profile_delete_desc')}
                 </p>
                 <button id="btn-delete-account" class="btn" style="background:var(--accent-red); color:white; border:none; padding:8px 16px; border-radius:var(--radius-md); font-weight:600; cursor:pointer">
@@ -162,7 +162,7 @@ export async function profilePage() {
                         <div class="card" style="grid-column: 1/-1; padding: var(--space-xl);">
                             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: var(--space-lg)">
                                 <h3 style="margin:0">${t('bracket_title')}</h3>
-                                <div style="font-size:0.85rem; color:var(--text-muted)">
+                                <div style="font-size:1.1rem; color:var(--text-muted)">
                                     ${t('matches_standings_legend_user_predicted', { name: user.username })}: <strong>${predictedCount}</strong>
                                 </div>
                             </div>
@@ -219,7 +219,7 @@ export async function profilePage() {
                                         `).join('')}
                                     </tbody>
                                 </table>
-                                <div style="padding:10px; font-size:0.7rem; color:var(--text-muted); border-top:1px solid var(--border-subtle)">
+                                <div style="padding:10px; font-size:0.95rem; color:var(--text-muted); border-top:1px solid var(--border-subtle)">
                                     ℹ️ ${t('matches_standings_legend_user_predicted', { name: user.username })}
                                 </div>
                             </div>

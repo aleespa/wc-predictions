@@ -57,8 +57,8 @@ export function renderBracketMatch(match, options = {}) {
     const awayIsPenWinner = isDraw && match.penalty_winner_id && match.away?.team && match.penalty_winner_id === match.away.team.id;
 
     if (isFinished && match.home_score !== null) {
-        const homePenLabel = homeIsPenWinner ? ' <span style="font-size:0.6rem; font-weight:normal; opacity:0.75; color:var(--accent-purple-light); vertical-align:middle; margin-left:3px">p</span>' : '';
-        const awayPenLabel = awayIsPenWinner ? ' <span style="font-size:0.6rem; font-weight:normal; opacity:0.75; color:var(--accent-purple-light); vertical-align:middle; margin-left:3px">p</span>' : '';
+        const homePenLabel = homeIsPenWinner ? ' <span style="font-size:0.85rem; font-weight:normal; opacity:0.75; color:var(--accent-purple-light); vertical-align:middle; margin-left:3px">p</span>' : '';
+        const awayPenLabel = awayIsPenWinner ? ' <span style="font-size:0.85rem; font-weight:normal; opacity:0.75; color:var(--accent-purple-light); vertical-align:middle; margin-left:3px">p</span>' : '';
         scoreHome = `<div class="bracket-score">${match.home_score}${homePenLabel}</div>`;
         scoreAway = `<div class="bracket-score">${match.away_score}${awayPenLabel}</div>`;
     } else if (hasPrediction) {
@@ -126,7 +126,7 @@ export function renderBracketMatch(match, options = {}) {
                         }
                         if (winTeam) {
                             const winsText = getLanguage() === 'es' ? `(${winTeam.code} gana en penales)` : `(${winTeam.code} wins on penalties)`;
-                            return `<div class="bracket-pk-label" style="font-size:0.6rem; font-weight:700; color:var(--accent-purple-light); margin-top:4px; text-align:center; border-top:1px solid var(--border-subtle); padding-top:4px">${winsText}</div>`;
+                            return `<div class="bracket-pk-label" style="font-size:0.85rem; font-weight:700; color:var(--accent-purple-light); margin-top:4px; text-align:center; border-top:1px solid var(--border-subtle); padding-top:4px">${winsText}</div>`;
                         }
                     }
                     return '';

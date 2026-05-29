@@ -106,7 +106,7 @@ export async function predictPage(params) {
             else if (pts === stagePts.outcome) { color = 'var(--accent-blue)'; label = t('predict_correct'); }
             pointsBadge = `
                 <div style="margin-top:var(--space-lg);padding:var(--space-lg);background:var(--bg-glass);border-radius:var(--radius-lg);text-align:center">
-                    <div style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">${t('predict_your_pred')}</div>
+                    <div style="font-size:1.1rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">${t('predict_your_pred')}</div>
                     <div style="font-size:1.5rem;font-weight:800;margin:var(--space-sm) 0">${existingPred.predicted_home_score} — ${existingPred.predicted_away_score}</div>
                     <div style="font-size:1.2rem;font-weight:700;color:${color}">${pts} ${t('common_pts')} · ${label}</div>
                 </div>
@@ -150,7 +150,7 @@ export async function predictPage(params) {
             <div style="text-align:center;padding:var(--space-xl);margin-top:var(--space-md);background:var(--bg-glass);border-radius:var(--radius-lg);border:1px dashed var(--border-medium)">
                 <div style="font-size:1.5rem;margin-bottom:var(--space-sm)">🔒</div>
                 <div style="font-weight:600;margin-bottom:var(--space-sm)">${t('predict_not_confirmed_title')}</div>
-                <div style="font-size:0.85rem;color:var(--text-muted)">
+                <div style="font-size:1rem;color:var(--text-muted)">
                     ${t('predict_not_confirmed_sub')}
                 </div>
             </div>
@@ -162,7 +162,7 @@ export async function predictPage(params) {
             <div style="text-align:center;padding:var(--space-xl);margin-top:var(--space-md);background:var(--bg-glass);border-radius:var(--radius-lg);border:1px dashed var(--border-medium)">
                 <div style="font-size:1.5rem;margin-bottom:var(--space-sm)">🏆</div>
                 <div style="font-weight:600;margin-bottom:var(--space-sm)">${t('predict_tbd')}</div>
-                <div style="font-size:0.85rem;color:var(--text-muted)">
+                <div style="font-size:1rem;color:var(--text-muted)">
                     ${t('predict_tbd_sub')}
                 </div>
             </div>

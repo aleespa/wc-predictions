@@ -91,7 +91,7 @@ export function renderMatchCard(match, options = {}) {
             <img src="${getFlagURL(match.home_team.code)}" alt="${match.home_team.code}" class="match-team-flag-svg" />
         </div>
     ` : `
-        <span class="match-team-name TBD" style="color:var(--text-muted);font-style:italic;font-size:0.8rem">${match.home_slot || t('common_tbd')}</span>
+        <span class="match-team-name TBD" style="color:var(--text-muted);font-style:italic;font-size:1.1rem">${match.home_slot || t('common_tbd')}</span>
     `;
 
     const awayTeamHtml = match.away_team ? `
@@ -100,7 +100,7 @@ export function renderMatchCard(match, options = {}) {
             <span class="match-team-name">${t(match.away_team.name)}</span>
         </div>
     ` : `
-        <span class="match-team-name TBD" style="color:var(--text-muted);font-style:italic;font-size:0.8rem">${match.away_slot || t('common_tbd')}</span>
+        <span class="match-team-name TBD" style="color:var(--text-muted);font-style:italic;font-size:1.1rem">${match.away_slot || t('common_tbd')}</span>
     `;
 
     let actualScoreHtml = '';
@@ -115,7 +115,7 @@ export function renderMatchCard(match, options = {}) {
             }
             if (winTeam) {
                 const winsText = getLanguage() === 'es' ? `(${winTeam.code} gana en penales)` : `(${winTeam.code} wins on penalties)`;
-                pkWinnerHtml = `<div class="pk-winner-label" style="grid-column: 1 / -1; text-align:center; font-size:0.6rem; font-weight:700; color:var(--accent-purple); margin-top:2px">${winsText}</div>`;
+                pkWinnerHtml = `<div class="pk-winner-label" style="grid-column: 1 / -1; text-align:center; font-size:0.9rem; font-weight:700; color:var(--accent-purple); margin-top:2px">${winsText}</div>`;
             }
         }
         actualScoreHtml = `
@@ -127,8 +127,8 @@ export function renderMatchCard(match, options = {}) {
     } else {
         actualScoreHtml = `
             <div style="grid-column: 1 / -1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.25; margin: 4px 0;">
-                <span style="font-size:0.7rem; color:var(--text-muted); font-weight:600">${dateStr}</span>
-                <span style="font-size:0.75rem; color:var(--text-muted); font-weight:500; opacity:0.8">${timeStr}</span>
+                <span style="font-size:0.9rem; color:var(--text-muted); font-weight:600">${dateStr}</span>
+                <span style="font-size:0.95rem; color:var(--text-muted); font-weight:500; opacity:0.8">${timeStr}</span>
             </div>
         `;
     }
@@ -182,7 +182,7 @@ export function renderMatchCard(match, options = {}) {
             }
             if (winTeam) {
                 const winsText = getLanguage() === 'es' ? `(${winTeam.code} gana)` : `(${winTeam.code} wins)`;
-                pkWinnerPredHtml = `<div class="pk-pred-label" style="grid-column: 1 / -1; text-align:center; font-size:0.6rem; font-weight:700; color:var(--accent-purple-light); margin-top:2px">${winsText}</div>`;
+                pkWinnerPredHtml = `<div class="pk-pred-label" style="grid-column: 1 / -1; text-align:center; font-size:0.9rem; font-weight:700; color:var(--accent-purple-light); margin-top:2px">${winsText}</div>`;
             }
         }
 
@@ -202,7 +202,7 @@ export function renderMatchCard(match, options = {}) {
         predictionScoreHtml = `
             <div class="match-card-prediction-box" style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: var(--radius-lg); padding: 8px var(--space-sm) var(--space-sm); position: relative; margin-top: var(--space-xs); box-shadow: inset 0 1px 1px rgba(255,255,255,0.02);">
                 <!-- Subtle Top Header Label -->
-                <div style="grid-column: 1 / -1; text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.8; margin-bottom: 6px; font-weight: 700;">
+                <div style="grid-column: 1 / -1; text-align: center; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.8; margin-bottom: 6px; font-weight: 700;">
                     🔮 ${labelTitle}
                 </div>
                 
@@ -221,10 +221,10 @@ export function renderMatchCard(match, options = {}) {
 
         predictionScoreHtml = `
             <div class="match-card-prediction-box" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; background: rgba(255, 255, 255, 0.01); border: 1px dashed rgba(255, 255, 255, 0.08); border-radius: var(--radius-lg); padding: 8px var(--space-sm); margin-top: var(--space-xs);">
-                <div style="text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.6; margin-bottom: 4px; font-weight: 700;">
+                <div style="text-align: center; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); opacity: 0.6; margin-bottom: 4px; font-weight: 700;">
                     🔮 ${labelTitle}
                 </div>
-                <div style="text-align: center; font-size: 0.75rem; color: var(--text-muted); font-style: italic;">
+                <div style="text-align: center; font-size: 0.95rem; color: var(--text-muted); font-style: italic;">
                     ${profileName ? t('match_user_no_prediction', { name: profileName }) : t('match_no_prediction')}
                 </div>
             </div>

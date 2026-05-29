@@ -82,7 +82,7 @@ export async function adminPage() {
                     </div>
                     ${m.stage !== 'Group Stage' ? `
                     <div id="admin-pen-wrapper-${m.id}" style="display:${m.home_score === m.away_score && m.home_score !== null ? 'block' : 'none'}">
-                        <select id="admin-pen-${m.id}" class="form-input" style="font-size:0.75rem; padding:2px 4px; height:auto; width:120px">
+                        <select id="admin-pen-${m.id}" class="form-input" style="font-size:0.95rem; padding:2px 4px; height:auto; width:120px">
                             <option value="">${t('admin_pk_winner_none')}</option>
                             <option value="${m.home_team?.id}" ${m.penalty_winner_id === m.home_team?.id ? 'selected' : ''}>${m.home_team?.code || t('common_home')} ${t('admin_wins')}</option>
                             <option value="${m.away_team?.id}" ${m.penalty_winner_id === m.away_team?.id ? 'selected' : ''}>${m.away_team?.code || t('common_away')} ${t('admin_wins')}</option>
