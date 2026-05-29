@@ -201,6 +201,7 @@ class BracketMatchOut(BaseModel):
     away: BracketSlotTeam
     home_score: Optional[int] = None
     away_score: Optional[int] = None
+    penalty_winner_id: Optional[int] = None
     is_finished: bool = False
     user_prediction: Optional[PredictionOut] = None
     is_invalid_prediction: bool = False

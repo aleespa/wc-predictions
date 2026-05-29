@@ -1,7 +1,7 @@
 import { fetchAPI, isAuthenticated } from '../api.js';
 import { showToast } from '../components/toast.js';
 import { getFlagURL } from '../components/flags.js';
-import { t } from '../i18n.js';
+import { t, getLanguage } from '../i18n.js';
 
 const SHIELD_SVG = `
 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px; height:16px; opacity:0.5">
@@ -52,9 +52,15 @@ export function renderBracketMatch(match, options = {}) {
     let scoreHome = '';
     let scoreAway = '';
 
+    const isDraw = isFinished && match.home_score === match.away_score;
+    const homeIsPenWinner = isDraw && match.penalty_winner_id && match.home?.team && match.penalty_winner_id === match.home.team.id;
+    const awayIsPenWinner = isDraw && match.penalty_winner_id && match.away?.team && match.penalty_winner_id === match.away.team.id;
+
     if (isFinished && match.home_score !== null) {
-        scoreHome = `<div class="bracket-score">${match.home_score}</div>`;
-        scoreAway = `<div class="bracket-score">${match.away_score}</div>`;
+        const homePenLabel = homeIsPenWinner ? ' <span style="font-size:0.6rem; font-weight:normal; opacity:0.75; color:var(--accent-purple-light); vertical-align:middle; margin-left:3px">p</span>' : '';
+        const awayPenLabel = awayIsPenWinner ? ' <span style="font-size:0.6rem; font-weight:normal; opacity:0.75; color:var(--accent-purple-light); vertical-align:middle; margin-left:3px">p</span>' : '';
+        scoreHome = `<div class="bracket-score">${match.home_score}${homePenLabel}</div>`;
+        scoreAway = `<div class="bracket-score">${match.away_score}${awayPenLabel}</div>`;
     } else if (hasPrediction) {
         const invalidClass = isInvalid ? 'bracket-score-invalid' : '';
         scoreHome = `<div class="bracket-score bracket-score-predicted ${invalidClass}">${match.user_prediction.predicted_home_score}</div>`;
@@ -110,6 +116,21 @@ export function renderBracketMatch(match, options = {}) {
                         ${scoreAway}
                     </div>
                 </div>
+                ${(() => {
+                    if (isDraw && match.penalty_winner_id) {
+                        let winTeam = null;
+                        if (match.home?.team && match.penalty_winner_id === match.home.team.id) {
+                            winTeam = match.home.team;
+                        } else if (match.away?.team && match.penalty_winner_id === match.away.team.id) {
+                            winTeam = match.away.team;
+                        }
+                        if (winTeam) {
+                            const winsText = getLanguage() === 'es' ? `(${winTeam.code} gana en penales)` : `(${winTeam.code} wins on penalties)`;
+                            return `<div class="bracket-pk-label" style="font-size:0.6rem; font-weight:700; color:var(--accent-purple-light); margin-top:4px; text-align:center; border-top:1px solid var(--border-subtle); padding-top:4px">${winsText}</div>`;
+                        }
+                    }
+                    return '';
+                })()}
                 ${match.venue ? `<div class="bracket-venue">🏟️ ${match.venue}</div>` : ''}
             </div>
         </div>

@@ -307,6 +307,7 @@ export async function matchesPage() {
                                 is_finished: m.is_finished,
                                 home_score: m.home_score,
                                 away_score: m.away_score,
+                                penalty_winner_id: m.penalty_winner_id,
                                 user_prediction: m.user_prediction,
                                 is_invalid_prediction: m.is_invalid_prediction || (m.user_prediction && m.user_prediction.is_invalid)
                             });

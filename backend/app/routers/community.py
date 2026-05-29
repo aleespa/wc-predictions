@@ -66,6 +66,7 @@ class CommunityBracketMatchOut(BaseModel):
     away: CommunityBracketSlotTeam
     home_score: Optional[int] = None
     away_score: Optional[int] = None
+    penalty_winner_id: Optional[int] = None
     is_finished: bool = False
     home_source_match_id: Optional[int] = None
     away_source_match_id: Optional[int] = None
@@ -498,6 +499,7 @@ def get_community_bracket(community_id: Optional[int] = None, db: Session = Depe
             ),
             home_score=match.home_score,
             away_score=match.away_score,
+            penalty_winner_id=match.penalty_winner_id,
             is_finished=match.is_finished,
             home_source_match_id=match.home_source_match_id,
             away_source_match_id=match.away_source_match_id,

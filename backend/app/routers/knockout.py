@@ -379,6 +379,7 @@ def build_bracket_match_data(
         away=away_slot,
         home_score=match.home_score,
         away_score=match.away_score,
+        penalty_winner_id=match.penalty_winner_id,
         is_finished=match.is_finished,
         user_prediction=pred_out,
         is_invalid_prediction=is_invalid,

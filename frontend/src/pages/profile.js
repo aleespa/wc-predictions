@@ -236,6 +236,15 @@ export async function profilePage() {
                 } else if (currentPredFilter === 'without') {
                     filtered = filtered.filter(m => m.user_prediction == null);
                 }
+                
+                // Sort: Move predicted matches to the top (first), ordered by date ascending
+                filtered.sort((a, b) => {
+                    const aHasPred = a.user_prediction != null;
+                    const bHasPred = b.user_prediction != null;
+                    if (aHasPred && !bHasPred) return -1;
+                    if (!aHasPred && bHasPred) return 1;
+                    return new Date(a.match_date) - new Date(b.match_date); 
+                });
 
                 if (filtered.length === 0) {
                     grid.innerHTML = `

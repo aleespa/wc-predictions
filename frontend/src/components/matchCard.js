@@ -1,5 +1,5 @@
 import { getFlagURL } from './flags.js';
-import { t } from '../i18n.js';
+import { t, getLanguage } from '../i18n.js';
 
 function getRemainingTimeStr(matchDate) {
     const now = new Date();
@@ -87,9 +87,23 @@ export function renderMatchCard(match, options = {}) {
 
     let scoreHtml;
     if (isFinished) {
+        let pkWinnerHtml = '';
+        if (match.stage !== 'Group Stage' && match.home_score === match.away_score && match.penalty_winner_id) {
+            let winTeam = null;
+            if (match.home_team && match.penalty_winner_id === match.home_team.id) {
+                winTeam = match.home_team;
+            } else if (match.away_team && match.penalty_winner_id === match.away_team.id) {
+                winTeam = match.away_team;
+            }
+            if (winTeam) {
+                const winsText = getLanguage() === 'es' ? `(${winTeam.code} gana en penales)` : `(${winTeam.code} wins on penalties)`;
+                pkWinnerHtml = `<span class="pk-winner-label" style="font-size:0.6rem;font-weight:700;color:var(--accent-purple);margin-top:2px">${winsText}</span>`;
+            }
+        }
         scoreHtml = `
-            <div style="display:flex;flex-direction:column;align-items:center;line-height:1">
+            <div style="display:flex;flex-direction:column;align-items:center;line-height:1.2">
                 <span class="match-score">${match.home_score} — ${match.away_score}</span>
+                ${pkWinnerHtml}
                 <span style="font-size:0.6rem;color:var(--text-muted);margin-top:4px">${dateStr}</span>
             </div>
         `;
@@ -111,9 +125,24 @@ export function renderMatchCard(match, options = {}) {
         if (pts === 5) badgeClass = 'exact';
         else if (pts >= 1) badgeClass = 'correct';
         
-        const labelText = profileName ? 
+        let labelText = profileName ? 
             t('match_user_pick', { name: profileName, h: pred.predicted_home_score, a: pred.predicted_away_score }) : 
             t('match_your_pick', { h: pred.predicted_home_score, a: pred.predicted_away_score });
+            
+        // Check if penalties defined
+        const isKnockout = match.stage !== 'Group Stage';
+        if (isKnockout && pred.predicted_home_score === pred.predicted_away_score && pred.penalty_winner_id) {
+            let winTeam = null;
+            if (match.home_team && pred.penalty_winner_id === match.home_team.id) {
+                winTeam = match.home_team;
+            } else if (match.away_team && pred.penalty_winner_id === match.away_team.id) {
+                winTeam = match.away_team;
+            }
+            if (winTeam) {
+                const winsText = getLanguage() === 'es' ? `gana ${winTeam.code}` : `${winTeam.code} wins`;
+                labelText += ` (${winsText})`;
+            }
+        }
             
         predictionBadge = `
             <div class="match-prediction-badge ${badgeClass}">
@@ -123,9 +152,25 @@ export function renderMatchCard(match, options = {}) {
         `;
     } else if (showPrediction && hasPrediction && !isFinished) {
         const pred = match.user_prediction;
-        const labelText = profileName ? 
+        let labelText = profileName ? 
             t('match_user_pick', { name: profileName, h: pred.predicted_home_score, a: pred.predicted_away_score }) : 
             t('match_your_pick', { h: pred.predicted_home_score, a: pred.predicted_away_score });
+            
+        // Check if penalties defined
+        const isKnockout = match.stage !== 'Group Stage';
+        if (isKnockout && pred.predicted_home_score === pred.predicted_away_score && pred.penalty_winner_id) {
+            let winTeam = null;
+            if (match.home_team && pred.penalty_winner_id === match.home_team.id) {
+                winTeam = match.home_team;
+            } else if (match.away_team && pred.penalty_winner_id === match.away_team.id) {
+                winTeam = match.away_team;
+            }
+            if (winTeam) {
+                const winsText = getLanguage() === 'es' ? `gana ${winTeam.code}` : `${winTeam.code} wins`;
+                labelText += ` (${winsText})`;
+            }
+        }
+            
         predictionBadge = `
             <div class="match-prediction-badge upcoming">
                 <span class="badge-label">${labelText}</span>
