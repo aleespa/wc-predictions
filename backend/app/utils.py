@@ -18,12 +18,10 @@ def calculate_points(
     POINTS_MAP = {
         "Group Stage": (3, 2, 1),
         "Round of 32": (6, 4, 2),
-        "Round of 16": (8, 6, 3),
-        "Round of 8": (10, 7, 4), # Not standard WC stage name but mapping it
         "Quarter-finals": (12, 8, 4),
         "Semi-finals": (16, 12, 5),
+        "Third Place Match": (16, 12, 5),
         "Final": (25, 20, 15),
-        "Third Place Match": (25, 20, 15),
     }
     
     # Handle aliases or variations in stage names

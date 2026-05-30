@@ -61,7 +61,7 @@ export async function homePage() {
                             </thead>
                             <tbody style="color: var(--text-primary);">
                                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                    <td style="padding: 8px; text-align: left; color: var(--text-muted);">${t('matches_filter_all').replace('🌍 ', '')} Stage</td>
+                                    <td style="padding: 8px; text-align: left; color: var(--text-muted);">${t('group_stage')}</td>
                                     <td style="padding: 8px; font-weight: 700;">3</td>
                                     <td style="padding: 8px; font-weight: 700;">2</td>
                                     <td style="padding: 8px; font-weight: 700;">1</td>
@@ -85,7 +85,7 @@ export async function homePage() {
                                     <td style="padding: 8px; font-weight: 700;">4</td>
                                 </tr>
                                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                    <td style="padding: 8px; text-align: left; color: var(--text-muted);">${t('matches_filter_sf')}</td>
+                                    <td style="padding: 8px; text-align: left; color: var(--text-muted);">${t('semi_third')}</td>
                                     <td style="padding: 8px; font-weight: 700;">16</td>
                                     <td style="padding: 8px; font-weight: 700;">12</td>
                                     <td style="padding: 8px; font-weight: 700;">5</td>
