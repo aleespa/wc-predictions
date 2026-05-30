@@ -10,6 +10,7 @@ import { profilePage } from './pages/profile.js';
 import { adminPage } from './pages/admin.js';
 import { bracketPage } from './pages/bracket.js';
 import { communityPage, joinCommunityPage } from './pages/community.js';
+import { matchDetailPage } from './pages/matchDetail.js';
 import { userProfilePage } from './pages/userProfile.js';
 import { onboardingPage } from './pages/onboarding.js';
 
@@ -23,6 +24,7 @@ registerRoute('/profile', profilePage);
 registerRoute('/admin', adminPage);
 registerRoute('/bracket', bracketPage);
 registerRoute('/community', communityPage);
+registerRoute('/community/match/:matchId', matchDetailPage);
 registerRoute('/join/:code', joinCommunityPage);
 registerRoute('/user/:username', userProfilePage);
 registerRoute('/onboarding', onboardingPage);

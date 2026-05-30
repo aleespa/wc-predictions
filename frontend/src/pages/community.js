@@ -136,7 +136,7 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
     if (isFinished) classes.push('finished');
 
     return `
-        <div class="${classes.join(' ')}" id="community-match-${match.match_id}">
+        <div class="${classes.join(' ')}" id="community-match-${match.match_id}" style="cursor: pointer;" onclick="location.hash='#/community/match/${match.match_id}'">
             <div class="match-card-header">
                 <span class="match-group-badge">${match.group_letter ? t('stage_group', { group: match.group_letter }) : t('stage_' + match.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || match.stage}</span>
                 ${statusHtml}

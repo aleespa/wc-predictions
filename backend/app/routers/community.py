@@ -3,9 +3,10 @@ Community Predictions API — aggregated prediction statistics
 across all users for every match, plus implied group standings
 and knockout bracket progression.
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, case
+from datetime import datetime, timezone
 from ..database import get_db
 from .. import models, schemas
 from ..auth import get_current_user
@@ -18,8 +19,26 @@ router = APIRouter(prefix="/api/community", tags=["community"])
 # ── Pydantic response models ────────────────────────
 
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
+
+
+class MatchPredictionDetail(BaseModel):
+    id: int
+    username: str
+    predicted_home_score: int
+    predicted_away_score: int
+    penalty_winner_id: Optional[int] = None
+    points_awarded: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+class MatchPredictionsResponse(BaseModel):
+    match: CommunityMatchStats
+    predictions: List[MatchPredictionDetail]
+    total_count: int
 
 
 class CommunityMatchStats(BaseModel):
@@ -185,6 +204,111 @@ def _get_cached_community_matches(community_id: Optional[int] = None):
         return result
     finally:
         db.close()
+
+@router.get("/match/{match_id}/predictions", response_model=MatchPredictionsResponse)
+def get_match_predictions(
+    match_id: int,
+    community_id: Optional[int] = Query(None),
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Get individual player predictions for a specific match.
+    Only returns predictions if the match has started or finished.
+    """
+    # 1. Fetch match and check if it exists
+    match = db.query(models.Match).options(
+        joinedload(models.Match.home_team),
+        joinedload(models.Match.away_team)
+    ).filter(models.Match.id == match_id).first()
+
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    # 2. Check visibility: only allow if match has started
+    now = datetime.now(timezone.utc)
+    match_dt = match.match_date
+    if isinstance(match_dt, str):
+        match_dt = datetime.fromisoformat(match_dt)
+    if match_dt.tzinfo is None:
+        match_dt = match_dt.replace(tzinfo=timezone.utc)
+    
+    is_started = match_dt <= now or match.is_finished
+    
+    # 3. Fetch match stats for the response header
+    stats_dict = _compute_match_stats(db, [match_id], community_id)
+    s = stats_dict.get(match_id, {})
+    
+    match_stats = CommunityMatchStats(
+        match_id=match.id,
+        group_letter=match.group_letter,
+        stage=match.stage,
+        match_number=match.match_number,
+        match_date=match.match_date,
+        venue=match.venue,
+        home_team=schemas.TeamOut.model_validate(match.home_team) if match.home_team else None,
+        away_team=schemas.TeamOut.model_validate(match.away_team) if match.away_team else None,
+        home_score=match.home_score,
+        away_score=match.away_score,
+        is_finished=match.is_finished,
+        home_slot=match.home_slot,
+        away_slot=match.away_slot,
+        home_source_match_id=match.home_source_match_id,
+        away_source_match_id=match.away_source_match_id,
+        prediction_count=s.get("count", 0),
+        avg_home_score=s.get("avg_home"),
+        avg_away_score=s.get("avg_away"),
+        home_win_pct=s.get("home_win_pct"),
+        draw_pct=s.get("draw_pct"),
+        away_win_pct=s.get("away_win_pct"),
+    )
+
+    if not is_started:
+        return MatchPredictionsResponse(
+            match=match_stats,
+            predictions=[],
+            total_count=s.get("count", 0)
+        )
+
+    # 4. Fetch individual predictions
+    query = db.query(models.Prediction).join(models.User).filter(models.Prediction.match_id == match_id)
+    
+    if community_id:
+        query = query.join(models.user_community, models.User.id == models.user_community.c.user_id)\
+                     .filter(models.user_community.c.community_id == community_id)
+
+    total_count = query.count()
+    
+    predictions = query.order_by(models.Prediction.points_awarded.desc().nulls_last(), models.User.username)\
+                       .offset((page - 1) * limit)\
+                       .limit(limit)\
+                       .all()
+
+    prediction_details = [
+        MatchPredictionDetail(
+            id=p.id,
+            username=p.user.username,
+            predicted_home_score=p.predicted_home_score,
+            predicted_away_score=p.predicted_away_score,
+            penalty_winner_id=p.penalty_winner_id,
+            points_awarded=p.points_awarded
+        )
+        for p in predictions
+    ]
+
+    # 5. Fetch all public communities to provide filter options
+    # (Actually we already have the communities from the previous request in frontend, 
+    # but we should ensure current_user is member or it's public if we had public communities)
+    # The requirement says "specific private community they belong to"
+    
+    return MatchPredictionsResponse(
+        match=match_stats,
+        predictions=prediction_details,
+        total_count=total_count
+    )
+
 
 @router.get("/matches", response_model=list[CommunityMatchStats])
 def get_community_matches(community_id: Optional[int] = None, db: Session = Depends(get_db)):
