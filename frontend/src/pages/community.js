@@ -105,16 +105,16 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
                 const detail = matchPointsMap[match.match_id];
                 if (!detail) return '';
                 const pts = detail.points_awarded;
-                let color = 'var(--accent-red)';
-                let label = t('match_badge_0pts', { h: detail.predicted_home, a: detail.predicted_away }) + ' ❌';
-                if (pts === 5) { color = 'var(--accent-gold)'; label = t('match_badge_exact', { h: detail.predicted_home, a: detail.predicted_away }); }
-                else if (pts === 3) { color = 'var(--accent-green)'; label = t('match_badge_3pts', { h: detail.predicted_home, a: detail.predicted_away }) + ' ✓'; }
-                else if (pts === 1) { color = 'var(--accent-blue)'; label = t('match_badge_1pt', { h: detail.predicted_home, a: detail.predicted_away }) + ' ✓'; }
+                if (pts === 0) return `<div class="community-match-points" style="color:var(--accent-red)">${t('match_badge_0pts', { h: detail.predicted_home, a: detail.predicted_away })} ❌</div>`;
+                
+                // We don't know the exact/correct labels from points alone anymore without stage info, 
+                // but we can at least show the points and a checkmark.
+                // The backend now handles the "Exact" and "Correct" counts correctly in the leaderboard.
                 return `
-                        <div class="community-match-points" style="color:${color}">
-                            ${label}
-                        </div>
-                    `;
+                    <div class="community-match-points" style="color:var(--accent-green)">
+                        ${detail.predicted_home} – ${detail.predicted_away} (+${pts} pts) ✓
+                    </div>
+                `;
             })()}
                 <div class="community-count">
                     <span class="community-count-icon">👥</span>

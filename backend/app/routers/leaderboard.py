@@ -15,7 +15,7 @@ def _compute_community_points(db: Session, community_id: Optional[int] = None) -
     and scoring them against actual results for all finished matches.
     """
     from .community import _compute_match_stats
-    from ..utils import calculate_points
+    from ..utils import calculate_points_detail
 
     finished_matches = (
         db.query(models.Match)
@@ -49,7 +49,7 @@ def _compute_community_points(db: Session, community_id: Optional[int] = None) -
             else:
                 pred_pen_winner = m.away_team_id
 
-        pts = calculate_points(
+        pts, is_exact, is_correct = calculate_points_detail(
             pred_home,
             pred_away,
             m.home_score,
@@ -62,9 +62,9 @@ def _compute_community_points(db: Session, community_id: Optional[int] = None) -
         )
         total_points += pts
         predictions_count += 1
-        if pts == 5:
+        if is_exact:
             exact_scores += 1
-        if pts >= 1:
+        if is_correct:
             correct_outcomes += 1
 
     return {
@@ -84,42 +84,59 @@ def _get_cached_leaderboard(community_id: Optional[int] = None):
     db = SessionLocal()
     try:
         # Aggregate user stats from predictions
-        query = (
-            db.query(
-                models.User.id,
-                models.User.username,
-                func.coalesce(func.sum(models.Prediction.points_awarded), 0).label("total_points"),
-                func.count(models.Prediction.id).label("predictions_count"),
-                func.sum(
-                    case((models.Prediction.points_awarded == 5, 1), else_=0)
-                ).label("exact_scores"),
-                func.sum(
-                    case((models.Prediction.points_awarded >= 1, 1), else_=0)
-                ).label("correct_outcomes"),
-            )
-            .outerjoin(models.Prediction, models.User.id == models.Prediction.user_id)
-            .filter(models.User.is_admin == False)  # noqa: E712
+        # We can't easily use calculate_points_detail in a single SQL query
+        # But we know points_awarded matches pts_exact only if it was an exact score
+        # Since pts_exact is stage-dependent, we'll do it in Python or a more complex SQL
+        # Given the current structure, let's fetch predictions and compute in Python for accuracy, 
+        # or use a JOIN with a points reference if it existed.
+        # Alternatively, we can use the fact that points_awarded is already calculated.
+        # But we need to know what pts_exact was for that match.
+        
+        # Let's try to do it by joining with Match to get the stage
+        from ..utils import get_stage_points
+        
+        # This is getting complex for a simple leaderboard. 
+        # Better approach: when setting the result, we could have stored is_exact in the Prediction model.
+        # But we don't have that column.
+        
+        # Let's keep the SQL for performance but make it correct-ish by using a CASE with stage points.
+        # Or just fetch all and process. For 100s of users it's fine.
+        
+        # For now, let's just fetch everything.
+        users = (
+            db.query(models.User)
+            .options(joinedload(models.User.predictions).joinedload(models.Prediction.match))
+            .filter(models.User.is_admin == False)
         )
-
         if community_id is not None:
-            query = query.join(models.user_community, models.User.id == models.user_community.c.user_id)\
-                         .filter(models.user_community.c.community_id == community_id)
-
-        results = (
-            query.group_by(models.User.id, models.User.username)
-            .order_by(func.coalesce(func.sum(models.Prediction.points_awarded), 0).desc())
-            .all()
-        )
-
+             users = users.join(models.user_community, models.User.id == models.user_community.c.user_id)\
+                          .filter(models.user_community.c.community_id == community_id)
+        
+        results = users.all()
+        
         entries = []
-        for row in results:
+        for u in results:
+            total_pts = 0
+            count = 0
+            exact = 0
+            correct = 0
+            for p in u.predictions:
+                if p.points_awarded is not None:
+                    total_pts += p.points_awarded
+                    count += 1
+                    pts_exact, pts_gd, pts_outcome = get_stage_points(p.match.stage)
+                    if p.points_awarded == pts_exact:
+                        exact += 1
+                    if p.points_awarded > 0:
+                        correct += 1
+            
             entries.append({
-                "user_id": row.id,
-                "username": row.username,
-                "total_points": row.total_points or 0,
-                "predictions_count": row.predictions_count or 0,
-                "exact_scores": row.exact_scores or 0,
-                "correct_outcomes": row.correct_outcomes or 0,
+                "user_id": u.id,
+                "username": u.username,
+                "total_points": total_pts,
+                "predictions_count": count,
+                "exact_scores": exact,
+                "correct_outcomes": correct,
                 "is_community": False,
             })
 

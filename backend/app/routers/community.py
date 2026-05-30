@@ -400,7 +400,7 @@ class CommunityPointsOut(BaseModel):
     match_details: list[CommunityMatchPoints] = []
 
 
-from ..utils import calculate_points
+from ..utils import calculate_points_detail
 
 
 @router.get("/points", response_model=CommunityPointsOut)
@@ -444,7 +444,7 @@ def get_community_points(community_id: Optional[int] = None, db: Session = Depen
             else:
                 pred_pen_winner = m.away_team_id
 
-        pts = calculate_points(
+        pts, is_exact, is_correct = calculate_points_detail(
             pred_home,
             pred_away,
             m.home_score,
@@ -458,9 +458,9 @@ def get_community_points(community_id: Optional[int] = None, db: Session = Depen
         total_points += pts
         predictions_count += 1
 
-        if pts == 5:
+        if is_exact:
             exact_scores += 1
-        if pts >= 1:
+        if is_correct:
             correct_outcomes += 1
 
         match_details.append(CommunityMatchPoints(

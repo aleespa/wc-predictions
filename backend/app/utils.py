@@ -1,20 +1,8 @@
 from typing import Optional, Callable, Dict, Any, List
 
-def calculate_points(
-    predicted_home: int,
-    predicted_away: int,
-    actual_home: int,
-    actual_away: int,
-    predicted_pen_winner: Optional[int] = None,
-    actual_pen_winner: Optional[int] = None,
-    home_team_id: Optional[int] = None,
-    away_team_id: Optional[int] = None,
-    stage: str = "Group Stage",
-) -> int:
-    """Calculate points for a prediction based on the tournament stage."""
-    
+def get_stage_points(stage: str) -> tuple[int, int, int]:
+    """Get the points awarded for a stage: (Exact Score, Result + GD, Correct Outcome)"""
     # Points table
-    # Event: (Exact Score, Result + GD, Correct Outcome)
     POINTS_MAP = {
         "Group Stage": (3, 2, 1),
         "Round of 32": (6, 4, 2),
@@ -32,9 +20,30 @@ def calculate_points(
     elif "Third" in stage: stage_key = "Third Place Match"
     elif "Final" in stage and "Semi" not in stage: stage_key = "Final"
     
-    pts_exact, pts_gd, pts_outcome = POINTS_MAP.get(stage_key, (3, 2, 1))
+    return POINTS_MAP.get(stage_key, (3, 2, 1))
 
-    is_knockout = stage_key != "Group Stage"
+
+def calculate_points_detail(
+    predicted_home: int,
+    predicted_away: int,
+    actual_home: int,
+    actual_away: int,
+    predicted_pen_winner: Optional[int] = None,
+    actual_pen_winner: Optional[int] = None,
+    home_team_id: Optional[int] = None,
+    away_team_id: Optional[int] = None,
+    stage: str = "Group Stage",
+) -> tuple[int, bool, bool]:
+    """
+    Calculate points and return details.
+    Returns (points, is_exact, is_correct_outcome)
+    """
+    pts_exact, pts_gd, pts_outcome = get_stage_points(stage)
+
+    is_knockout = stage not in ["Group Stage"]
+    if "Quarter" in stage or "Semi" in stage or "Third" in stage or "Final" in stage or "Round of" in stage:
+        if "Group" not in stage:
+            is_knockout = True
 
     def outcome(h, a):
         if h > a: return "home"
@@ -52,7 +61,7 @@ def calculate_points(
         a_advancer = get_advancer(actual_home, actual_away, actual_pen_winner, home_team_id, away_team_id)
         
         if p_advancer != a_advancer or p_advancer is None:
-            return 0
+            return 0, False, False
 
     # Correct Outcome
     if outcome(predicted_home, predicted_away) == outcome(actual_home, actual_away):
@@ -61,21 +70,37 @@ def calculate_points(
             # For knockout, if it went to penalties, we check if they predicted the penalty winner too
             if is_knockout and predicted_home == predicted_away:
                 if predicted_pen_winner == actual_pen_winner and actual_pen_winner is not None:
-                    return pts_exact
+                    return pts_exact, True, True
                 else:
-                    # Predicted correct draw but wrong penalty winner -> only outcome points? 
-                    # Actually, the logic above says if p_advancer != a_advancer return 0.
-                    # So if they got the draw right but wrong pen winner, they already returned 0.
-                    return pts_exact
-            return pts_exact
+                    return pts_exact, True, True
+            return pts_exact, True, True
         
         # Result + Goal Diff
         if (predicted_home - predicted_away) == (actual_home - actual_away):
-            return pts_gd
+            return pts_gd, False, True
             
-        return pts_outcome
+        return pts_outcome, False, True
         
-    return 0
+    return 0, False, False
+
+
+def calculate_points(
+    predicted_home: int,
+    predicted_away: int,
+    actual_home: int,
+    actual_away: int,
+    predicted_pen_winner: Optional[int] = None,
+    actual_pen_winner: Optional[int] = None,
+    home_team_id: Optional[int] = None,
+    away_team_id: Optional[int] = None,
+    stage: str = "Group Stage",
+) -> int:
+    """Calculate points for a prediction based on the tournament stage."""
+    pts, _, _ = calculate_points_detail(
+        predicted_home, predicted_away, actual_home, actual_away,
+        predicted_pen_winner, actual_pen_winner, home_team_id, away_team_id, stage
+    )
+    return pts
 
 
 def compute_standings(teams: List[Any], matches: List[Any], get_scores_fn: Callable) -> List[Dict[str, Any]]:
