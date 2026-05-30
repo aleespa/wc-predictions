@@ -46,7 +46,7 @@ export async function matchDetailPage(params) {
             return `
                 <div class="empty-state">
                     <div class="empty-state-icon">🔮</div>
-                    <div class="empty-state-text">${t('match_detail_no_predictions') || 'No predictions visible yet. They will appear once the match starts.'}</div>
+                    <div class="empty-state-text">${t('match_detail_no_predictions')}</div>
                 </div>
             `;
         }
@@ -58,9 +58,8 @@ export async function matchDetailPage(params) {
                         <tr>
                             <th>${t('leaderboard_th_player')}</th>
                             <th>🏠 ${t('common_home')}</th>
-                            <th>🤝 ${t('match_draw') || 'Draw'}</th>
                             <th>✈️ ${t('common_away')}</th>
-                            <th>🥅 ${t('match_penalty_winner_short') || 'Pens'}</th>
+                            <th>🥅 ${t('match_penalty_winner_short')}</th>
                             ${isFinished ? `<th>⭐ ${t('leaderboard_th_points')}</th>` : ''}
                         </tr>
                     </thead>
@@ -75,7 +74,6 @@ export async function matchDetailPage(params) {
                                         <a href="#/user/${encodeURIComponent(p.username)}" class="leaderboard-user-link">${p.username}</a>
                                     </td>
                                     <td style="font-weight:700">${p.predicted_home_score}</td>
-                                    <td>${isDraw ? '✓' : '—'}</td>
                                     <td style="font-weight:700">${p.predicted_away_score}</td>
                                     <td>${isDraw ? penaltyWinner : '—'}</td>
                                     ${isFinished ? `<td class="leaderboard-points">${p.points_awarded !== null ? p.points_awarded : '—'}</td>` : ''}
@@ -134,9 +132,9 @@ export async function matchDetailPage(params) {
 
         return `
             <div class="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: var(--space-md); margin-top: var(--space-xl);">
-                <button class="btn btn-secondary btn-sm" id="prev-page" ${currentPage === 1 ? 'disabled' : ''}>${t('common_prev') || 'Previous'}</button>
+                <button class="btn btn-secondary btn-sm" id="prev-page" ${currentPage === 1 ? 'disabled' : ''}>${t('pagination_prev')}</button>
                 <span style="color: var(--text-muted)">${t('common_page_of', { current: currentPage, total: totalPages }) || `Page ${currentPage} of ${totalPages}`}</span>
-                <button class="btn btn-secondary btn-sm" id="next-page" ${currentPage === totalPages ? 'disabled' : ''}>${t('common_next') || 'Next'}</button>
+                <button class="btn btn-secondary btn-sm" id="next-page" ${currentPage === totalPages ? 'disabled' : ''}>${t('pagination_next')}</button>
             </div>
         `;
     }
@@ -163,7 +161,7 @@ export async function matchDetailPage(params) {
                 </div>
                 <div id="match-header-container"></div>
                 <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                    <h2 class="page-title" style="margin-bottom: 0;">🔮 ${t('match_detail_predictions_title') || 'Player Predictions'}</h2>
+                    <h2 class="page-title" style="margin-bottom: 0;">🔮 ${t('match_detail_predictions_title')}</h2>
                     <div id="filter-container"></div>
                 </div>
                 <div id="predictions-table-container"></div>
