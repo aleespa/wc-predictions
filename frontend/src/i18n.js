@@ -249,7 +249,7 @@ export const translations = {
         user_profile_not_found: "User not found",
         user_profile_back_community: "Back to Community",
         user_profile_share: "Share Profile",
-        user_profile_preds_title: "{name}'s Predictions",
+        user_profile_preds_title: "{name}'s predictions",
         user_profile_no_preds: "This user hasn't made any predictions yet",
         user_profile_no_preds_filter: "No predictions in this category",
         // Onboarding
@@ -261,7 +261,7 @@ export const translations = {
         onboarding_submit_btn: "Complete Setup",
         onboarding_submitting: "Saving...",
         // Missing keys
-        nav_brand: "WC 2026",
+        nav_brand: "WC 2026 Predictions",
         nav_logo_alt: "Logo",
         nav_avatar_alt: "User avatar",
         login_title: "WC 2026 Predictions",
@@ -380,7 +380,7 @@ export const translations = {
         home_table_stage: "Fase",
         home_table_exact: "Exacto",
         home_table_gd: "Res + DG",
-        home_table_outcome: "Resultado correcto",
+        home_table_outcome: "Res correcto",
         home_exact_score: "Marcador Exacto",
         home_result_gd: "Resultado + Diferencia de Goles",
         home_correct_outcome: "Resultado Correcto",
@@ -609,7 +609,7 @@ export const translations = {
         onboarding_submit_btn: "Terminar configuración",
         onboarding_submitting: "Guardando...",
         // Missing keys
-        nav_brand: "WC 2026",
+        nav_brand: "Quiniela Mundial 2026",
         nav_logo_alt: "Logo",
         nav_avatar_alt: "Avatar de usuario",
         login_title: "Quiniela Mundial 2026",

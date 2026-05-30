@@ -51,10 +51,10 @@ export async function renderNavbar() {
 
             <div class="nav-links" id="nav-links">
                 <button class="nav-link" data-route="/matches" onclick="location.hash='#/matches'">${t('nav_matches')}</button>
-                <button class="nav-link" data-route="/bracket" onclick="location.hash='#/bracket'">🏆 ${t('nav_bracket')}</button>
-                <button class="nav-link" data-route="/community" onclick="location.hash='#/community'">👥 ${t('nav_community')}</button>
+                <button class="nav-link" data-route="/bracket" onclick="location.hash='#/bracket'">${t('nav_bracket')}</button>
+                <button class="nav-link" data-route="/community" onclick="location.hash='#/community'">${t('nav_community')}</button>
                 ${authed ? `
-                    ${user?.is_admin ? `<button class="nav-link" data-route="/admin" onclick="location.hash='#/admin'">⚙️ ${t('nav_admin')}</button>` : ''}
+                    ${user?.is_admin ? `<button class="nav-link" data-route="/admin" onclick="location.hash='#/admin'">${t('nav_admin')}</button>` : ''}
                     <button class="nav-link nav-user-info" data-route="/profile" onclick="location.hash='#/profile'">
                         ${googleUser?.picture
                             ? `<img src="${googleUser.picture}" class="nav-user-avatar" alt="${t('nav_avatar_alt')}" referrerpolicy="no-referrer">`
@@ -66,9 +66,9 @@ export async function renderNavbar() {
                 ` : `
                     <button class="nav-link" data-route="/login" onclick="location.hash='#/login'">${t('nav_login')}</button>
                 `}
-                <div class="nav-lang-toggle" style="display:flex;align-items:center;margin-left:8px;border-left:1px solid var(--border-medium);padding-left:12px">
-                    <button class="btn btn-sm ${lang === 'en' ? 'btn-primary' : 'btn-secondary'}" onclick="window.__setLang('en')" style="padding:4px 8px;font-size:0.7rem;border-radius:4px 0 0 4px">EN</button>
-                    <button class="btn btn-sm ${lang === 'es' ? 'btn-primary' : 'btn-secondary'}" onclick="window.__setLang('es')" style="padding:4px 8px;font-size:0.7rem;border-radius:0 4px 4px 0">ES</button>
+                <div class="nav-lang-toggle" style="display:flex;align-items:center;margin-left:8px;border-left:1px solid rgba(255,255,255,0.2);padding-left:12px">
+                    <button class="btn btn-sm ${lang === 'en' ? 'btn-primary' : 'btn-secondary'}" onclick="window.__setLang('en')" style="padding:4px 8px;font-size:0.7rem;border-radius:4px 0 0 4px;${lang !== 'en' ? 'background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)' : ''}">EN</button>
+                    <button class="btn btn-sm ${lang === 'es' ? 'btn-primary' : 'btn-secondary'}" onclick="window.__setLang('es')" style="padding:4px 8px;font-size:0.7rem;border-radius:0 4px 4px 0;${lang !== 'es' ? 'background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.2)' : ''}">ES</button>
                 </div>
             </div>
         </div>
