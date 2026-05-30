@@ -12,7 +12,7 @@ from app.models import User, Match, Prediction, Team, Community, user_community
 from app.routers.knockout import resolve_bracket_teams, resolve_bracket_slot
 from app.routers.admin import propagate_knockout_results, invalidate_user_brackets
 from app.cache import user_cache
-from app.utils import calculate_points, compute_standings
+from app.utils import calculate_points, compute_standings, get_stage_points
 from app.seed import seed_database
 
 # Curated soccer-themed usernames for 20 simulated users
@@ -46,6 +46,9 @@ def reset_database(db):
     print("--------------------------------------------------------------------------------")
     
     # 1. Seed teams and matches if they aren't loaded yet
+    from app.database import engine, Base
+    Base.metadata.create_all(bind=engine)
+    
     if db.query(Team).count() == 0:
         print("Teams not seeded. Seeding now...")
         seed_database(db)
@@ -96,7 +99,7 @@ def create_users_and_community(db):
     for u in users:
         db.refresh(u)
         
-    print(f"Created 10 users: {', '.join(USERNAMES)}")
+    print(f"Created 20 users: {', '.join(USERNAMES)}")
     
     # Create a simulation community league
     community = Community(
@@ -111,7 +114,7 @@ def create_users_and_community(db):
     # Add all users as members of the community
     community.members.extend(users)
     db.commit()
-    print(f"Created Community League '{community.name}' with all 10 users joined.")
+    print(f"Created Community League '{community.name}' with all 20 users joined.")
     
     return users
 
@@ -147,7 +150,7 @@ def simulate_group_stage_predictions(db, users):
             prediction_records.append(pred)
             
     db.commit()
-    print(f"Success: Created {len(prediction_records)} Group Stage predictions (72 matches x 10 users).")
+    print(f"Success: Created {len(prediction_records)} Group Stage predictions (72 matches x 20 users).")
 
 
 def simulate_group_stage_results(db):
@@ -157,9 +160,24 @@ def simulate_group_stage_results(db):
     
     group_matches = db.query(Match).filter(Match.stage == "Group Stage").order_by(Match.match_number).all()
     
+    # Identify a "perfect" user whose predictions will become the actual results
+    perfect_user = db.query(User).filter(User.username == USERNAMES[0]).first()
+    
     for i, match in enumerate(group_matches):
-        actual_home = get_random_score()
-        actual_away = get_random_score()
+        # Use perfect user's prediction as actual result if available
+        perfect_pred = None
+        if perfect_user:
+            perfect_pred = db.query(Prediction).filter(
+                Prediction.user_id == perfect_user.id,
+                Prediction.match_id == match.id
+            ).first()
+            
+        if perfect_pred:
+            actual_home = perfect_pred.predicted_home_score
+            actual_away = perfect_pred.predicted_away_score
+        else:
+            actual_home = get_random_score()
+            actual_away = get_random_score()
         
         match.home_score = actual_home
         match.away_score = actual_away
@@ -216,7 +234,7 @@ def simulate_knockout_stage(db, users, stage_name):
     match_id_to_num = {m.id: m.match_number for m in knockout_matches}
     
     # 2. Users predict matches for this stage based on their speculative brackets
-    print(f"-> Generating speculative bracket predictions for {stage_name} (10 users)...")
+    print(f"-> Generating speculative bracket predictions for {stage_name} (20 users)...")
     prediction_count = 0
     for user in users:
         resolved = resolve_bracket_teams(db, user.id)
@@ -279,18 +297,32 @@ def simulate_knockout_stage(db, users, stage_name):
                 match.away_team_id = off_a.team.id
                 a_id = off_a.team.id
                 
-        actual_home = get_random_score()
-        actual_away = get_random_score()
-        penalty_winner_id = None
-        
-        # A knockout match must resolve to a winner. If score is a draw, pick penalty winner randomly
-        if actual_home == actual_away:
-            if h_id and a_id:
-                penalty_winner_id = random.choice([h_id, a_id])
-            elif h_id:
-                penalty_winner_id = h_id
-            elif a_id:
-                penalty_winner_id = a_id
+        # Identify a "perfect" user whose predictions will become the actual results
+        perfect_user = db.query(User).filter(User.username == USERNAMES[0]).first()
+        perfect_pred = None
+        if perfect_user:
+            perfect_pred = db.query(Prediction).filter(
+                Prediction.user_id == perfect_user.id,
+                Prediction.match_id == match.id
+            ).first()
+
+        if perfect_pred:
+            actual_home = perfect_pred.predicted_home_score
+            actual_away = perfect_pred.predicted_away_score
+            penalty_winner_id = perfect_pred.penalty_winner_id
+        else:
+            actual_home = get_random_score()
+            actual_away = get_random_score()
+            penalty_winner_id = None
+            
+            # A knockout match must resolve to a winner. If score is a draw, pick penalty winner randomly
+            if actual_home == actual_away:
+                if h_id and a_id:
+                    penalty_winner_id = random.choice([h_id, a_id])
+                elif h_id:
+                    penalty_winner_id = h_id
+                elif a_id:
+                    penalty_winner_id = a_id
                 
         match.home_score = actual_home
         match.away_score = actual_away
@@ -336,63 +368,6 @@ def simulate_knockout_stage(db, users, stage_name):
     user_cache.clear_all()
 
 
-def show_final_leaderboard(db):
-    print("\n================================================================================")
-    print(" TOURNAMENT FINISHED! FINAL LEADERBOARD")
-    print("================================================================================")
-    
-    # Query total points awarded to each user
-    results = db.query(
-        User.username,
-        func.sum(Prediction.points_awarded).label("total_points")
-    ).join(Prediction).group_by(User.id).order_by(desc("total_points")).all()
-    
-    print(f"{'Rank':<4} | {'Username':<22} | {'Total Points':<12}")
-    print("-" * 50)
-    for rank, row in enumerate(results, 1):
-        suffix = " (WINNER)" if rank == 1 else ""
-        print(f"#{rank:<3} | {row.username:<22} | {row.total_points:<12} {suffix}")
-        
-    print("\nDetailed point statistics per user:")
-    print(f"{'Username':<22} | {'Exact Scores':<12} | {'Outcome Only':<12} | {'Total Points':<12}")
-    print("-" * 70)
-    
-    for username in USERNAMES:
-        user = db.query(User).filter(User.username == username).first()
-        preds = db.query(Prediction).filter(Prediction.user_id == user.id).all()
-        
-        exact_scores = 0
-        outcome_only = 0
-        bracket_bonuses = 0
-        total_pts = 0
-        
-        for p in preds:
-            pts = p.points_awarded or 0
-            total_pts += pts
-            match = p.match
-            
-            if not match.stage == "Group Stage":
-                # For knockout, check if they got bracket bonus (+5 points)
-                actual_teams = {match.home_team_id, match.away_team_id}
-                predicted_teams = {p.predicted_home_team_id, p.predicted_away_team_id}
-                got_bracket_bonus = (actual_teams == predicted_teams and None not in actual_teams and None not in predicted_teams)
-                if got_bracket_bonus:
-                    bracket_bonuses += 1
-                    pts -= 5
-                
-                # Check outcome point remaining
-                if pts > 0:
-                    outcome_only += 1  # Standard correct advancer
-            else:
-                # Group stage
-                if pts == 5:
-                    exact_scores += 1
-                elif pts in [1, 3]:
-                    outcome_only += 1
-                    
-        print(f"{username:<22} | {exact_scores:<12} | {outcome_only:<12} | {total_pts:<12}")
-
-
 if __name__ == "__main__":
     db = SessionLocal()
     try:
@@ -422,9 +397,7 @@ if __name__ == "__main__":
         
         for stage in knockout_stages:
             simulate_knockout_stage(db, users, stage)
-            
-        # 6. Show leaderboard
-        show_final_leaderboard(db)
+
         
         print("\nTournament simulation completed successfully! All match outcomes, predictions, and score calculations match real database states.")
         
