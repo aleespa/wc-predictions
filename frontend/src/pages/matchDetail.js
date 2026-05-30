@@ -157,7 +157,7 @@ export async function matchDetailPage(params) {
         html: `
             <div class="fade-in">
                 <div style="margin-bottom: var(--space-lg)">
-                    <a href="#/community" class="btn btn-secondary btn-sm">← ${t('common_back_to_list') || 'Back to Community'}</a>
+                    <a href="#/community" class="btn btn-secondary btn-sm">← ${t('common_back_to_list')}</a>
                 </div>
                 <div id="match-header-container"></div>
                 <div style="display: flex; justify-content: space-between; align-items: flex-end;">

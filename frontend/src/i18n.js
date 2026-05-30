@@ -219,6 +219,7 @@ export const translations = {
         match_penalty_winner_short: "Pens",
         match_detail_no_predictions: "No predictions visible yet. They will appear once the match starts.",
         match_detail_predictions_title: "Player Predictions",
+        common_back_to_list: "Back to List",
         // common terms
         common_pts: "pts",
         common_pt: "pt",
@@ -561,6 +562,7 @@ export const translations = {
         match_penalty_winner_short: "Penales",
         match_detail_no_predictions: "Aún no hay quinielas visibles. Aparecerán en cuanto empiece el partido.",
         match_detail_predictions_title: "Quinielas de los Jugadores",
+        common_back_to_list: "Volver a la Lista",
         // common terms
         common_pts: "pts",
         common_pt: "pt",
