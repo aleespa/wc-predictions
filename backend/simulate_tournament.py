@@ -15,7 +15,7 @@ from app.cache import user_cache
 from app.utils import calculate_points, compute_standings
 from app.seed import seed_database
 
-# Curated soccer-themed usernames for 10 simulated users
+# Curated soccer-themed usernames for 20 simulated users
 USERNAMES = [
     "striker_star",
     "midfield_magic",
@@ -26,7 +26,17 @@ USERNAMES = [
     "penalty_king",
     "golden_boot_hunter",
     "pitch_maestro",
-    "injury_time_hero"
+    "injury_time_hero",
+    "bicycle_kick_ace",
+    "offside_trap_master",
+    "nutmeg_ninja",
+    "corner_flag_dancer",
+    "clean_sheet_king",
+    "super_sub_flyer",
+    "false_nine_expert",
+    "header_powerhouse",
+    "counter_attack_pro",
+    "top_bins_finisher"
 ]
 
 
@@ -45,7 +55,7 @@ def reset_database(db):
     db.execute(user_community.delete())
     db.query(Community).delete()
     
-    # 3. Delete all users to ensure exactly our 10 simulated users are created
+    # 3. Delete all users to ensure exactly our 20 simulated users are created
     db.query(User).delete()
     
     # 4. Reset all matches: set is_finished to False, scores and penalty winners to None.
@@ -67,7 +77,7 @@ def reset_database(db):
 
 def create_users_and_community(db):
     print("\n--------------------------------------------------------------------------------")
-    print(" Creating 10 simulated users and a community league...")
+    print(" Creating 20 simulated users and a community league...")
     print("--------------------------------------------------------------------------------")
     
     # Create the users
