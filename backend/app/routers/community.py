@@ -23,24 +23,6 @@ from typing import Optional, List
 from datetime import datetime
 
 
-class MatchPredictionDetail(BaseModel):
-    id: int
-    username: str
-    predicted_home_score: int
-    predicted_away_score: int
-    penalty_winner_id: Optional[int] = None
-    points_awarded: Optional[int] = None
-
-    class Config:
-        from_attributes = True
-
-
-class MatchPredictionsResponse(BaseModel):
-    match: CommunityMatchStats
-    predictions: List[MatchPredictionDetail]
-    total_count: int
-
-
 class CommunityMatchStats(BaseModel):
     match_id: int
     group_letter: Optional[str]
@@ -68,6 +50,24 @@ class CommunityMatchStats(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class MatchPredictionDetail(BaseModel):
+    id: int
+    username: str
+    predicted_home_score: int
+    predicted_away_score: int
+    penalty_winner_id: Optional[int] = None
+    points_awarded: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+class MatchPredictionsResponse(BaseModel):
+    match: CommunityMatchStats
+    predictions: List[MatchPredictionDetail]
+    total_count: int
 
 
 class CommunityBracketSlotTeam(BaseModel):
