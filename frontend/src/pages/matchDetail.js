@@ -144,9 +144,9 @@ export async function matchDetailPage(params) {
 
         return `
             <div style="margin-bottom: var(--space-md); display: flex; align-items: center; gap: var(--space-sm);">
-                <label for="community-filter" style="color: var(--text-muted); font-size: 0.9rem;">${t('community_filter_label') || 'Filter by community:'}</label>
+                <label for="community-filter" style="color: var(--text-muted); font-size: 0.9rem;">${t('community_filter_label')}</label>
                 <select id="community-filter" class="btn btn-secondary btn-sm" style="background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary); cursor: pointer;">
-                    <option value="">${t('community_filter_all') || 'All Players'}</option>
+                    <option value="">${t('community_filter_all')}</option>
                     ${communities.map(c => `<option value="${c.id}" ${currentCommunityId == c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
                 </select>
             </div>
