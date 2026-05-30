@@ -7,7 +7,7 @@ export async function matchDetailPage(params) {
     let currentPage = 1;
     let currentCommunityId = null;
     let totalCount = 0;
-    const limit = 50;
+    const limit = 10;
 
     async function loadData() {
         const query = new URLSearchParams({
@@ -46,7 +46,7 @@ export async function matchDetailPage(params) {
             return `
                 <div class="empty-state">
                     <div class="empty-state-icon">🔮</div>
-                    <div class="empty-state-text">${t('match_detail_no_predictions')}</div>
+                    <div class="empty-state-text">${t('match_no_prediction')}</div>
                 </div>
             `;
         }

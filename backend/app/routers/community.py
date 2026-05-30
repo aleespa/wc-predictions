@@ -210,7 +210,7 @@ def get_match_predictions(
     match_id: int,
     community_id: Optional[int] = Query(None),
     page: int = Query(1, ge=1),
-    limit: int = Query(50, ge=1, le=100),
+    limit: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
@@ -227,16 +227,6 @@ def get_match_predictions(
     if not match:
         raise HTTPException(status_code=404, detail="Match not found")
 
-    # 2. Check visibility: only allow if match has started
-    now = datetime.now(timezone.utc)
-    match_dt = match.match_date
-    if isinstance(match_dt, str):
-        match_dt = datetime.fromisoformat(match_dt)
-    if match_dt.tzinfo is None:
-        match_dt = match_dt.replace(tzinfo=timezone.utc)
-    
-    is_started = match_dt <= now or match.is_finished
-    
     # 3. Fetch match stats for the response header
     stats_dict = _compute_match_stats(db, [match_id], community_id)
     s = stats_dict.get(match_id, {})
@@ -264,13 +254,6 @@ def get_match_predictions(
         draw_pct=s.get("draw_pct"),
         away_win_pct=s.get("away_win_pct"),
     )
-
-    if not is_started:
-        return MatchPredictionsResponse(
-            match=match_stats,
-            predictions=[],
-            total_count=s.get("count", 0)
-        )
 
     # 4. Fetch individual predictions
     query = db.query(models.Prediction).join(models.User).filter(models.Prediction.match_id == match_id)
