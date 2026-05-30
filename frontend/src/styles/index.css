@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Domine:wght@400;500;600;700&display=swap');
+
 /* ══════════════════════════════════════════════════
    World Cup 2026 Predictions — Design System
    ══════════════════════════════════════════════════ */
@@ -29,8 +31,8 @@
 
     /* Text */
     --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --text-muted: #94a3b8;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
     --text-accent: var(--accent-gold);
 
     /* Borders */
@@ -82,6 +84,19 @@
 
     /* Typography */
     --font-sans: 'Google Sans', 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-serif: 'Domine', Georgia, serif;
+
+    /* Font Sizes */
+    --fs-xs: 0.75rem;
+    --fs-sm: 0.875rem;
+    --fs-base: 1rem;
+    --fs-lg: 1.125rem;
+    --fs-xl: 1.25rem;
+    --fs-2xl: 1.5rem;
+    --fs-3xl: 1.875rem;
+    --fs-4xl: 2.25rem;
+    --fs-5xl: 3rem;
+    --fs-hero: clamp(2rem, 5vw, 3.5rem);
 }
 
 
@@ -108,8 +123,24 @@ body {
     line-height: 1.6;
     min-height: 100vh;
     overflow-x: hidden;
-    font-size: 1.1rem;
+    font-size: var(--fs-lg);
 }
+
+h1, h2, h3, h4, h5, h6,
+.page-title,
+.auth-title,
+.user-profile-name {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+h1 { font-size: var(--fs-4xl); margin-bottom: var(--space-lg); }
+h2 { font-size: var(--fs-3xl); margin-bottom: var(--space-md); }
+h3 { font-size: var(--fs-2xl); margin-bottom: var(--space-sm); }
+h4 { font-size: var(--fs-xl); margin-bottom: var(--space-sm); }
+h5 { font-size: var(--fs-lg); margin-bottom: var(--space-xs); }
+h6 { font-size: var(--fs-base); margin-bottom: var(--space-xs); }
 
 body::before {
     content: '';
@@ -309,7 +340,7 @@ a:hover {
 }
 
 .hero h1 {
-    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-size: var(--fs-hero);
     font-weight: 900;
     line-height: 1.1;
     margin-bottom: var(--space-lg);
@@ -324,7 +355,7 @@ a:hover {
 }
 
 .hero p {
-    font-size: 1.15rem;
+    font-size: var(--fs-xl);
     color: var(--text-secondary);
     max-width: 600px;
     margin: 0 auto var(--space-xl);
@@ -1002,14 +1033,14 @@ select.form-input option {
 }
 
 .auth-title {
-    font-size: 1.5rem;
+    font-size: var(--fs-3xl);
     font-weight: 800;
     text-align: center;
     margin-bottom: var(--space-xs);
 }
 
 .auth-subtitle {
-    font-size: 1.1rem;
+    font-size: var(--fs-lg);
     color: var(--text-secondary);
     text-align: center;
     margin-bottom: var(--space-xl);
@@ -1018,7 +1049,7 @@ select.form-input option {
 .auth-switch {
     text-align: center;
     margin-top: var(--space-lg);
-    font-size: 1.05rem;
+    font-size: var(--fs-lg);
     color: var(--text-secondary);
 }
 
@@ -1077,7 +1108,7 @@ select.form-input option {
 }
 
 .page-title {
-    font-size: 1.8rem;
+    font-size: var(--fs-3xl);
     font-weight: 800;
     margin-bottom: var(--space-sm);
 }
@@ -1185,7 +1216,7 @@ select.form-input option {
 .leaderboard-table th {
     text-align: left;
     padding: var(--space-sm) var(--space-md);
-    font-size: 0.95rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--text-muted);
     letter-spacing: 0.05em;
@@ -1393,13 +1424,13 @@ select.form-input option {
 }
 
 .profile-info h2 {
-    font-size: 1.5rem;
+    font-size: var(--fs-2xl);
     font-weight: 800;
 }
 
 .profile-info p {
     color: var(--text-secondary);
-    font-size: 1.1rem;
+    font-size: var(--fs-lg);
 }
 
 .profile-stats {
@@ -1549,12 +1580,12 @@ select.form-input option {
 
 .admin-section-title h3 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: var(--fs-xl);
     color: var(--text-primary);
 }
 
 .title-icon {
-    font-size: 1.5rem;
+    font-size: var(--fs-2xl);
 }
 
 /* Match Rows */
