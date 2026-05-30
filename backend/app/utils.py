@@ -3,24 +3,16 @@ from typing import Optional, Callable, Dict, Any, List
 def get_stage_points(stage: str) -> tuple[int, int, int]:
     """Get the points awarded for a stage: (Exact Score, Result + GD, Correct Outcome)"""
     POINTS_MAP = {
-        "Group Stage":       (3,  2,  1),
-        "Round of 32":       (6,  4,  2),
-        "Round of 16":       (10, 7,  4),
-        "Quarter-finals":    (12, 8,  4),
-        "Semi-finals":       (16, 12, 5),
-        "Third Place Match": (16, 12, 5),
-        "Final":             (25, 20, 15),
+        "Group Stage":    (3,  2,  1),
+        "Round of 32":    (6,  4,  2),
+        "Round of 16":    (10, 7,  4),
+        "Quarter-finals": (12, 8,  4),
+        "Semi-finals":    (16, 12, 5),
+        "Third-place":    (16, 12, 5),
+        "Final":          (25, 20, 15),
     }
 
-    stage_key = stage
-    if "Third" in stage:                      stage_key = "Third Place Match"
-    elif "Semi" in stage:                     stage_key = "Semi-finals"
-    elif "Quarter" in stage or stage == "R8": stage_key = "Quarter-finals"
-    elif stage in ("Round of 8", "R16"):      stage_key = "Round of 16"
-    elif stage == "R32":                      stage_key = "Round of 32"
-    elif "Final" in stage:                    stage_key = "Final"
-
-    return POINTS_MAP.get(stage_key, (3, 2, 1))
+    return POINTS_MAP.get(stage, (3, 2, 1))
 
 
 def calculate_points_detail(
