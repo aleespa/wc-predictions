@@ -1346,6 +1346,84 @@ select.form-input option {
     color: var(--accent-gold);
 }
 
+.community-predictions-table {
+    table-layout: fixed;
+    min-width: 0;
+}
+
+.community-predictions-table th,
+.community-predictions-table td {
+    text-align: center;
+}
+
+.community-predictions-table th {
+    padding: var(--space-sm);
+}
+
+.community-predictions-table td {
+    padding: var(--space-md) var(--space-sm);
+}
+
+.community-predictions-table td:first-child {
+    text-align: center;
+}
+
+.community-predictions-table th:nth-child(1),
+.community-predictions-table th:nth-child(2),
+.community-predictions-table td:nth-child(1),
+.community-predictions-table td:nth-child(2) {
+    width: 38%;
+}
+
+.community-predictions-table th:nth-child(3),
+.community-predictions-table td:nth-child(3) {
+    width: 24%;
+}
+
+.community-prediction-flag {
+    width: 28px;
+    height: 20px;
+    object-fit: cover;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    vertical-align: middle;
+}
+
+.community-prediction-score {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.2rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.penalty-score-winner {
+    border: 2px solid var(--accent-gold);
+    border-radius: 999px;
+    color: var(--accent-gold);
+}
+
+.community-prediction-user {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.community-predictions-note {
+    margin-top: var(--space-sm);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
 .leaderboard-stat {
     font-size: 1.05rem;
     color: var(--text-secondary);

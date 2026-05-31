@@ -39,7 +39,14 @@ export async function matchDetailPage(params) {
     const communities = await loadCommunities();
 
     function renderTable(data) {
-        const isFinished = data.match.is_finished;
+        const homeFlag = getFlagURL(data.match.home_team?.code);
+        const awayFlag = getFlagURL(data.match.away_team?.code);
+        const homeHeader = homeFlag
+            ? `<img src="${homeFlag}" alt="${data.match.home_team?.code || t('common_home')}" class="community-prediction-flag">`
+            : t('common_home');
+        const awayHeader = awayFlag
+            ? `<img src="${awayFlag}" alt="${data.match.away_team?.code || t('common_away')}" class="community-prediction-flag">`
+            : t('common_away');
         const predictions = data.predictions;
         
         if (predictions.length === 0) {
@@ -53,35 +60,37 @@ export async function matchDetailPage(params) {
 
         return `
             <div class="card" style="overflow-x: auto; margin-top: var(--space-lg)">
-                <table class="leaderboard-table">
+                <table class="leaderboard-table community-predictions-table">
                     <thead>
                         <tr>
-                            <th>${t('leaderboard_th_player')}</th>
-                            <th>🏠 ${t('common_home')}</th>
-                            <th>✈️ ${t('common_away')}</th>
-                            <th>🥅 ${t('match_penalty_winner_short')}</th>
-                            ${isFinished ? `<th>⭐ ${t('leaderboard_th_points')}</th>` : ''}
+                            <th>${homeHeader}</th>
+                            <th>${awayHeader}</th>
+                            <th>⭐</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${predictions.map(p => {
                             const isDraw = p.predicted_home_score === p.predicted_away_score;
-                            const penaltyWinner = p.penalty_winner_id ? (p.penalty_winner_id === data.match.home_team_id ? '🏠' : '✈️') : '—';
+                            const homeWonPens = isDraw && p.penalty_winner_id === data.match.home_team_id;
+                            const awayWonPens = isDraw && p.penalty_winner_id === data.match.away_team_id;
+                            const points = p.points_awarded !== null ? p.points_awarded : '—';
                             
                             return `
                                 <tr>
-                                    <td class="leaderboard-user">
-                                        <a href="#/user/${encodeURIComponent(p.username)}" class="leaderboard-user-link">${p.username}</a>
+                                    <td>
+                                        <div class="community-prediction-score ${homeWonPens ? 'penalty-score-winner' : ''}">${p.predicted_home_score}</div>
+                                        <a href="#/user/${encodeURIComponent(p.username)}" class="leaderboard-user-link community-prediction-user">${p.username}</a>
                                     </td>
-                                    <td style="font-weight:700">${p.predicted_home_score}</td>
-                                    <td style="font-weight:700">${p.predicted_away_score}</td>
-                                    <td>${isDraw ? penaltyWinner : '—'}</td>
-                                    ${isFinished ? `<td class="leaderboard-points">${p.points_awarded !== null ? p.points_awarded : '—'}</td>` : ''}
+                                    <td>
+                                        <div class="community-prediction-score ${awayWonPens ? 'penalty-score-winner' : ''}">${p.predicted_away_score}</div>
+                                    </td>
+                                    <td class="leaderboard-points">${points}</td>
                                 </tr>
                             `;
                         }).join('')}
                     </tbody>
                 </table>
+                <div class="community-predictions-note">${t('match_penalty_circle_note')}</div>
             </div>
         `;
     }
