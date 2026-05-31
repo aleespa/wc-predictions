@@ -297,7 +297,7 @@ export const translations = {
         router_page_not_found: "Page not found",
         router_go_home: "Go to Home",
         match_badge_0pts: "Predicted {{h}}–{{a}}",
-        common_page_of: "Page {{current}} of {{total}}",
+        common_page_of: "{current}/{total}",
         // Teams
         "Mexico": "Mexico",
         "South Africa": "South Africa",
@@ -644,7 +644,7 @@ export const translations = {
         router_page_not_found: "Página no encontrada",
         router_go_home: "Ir al Inicio",
         match_badge_0pts: "Predicción {{h}}–{{a}}",
-        common_page_of: "Pagina {{current}} de {{total}}",
+        common_page_of: "{current}/{total}",
         // Teams
         "Mexico": "México",
         "South Africa": "Sudáfrica",
