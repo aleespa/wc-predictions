@@ -34,6 +34,7 @@ class CommunityMatchStats(BaseModel):
     away_team: Optional[schemas.TeamOut] = None
     home_score: Optional[int] = None
     away_score: Optional[int] = None
+    penalty_winner_id: Optional[int] = None
     is_finished: bool
     home_slot: Optional[str] = None
     away_slot: Optional[str] = None
@@ -242,6 +243,7 @@ def get_match_predictions(
         away_team=schemas.TeamOut.model_validate(match.away_team) if match.away_team else None,
         home_score=match.home_score,
         away_score=match.away_score,
+        penalty_winner_id=match.penalty_winner_id,
         is_finished=match.is_finished,
         home_slot=match.home_slot,
         away_slot=match.away_slot,
