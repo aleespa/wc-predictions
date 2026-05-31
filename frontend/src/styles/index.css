@@ -1369,15 +1369,20 @@ select.form-input option {
 }
 
 .community-predictions-table th:nth-child(1),
-.community-predictions-table th:nth-child(2),
-.community-predictions-table td:nth-child(1),
-.community-predictions-table td:nth-child(2) {
-    width: 38%;
+.community-predictions-table td:nth-child(1) {
+    width: 34%;
 }
 
+.community-predictions-table th:nth-child(2),
 .community-predictions-table th:nth-child(3),
+.community-predictions-table td:nth-child(2),
 .community-predictions-table td:nth-child(3) {
     width: 24%;
+}
+
+.community-predictions-table th:nth-child(4),
+.community-predictions-table td:nth-child(4) {
+    width: 18%;
 }
 
 .community-prediction-flag {
@@ -1407,8 +1412,8 @@ select.form-input option {
 }
 
 .community-prediction-user {
-    display: block;
-    margin-top: 4px;
+    display: inline-block;
+    max-width: 100%;
     font-size: 0.8rem;
     font-weight: 600;
     line-height: 1.2;

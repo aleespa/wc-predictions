@@ -63,6 +63,7 @@ export async function matchDetailPage(params) {
                 <table class="leaderboard-table community-predictions-table">
                     <thead>
                         <tr>
+                            <th>${t('leaderboard_th_player')}</th>
                             <th>${homeHeader}</th>
                             <th>${awayHeader}</th>
                             <th>⭐</th>
@@ -77,9 +78,11 @@ export async function matchDetailPage(params) {
                             
                             return `
                                 <tr>
+                                    <td class="leaderboard-user">
+                                        <a href="#/user/${encodeURIComponent(p.username)}" class="leaderboard-user-link community-prediction-user">${p.username}</a>
+                                    </td>
                                     <td>
                                         <div class="community-prediction-score ${homeWonPens ? 'penalty-score-winner' : ''}">${p.predicted_home_score}</div>
-                                        <a href="#/user/${encodeURIComponent(p.username)}" class="leaderboard-user-link community-prediction-user">${p.username}</a>
                                     </td>
                                     <td>
                                         <div class="community-prediction-score ${awayWonPens ? 'penalty-score-winner' : ''}">${p.predicted_away_score}</div>
