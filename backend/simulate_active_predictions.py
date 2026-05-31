@@ -242,7 +242,7 @@ def generate_predictions(db, random_user, fifa_user, fifa_rankings):
         invalidate_single_user_bracket(db, fifa_user.id)
         
     user_cache.clear_all()
-    print(f"\nSimulation complete: Added {random_count} new predictions for user 'random' and {fifa_count} new predictions for user 'fifa_standing'.")
+    print(f"\nSimulation complete: Added {random_count} new predictions for user 'random' and {fifa_count} new predictions for user 'fifa_standings'.")
 
 
 if __name__ == "__main__":
@@ -256,7 +256,7 @@ if __name__ == "__main__":
         
         # Load or create users
         random_user = get_or_create_user(db, "random")
-        fifa_user = get_or_create_user(db, "fifa_standing")
+        fifa_user = get_or_create_user(db, "fifa_standings")
         
         # Run
         generate_predictions(db, random_user, fifa_user, fifa_rankings)
