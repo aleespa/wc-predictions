@@ -296,7 +296,7 @@ export const translations = {
         router_error: "Something went wrong: {msg}",
         router_page_not_found: "Page not found",
         router_go_home: "Go to Home",
-        match_badge_0pts: "Predicted {{h}}–{{a}}",
+        match_badge_0pts: "{h}–{a} (0 points)",
         common_page_of: "{current}/{total}",
         // Teams
         "Mexico": "Mexico",
@@ -643,7 +643,7 @@ export const translations = {
         router_error: "Algo salió mal: {msg}",
         router_page_not_found: "Página no encontrada",
         router_go_home: "Ir al Inicio",
-        match_badge_0pts: "Predicción {{h}}–{{a}}",
+        match_badge_0pts: "{h}–{a} (0 puntos)",
         common_page_of: "{current}/{total}",
         // Teams
         "Mexico": "México",
