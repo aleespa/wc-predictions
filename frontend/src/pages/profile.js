@@ -1,7 +1,6 @@
 import { fetchAPI, isAuthenticated } from '../api.js';
 import { getCurrentUser } from '../components/navbar.js';
 import { renderMatchCard } from '../components/matchCard.js';
-import { renderRound } from './bracket.js';
 import { getFlagURL } from '../components/flags.js';
 import { t } from '../i18n.js';
 
@@ -19,8 +18,8 @@ export async function profilePage() {
         { label: t('matches_filter_r16'), type: 'stage', val: 'Round of 16' },
         { label: t('matches_filter_qf'), type: 'stage', val: 'Quarter-finals' },
         { label: t('matches_filter_sf'), type: 'stage', val: 'Semi-finals' },
+        { label: t('matches_filter_thirdplace'), type: 'stage', val: 'Third-place' },
         { label: t('matches_filter_final'), type: 'stage', val: 'Final' },
-        { label: t('bracket_title') || 'Bracket', type: 'bracket', val: 'bracket' }
     ];
     
     const PREDICTION_FILTERS = [
@@ -29,19 +28,17 @@ export async function profilePage() {
         { label: t('matches_pred_filter_without') || 'Without Prediction', val: 'without' }
     ];
 
-    let user, matches, bracket;
+    let user, matches;
     try {
         user = await getCurrentUser();
         if (!user) throw new Error('User data not found');
 
         // Use the public profile stats too
-        const [m, b, p] = await Promise.all([
+        const [m, p] = await Promise.all([
             fetchAPI(`/matches?username=${encodeURIComponent(user.username)}`),
-            fetchAPI(`/knockout/bracket?username=${encodeURIComponent(user.username)}`),
             fetchAPI(`/users/${encodeURIComponent(user.username)}`)
         ]);
         matches = m;
-        bracket = b;
         // Merge public stats into user object
         user = { ...user, ...p };
     } catch (e) {
@@ -146,38 +143,6 @@ export async function profilePage() {
             const renderMatches = async () => {
                 const standingsContainer = document.getElementById('user-standings-container');
                 standingsContainer.innerHTML = '';
-
-                if (currentFilterType === 'bracket') {
-                    grid.innerHTML = '';
-                    const predictedCount = [
-                        ...(bracket.round_of_32 || []),
-                        ...(bracket.round_of_16 || []),
-                        ...(bracket.quarter_finals || []),
-                        ...(bracket.semi_finals || []),
-                        ...(bracket.third_place ? [bracket.third_place] : []),
-                        ...(bracket.final ? [bracket.final] : []),
-                    ].filter(m => m.user_prediction).length;
-
-                    grid.innerHTML = `
-                        <div class="card" style="grid-column: 1/-1; padding: var(--space-xl);">
-                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: var(--space-lg)">
-                                <h3 style="margin:0">${t('bracket_title')}</h3>
-                                <div style="font-size:1.1rem; color:var(--text-muted)">
-                                    ${t('matches_standings_legend_user_predicted', { name: user.username })}: <strong>${predictedCount}</strong>
-                                </div>
-                            </div>
-                            <div class="bracket-container">
-                                ${renderRound(t('stage_roundof32'), bracket.round_of_32, { profileName: user.username })}
-                                ${renderRound(t('stage_roundof16'), bracket.round_of_16, { profileName: user.username })}
-                                ${renderRound(t('stage_quarterfinals'), bracket.quarter_finals, { profileName: user.username })}
-                                ${renderRound(t('stage_semifinals'), bracket.semi_finals, { profileName: user.username })}
-                                ${bracket.third_place ? renderRound(t('stage_thirdplace'), [bracket.third_place], { profileName: user.username }) : ''}
-                                ${bracket.final ? renderRound(t('stage_final'), [bracket.final], { profileName: user.username }) : ''}
-                            </div>
-                        </div>
-                    `;
-                    return;
-                }
 
                 let filtered = matches;
                 if (currentFilterType === 'group') {
