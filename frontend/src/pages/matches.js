@@ -12,6 +12,7 @@ export async function matchesPage() {
         { label: t('matches_filter_r16'), type: 'stage', val: 'Round of 16' },
         { label: t('matches_filter_qf'), type: 'stage', val: 'Quarter-finals' },
         { label: t('matches_filter_sf'), type: 'stage', val: 'Semi-finals' },
+        { label: t('matches_filter_thirdplace'), type: 'stage', val: 'Third-place' },
         { label: t('matches_filter_final'), type: 'stage', val: 'Final' },
     ];
     

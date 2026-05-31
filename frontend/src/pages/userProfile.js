@@ -1,6 +1,5 @@
 import { fetchAPI } from '../api.js';
 import { renderMatchCard } from '../components/matchCard.js';
-import { renderRound } from './bracket.js';
 import { getFlagURL } from '../components/flags.js';
 import { t } from '../i18n.js';
 
@@ -15,8 +14,8 @@ export async function userProfilePage(params) {
         { label: t('matches_filter_r16'), type: 'stage', val: 'Round of 16' },
         { label: t('matches_filter_qf'), type: 'stage', val: 'Quarter-finals' },
         { label: t('matches_filter_sf'), type: 'stage', val: 'Semi-finals' },
+        { label: t('matches_filter_thirdplace'), type: 'stage', val: 'Third-place' },
         { label: t('matches_filter_final'), type: 'stage', val: 'Final' },
-        { label: t('bracket_title') || 'Bracket', type: 'bracket', val: 'bracket' }
     ];
     
     const PREDICTION_FILTERS = [
@@ -25,16 +24,14 @@ export async function userProfilePage(params) {
         { label: t('matches_pred_filter_without') || 'Without Prediction', val: 'without' }
     ];
 
-    let profile, matches, bracket;
+    let profile, matches;
     try {
-        const [p, m, b] = await Promise.all([
+        const [p, m] = await Promise.all([
             fetchAPI(`/users/${encodeURIComponent(username)}`),
-            fetchAPI(`/matches?username=${encodeURIComponent(username)}`),
-            fetchAPI(`/knockout/bracket?username=${encodeURIComponent(username)}`)
+            fetchAPI(`/matches?username=${encodeURIComponent(username)}`)
         ]);
         profile = p;
         matches = m;
-        bracket = b;
     } catch (e) {
         if (e.message.includes('not found') || e.message.includes('404')) {
             return `
@@ -148,11 +145,7 @@ export async function userProfilePage(params) {
                 const standingsContainer = document.getElementById('user-standings-container');
                 standingsContainer.innerHTML = '';
 
-                if (currentFilterType === 'bracket') {
-                    predTabsContainer.style.display = 'none';
-                } else {
-                    predTabsContainer.style.display = 'inline-flex';
-                }
+                predTabsContainer.style.display = currentFilterType === 'thirds' ? 'none' : 'inline-flex';
                 
                 let filtered = matches;
                 
@@ -288,29 +281,6 @@ export async function userProfilePage(params) {
                     } catch (err) {
                         console.error('Failed to load standings', err);
                     }
-                } else if (currentFilterType === 'bracket') {
-                    standingsContainer.innerHTML = '';
-                    
-                    grid.innerHTML = `
-                        <div style="grid-column:1/-1; overflow-x:auto;">
-                            <div id="bracket-rounds-view" class="bracket-container">
-                                ${renderRound(t('stage_roundof32'), bracket.round_of_32, { profileName: profile.username })}
-                                ${renderRound(t('stage_roundof16'), bracket.round_of_16, { compact: true, profileName: profile.username })}
-                                ${renderRound(t('stage_quarterfinals'), bracket.quarter_finals, { compact: true, profileName: profile.username })}
-                                ${renderRound(t('stage_semifinals'), bracket.semi_finals, { compact: true, profileName: profile.username })}
-                                ${bracket.third_place ? renderRound(t('stage_thirdplace'), [bracket.third_place], { compact: true, profileName: profile.username }) : ''}
-                                ${bracket.final ? renderRound(t('stage_final'), [bracket.final], { profileName: profile.username }) : ''}
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Remove links from bracket matches
-                    document.querySelectorAll('#user-matches-grid .bracket-match').forEach(el => {
-                        el.removeAttribute('onclick');
-                        el.classList.remove('bracket-match-clickable');
-                    });
-                    
-                    return; // Stop normal rendering
                 } else if (currentFilterType === 'stage') {
                     filtered = matches.filter(m => m.stage === currentFilterVal);
                 }

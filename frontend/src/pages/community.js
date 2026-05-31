@@ -17,6 +17,10 @@ const getFilters = () => [{
     type: 'stage',
     val: 'Quarter-finals'
 }, {label: t('matches_filter_sf'), type: 'stage', val: 'Semi-finals'}, {
+    label: t('matches_filter_thirdplace'),
+    type: 'stage',
+    val: 'Third-place'
+}, {
     label: t('matches_filter_final'),
     type: 'stage',
     val: 'Final'
