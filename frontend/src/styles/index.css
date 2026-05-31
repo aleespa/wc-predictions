@@ -1348,7 +1348,7 @@ select.form-input option {
 
 .community-predictions-table {
     table-layout: fixed;
-    min-width: 440px;
+    min-width: 340px;
 }
 
 .community-predictions-table th,
@@ -1357,11 +1357,11 @@ select.form-input option {
 }
 
 .community-predictions-table th {
-    padding: var(--space-sm);
+    padding: 8px 6px;
 }
 
 .community-predictions-table td {
-    padding: var(--space-md) var(--space-sm);
+    padding: 10px 6px;
 }
 
 .community-predictions-table td:first-child {
@@ -1370,19 +1370,19 @@ select.form-input option {
 
 .community-predictions-table th:nth-child(1),
 .community-predictions-table td:nth-child(1) {
-    width: 34%;
+    width: 31%;
 }
 
 .community-predictions-table th:nth-child(2),
 .community-predictions-table th:nth-child(3),
 .community-predictions-table td:nth-child(2),
 .community-predictions-table td:nth-child(3) {
-    width: 24%;
+    width: 23%;
 }
 
 .community-predictions-table th:nth-child(4),
 .community-predictions-table td:nth-child(4) {
-    width: 18%;
+    width: 23%;
 }
 
 .community-prediction-flag {
@@ -1398,9 +1398,9 @@ select.form-input option {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    font-size: 1.2rem;
+    width: 1.85rem;
+    height: 1.85rem;
+    font-size: 1.1rem;
     font-weight: 800;
     line-height: 1;
 }
@@ -1414,7 +1414,7 @@ select.form-input option {
 .community-prediction-user {
     display: inline-block;
     max-width: 100%;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
     line-height: 1.2;
     overflow: hidden;
