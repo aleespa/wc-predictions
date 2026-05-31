@@ -17,21 +17,23 @@ def _compute_community_points(db: Session, community_id: Optional[int] = None) -
     from .community import _compute_match_stats
     from ..utils import calculate_points_detail
 
-    finished_matches = (
+    matches = (
         db.query(models.Match)
-        .filter(models.Match.is_finished == True, models.Match.home_score.isnot(None))
         .all()
     )
 
-    match_ids = [m.id for m in finished_matches]
+    match_ids = [m.id for m in matches]
     stats = _compute_match_stats(db, match_ids, community_id)
 
     total_points = 0
-    predictions_count = 0
+    predictions_count = sum(1 for s in stats.values() if s.get("avg_home") is not None)
     exact_scores = 0
     correct_outcomes = 0
 
-    for m in finished_matches:
+    for m in matches:
+        if not (m.is_finished and m.home_score is not None):
+            continue
+
         s = stats.get(m.id)
         if not s or s.get("avg_home") is None:
             continue
@@ -61,7 +63,6 @@ def _compute_community_points(db: Session, community_id: Optional[int] = None) -
             stage=m.stage,
         )
         total_points += pts
-        predictions_count += 1
         if is_exact:
             exact_scores += 1
         if is_correct:
