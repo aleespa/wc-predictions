@@ -715,6 +715,14 @@ a:hover {
     white-space: nowrap;
 }
 
+.match-detail-penalty-winner {
+    color: var(--accent-gold);
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+}
+
 .match-vs-label {
     font-size: 0.9rem;
     font-weight: 700;
@@ -1320,6 +1328,16 @@ select.form-input option {
         padding: var(--space-md) var(--space-sm);
         font-size: 0.95rem;
     }
+
+    .community-predictions-table th:nth-child(4),
+    .community-predictions-table td:nth-child(4) {
+        display: table-cell;
+    }
+
+    .community-predictions-table td {
+        padding: 10px 4px;
+        font-size: 0.9rem;
+    }
     
     .leaderboard-rank {
         width: 32px;
@@ -1348,7 +1366,7 @@ select.form-input option {
 
 .community-predictions-table {
     table-layout: fixed;
-    min-width: 340px;
+    min-width: 300px;
 }
 
 .community-predictions-table th,
@@ -1357,11 +1375,11 @@ select.form-input option {
 }
 
 .community-predictions-table th {
-    padding: 8px 6px;
+    padding: 8px 4px;
 }
 
 .community-predictions-table td {
-    padding: 10px 6px;
+    padding: 10px 4px;
 }
 
 .community-predictions-table td:first-child {
@@ -1370,24 +1388,24 @@ select.form-input option {
 
 .community-predictions-table th:nth-child(1),
 .community-predictions-table td:nth-child(1) {
-    width: 31%;
+    width: 40%;
 }
 
 .community-predictions-table th:nth-child(2),
 .community-predictions-table th:nth-child(3),
 .community-predictions-table td:nth-child(2),
 .community-predictions-table td:nth-child(3) {
-    width: 23%;
+    width: 19%;
 }
 
 .community-predictions-table th:nth-child(4),
 .community-predictions-table td:nth-child(4) {
-    width: 23%;
+    width: 22%;
 }
 
 .community-prediction-flag {
-    width: 28px;
-    height: 20px;
+    width: 24px;
+    height: 17px;
     object-fit: cover;
     border-radius: 3px;
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1398,9 +1416,9 @@ select.form-input option {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.85rem;
-    height: 1.85rem;
-    font-size: 1.1rem;
+    width: 1.6rem;
+    height: 1.6rem;
+    font-size: 1rem;
     font-weight: 800;
     line-height: 1;
 }
@@ -1414,7 +1432,7 @@ select.form-input option {
 .community-prediction-user {
     display: inline-block;
     max-width: 100%;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 600;
     line-height: 1.2;
     overflow: hidden;

@@ -105,6 +105,14 @@ export async function matchDetailPage(params) {
         const awayFlag = getFlagURL(match.away_team?.code);
         const homeName = match.home_team?.name ? t(match.home_team.name) : (match.home_slot || '???');
         const awayName = match.away_team?.name ? t(match.away_team.name) : (match.away_slot || '???');
+        let penaltyWinnerHtml = '';
+        if (match.is_finished && match.home_score === match.away_score && match.penalty_winner_id) {
+            const winner = match.penalty_winner_id === match.home_team?.id ? match.home_team : match.away_team;
+            if (winner) {
+                const winnerName = t(winner.name);
+                penaltyWinnerHtml = `<span class="match-detail-penalty-winner">${t('match_penalty_winner_note', { team: winnerName })}</span>`;
+            }
+        }
         
         return `
             <div class="match-detail-header card" style="margin-bottom: var(--space-xl); padding: var(--space-xl); text-align: center;">
@@ -122,6 +130,7 @@ export async function matchDetailPage(params) {
                             ? `<span class="match-detail-score">${match.home_score} – ${match.away_score}</span>`
                             : `<span style="font-size: 1.5rem; font-weight: 600; color: var(--text-muted);">${t('common_vs')}</span>`
                         }
+                        ${penaltyWinnerHtml}
                         <span class="match-status ${match.is_finished ? 'finished' : 'upcoming'}">
                             ${match.is_finished ? t('match_status_finished') : t('match_status_upcoming')}
                         </span>
