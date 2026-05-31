@@ -3,7 +3,6 @@ import { showToast } from '../components/toast.js';
 import { getCurrentUser } from '../components/navbar.js';
 import { getFlagURL } from '../components/flags.js';
 import { t } from '../i18n.js';
-import { renderRound } from './bracket.js';
 
 export async function adminPage() {
     if (!isAuthenticated()) {
@@ -24,17 +23,14 @@ export async function adminPage() {
 
     let matches = [];
     let teams = [];
-    let bracket = null;
     try {
         const ts = Date.now();
-        const [mRes, tRes, bRes] = await Promise.all([
+        const [mRes, tRes] = await Promise.all([
             fetchAPI(`/admin/matches?t=${ts}`),
-            fetchAPI(`/matches/teams?t=${ts}`),
-            fetchAPI(`/knockout/bracket?t=${ts}`).catch(() => null)
+            fetchAPI(`/matches/teams?t=${ts}`)
         ]);
         matches = mRes;
         teams = tRes;
-        bracket = bRes;
     } catch (e) {
         return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${t(e.message)}</div></div>`;
     }
@@ -177,19 +173,6 @@ export async function adminPage() {
             </div>
 
 
-            ${bracket ? `
-                <div style="margin-top: var(--space-2xl); border-top: 1px solid var(--border-color); padding-top: var(--space-xl)">
-                    <h2 class="page-title" style="text-align:left; font-size:1.5rem; margin-bottom:var(--space-md)">${t('bracket_title')}</h2>
-                    <div class="bracket-container" style="background: var(--card-bg); border-radius: var(--radius-lg); padding: var(--space-lg);">
-                        ${renderRound(t('stage_roundof32'), bracket.round_of_32, { isLocked: true })}
-                        ${renderRound(t('stage_roundof16'), bracket.round_of_16, { compact: true, isLocked: true })}
-                        ${renderRound(t('stage_quarterfinals'), bracket.quarter_finals, { compact: true, isLocked: true })}
-                        ${renderRound(t('stage_semifinals'), bracket.semi_finals, { compact: true, isLocked: true })}
-                        ${bracket.third_place ? renderRound(t('stage_thirdplace'), [bracket.third_place], { compact: true, isLocked: true }) : ''}
-                        ${bracket.final ? renderRound(t('stage_final'), [bracket.final], { isLocked: true }) : ''}
-                    </div>
-                </div>
-            ` : ''}
         </div>
     `;
 
