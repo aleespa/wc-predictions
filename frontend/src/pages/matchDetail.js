@@ -47,6 +47,8 @@ export async function matchDetailPage(params) {
         const awayHeader = awayFlag
             ? `<img src="${awayFlag}" alt="${data.match.away_team?.code || t('common_away')}" class="community-prediction-flag">`
             : t('common_away');
+        const homeTeamId = data.match.home_team?.id;
+        const awayTeamId = data.match.away_team?.id;
         const predictions = data.predictions;
         
         if (predictions.length === 0) {
@@ -72,8 +74,8 @@ export async function matchDetailPage(params) {
                     <tbody>
                         ${predictions.map(p => {
                             const isDraw = p.predicted_home_score === p.predicted_away_score;
-                            const homeWonPens = isDraw && p.penalty_winner_id === data.match.home_team_id;
-                            const awayWonPens = isDraw && p.penalty_winner_id === data.match.away_team_id;
+                            const homeWonPens = isDraw && p.penalty_winner_id === homeTeamId;
+                            const awayWonPens = isDraw && p.penalty_winner_id === awayTeamId;
                             const points = p.points_awarded !== null ? p.points_awarded : '—';
                             
                             return `
