@@ -541,7 +541,7 @@ function renderLeaderboardTable(leaderboard, currentUser, page = 1) {
         const stickyClass = isSticky ? 'leaderboard-row-sticky' : '';
         let nameDisplay;
         if (isCommunity) {
-            nameDisplay = `<span class="leaderboard-community-name">${entry.username}</span>`;
+            nameDisplay = `<span class="leaderboard-community-name">${t('community_virtual_user')}</span>`;
         } else {
             const displayText = `${entry.username}${isMe ? t('leaderboard_you') : ''}`;
             nameDisplay = `<a href="#/user/${encodeURIComponent(entry.username)}" class="leaderboard-user-link" title="View ${entry.username}'s predictions">${displayText}</a>`;

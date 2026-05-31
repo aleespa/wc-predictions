@@ -133,7 +133,7 @@ export async function homePage() {
                             ${top5.map(entry => {
                                 const isCommunity = entry.is_community;
                                 const nameHtml = isCommunity
-                                    ? `${entry.username}`
+                                    ? `${t('community_virtual_user')}`
                                     : `<a href="#/user/${encodeURIComponent(entry.username)}" class="leaderboard-user-link">${entry.username}</a>`;
                                 return `
                                 <tr>
