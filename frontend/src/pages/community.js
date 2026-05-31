@@ -1,17 +1,26 @@
-import { fetchAPI } from '../api.js';
-import { getFlagURL } from '../components/flags.js';
-import { t } from '../i18n.js';
+import {fetchAPI} from '../api.js';
+import {getFlagURL} from '../components/flags.js';
+import {t} from '../i18n.js';
 
-const getFilters = () => [
-    { label: t('matches_filter_all'), type: 'all', val: 'All' },
-    ...['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'].map(g => ({ label: t('matches_filter_grp', { group: g }), type: 'group', val: g })),
-    { label: t('matches_filter_thirds'), type: 'thirds', val: 'thirds' },
-    { label: t('matches_filter_r32'), type: 'stage', val: 'Round of 32' },
-    { label: t('matches_filter_r16'), type: 'stage', val: 'Round of 16' },
-    { label: t('matches_filter_qf'), type: 'stage', val: 'Quarter-finals' },
-    { label: t('matches_filter_sf'), type: 'stage', val: 'Semi-finals' },
-    { label: t('matches_filter_final'), type: 'stage', val: 'Final' },
-];
+const getFilters = () => [{
+    label: t('matches_filter_all'),
+    type: 'all',
+    val: 'All'
+}, ...['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'].map(g => ({
+    label: t('matches_filter_grp', {group: g}), type: 'group', val: g
+})), {label: t('matches_filter_thirds'), type: 'thirds', val: 'thirds'}, {
+    label: t('matches_filter_r32'),
+    type: 'stage',
+    val: 'Round of 32'
+}, {label: t('matches_filter_r16'), type: 'stage', val: 'Round of 16'}, {
+    label: t('matches_filter_qf'),
+    type: 'stage',
+    val: 'Quarter-finals'
+}, {label: t('matches_filter_sf'), type: 'stage', val: 'Semi-finals'}, {
+    label: t('matches_filter_final'),
+    type: 'stage',
+    val: 'Final'
+},];
 
 /**
  * Render a community match card with aggregated prediction statistics.
@@ -62,10 +71,10 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
         let impliedResult = '';
         let impliedColor = '';
         if (roundedHome > roundedAway) {
-            impliedResult = t('community_win', { team: match.home_team?.name ? t(match.home_team.name) : t('common_home') });
+            impliedResult = t('community_win', {team: match.home_team?.name ? t(match.home_team.name) : t('common_home')});
             impliedColor = 'var(--accent-green)';
         } else if (roundedAway > roundedHome) {
-            impliedResult = t('community_win', { team: match.away_team?.name ? t(match.away_team.name) : t('common_away') });
+            impliedResult = t('community_win', {team: match.away_team?.name ? t(match.away_team.name) : t('common_away')});
             impliedColor = 'var(--accent-blue)';
         } else {
             impliedResult = t('community_draw');
@@ -102,23 +111,25 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
                     </div>
                 </div>
                 ${(() => {
-                const detail = matchPointsMap[match.match_id];
-                if (!detail) return '';
-                const pts = detail.points_awarded;
-                if (pts === 0) return `<div class="community-match-points" style="color:var(--accent-red)">${t('match_badge_0pts', { h: detail.predicted_home, a: detail.predicted_away })} ❌</div>`;
-                
-                // We don't know the exact/correct labels from points alone anymore without stage info, 
-                // but we can at least show the points and a checkmark.
-                // The backend now handles the "Exact" and "Correct" counts correctly in the leaderboard.
-                return `
+            const detail = matchPointsMap[match.match_id];
+            if (!detail) return '';
+            const pts = detail.points_awarded;
+            if (pts === 0) return `<div class="community-match-points" style="color:var(--accent-red)">${t('match_badge_0pts', {
+                h: detail.predicted_home, a: detail.predicted_away
+            })} ❌</div>`;
+
+            // We don't know the exact/correct labels from points alone anymore without stage info, 
+            // but we can at least show the points and a checkmark.
+            // The backend now handles the "Exact" and "Correct" counts correctly in the leaderboard.
+            return `
                     <div class="community-match-points" style="color:var(--accent-green)">
                         ${detail.predicted_home} – ${detail.predicted_away} (+${pts} pts) ✓
                     </div>
                 `;
-            })()}
+        })()}
                 <div class="community-count">
                     <span class="community-count-icon">👥</span>
-                    ${match.prediction_count === 1 ? t('community_pred_count', { count: match.prediction_count }) : t('community_preds_count', { count: match.prediction_count })}
+                    ${match.prediction_count === 1 ? t('community_pred_count', {count: match.prediction_count}) : t('community_preds_count', {count: match.prediction_count})}
                 </div>
             </div>
         `;
@@ -138,7 +149,7 @@ function renderCommunityMatchCard(match, matchPointsMap = {}) {
     return `
         <div class="${classes.join(' ')}" id="community-match-${match.match_id}" style="cursor: pointer;" onclick="location.hash='#/community/match/${match.match_id}'">
             <div class="match-card-header">
-                <span class="match-group-badge">${match.group_letter ? t('stage_group', { group: match.group_letter }) : t('stage_' + match.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || match.stage}</span>
+                <span class="match-group-badge">${match.group_letter ? t('stage_group', {group: match.group_letter}) : t('stage_' + match.stage.toLowerCase().replace(/[^a-z0-9]/g, '')) || match.stage}</span>
                 ${statusHtml}
             </div>
             <div class="match-teams">
@@ -190,7 +201,9 @@ function renderStandingsTable(standings, groupLetter, label = t('community_avg_l
     return `
         <div class="card" style="margin-bottom:var(--space-lg);overflow-x:auto;">
             <h3 style="margin-top:0;margin-bottom:var(--space-md)">
-                <span style="color:var(--accent-purple-light)">👥</span> ${t('community_standings_title', { label: label, group: groupLetter })}
+                <span style="color:var(--accent-purple-light)">👥</span> ${t('community_standings_title', {
+        label: label, group: groupLetter
+    })}
             </h3>
             <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:var(--space-md)">
                 ${t('community_standings_sub')}
@@ -222,8 +235,8 @@ function renderStandingsTable(standings, groupLetter, label = t('community_avg_l
  */
 function renderCommunityBracketMatch(match) {
     const matchDate = new Date(match.match_date);
-    const dateStr = matchDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    const timeStr = matchDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    const dateStr = matchDate.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
+    const timeStr = matchDate.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'});
     const hasPredictions = match.prediction_count > 0;
     const isFinished = match.is_finished;
 
@@ -254,8 +267,7 @@ function renderCommunityBracketMatch(match) {
     }
 
     let statusClass = 'bracket-upcoming';
-    if (isFinished) statusClass = 'bracket-finished';
-    else if (hasPredictions) statusClass = 'bracket-has-prediction';
+    if (isFinished) statusClass = 'bracket-finished'; else if (hasPredictions) statusClass = 'bracket-has-prediction';
 
     // Outcome bar mini
     let miniOutcome = '';
@@ -297,7 +309,7 @@ function renderBracketRound(title, matches) {
         <div class="bracket-round">
             <div class="bracket-round-header">
                 <h3 class="bracket-round-title">${title}</h3>
-                <span class="bracket-round-count">${matches.length === 1 ? t('bracket_round_match', { count: matches.length }) : t('bracket_round_matches', { count: matches.length })}</span>
+                <span class="bracket-round-count">${matches.length === 1 ? t('bracket_round_match', {count: matches.length}) : t('bracket_round_matches', {count: matches.length})}</span>
             </div>
             <div class="bracket-round-matches">
                 ${matches.map(m => renderCommunityBracketMatch(m)).join('')}
@@ -311,8 +323,8 @@ function renderBracketRound(title, matches) {
  * Main community page.
  */
 
-import { getCurrentUser } from '../components/navbar.js';
-import { isAuthenticated } from '../api.js';
+import {getCurrentUser} from '../components/navbar.js';
+import {isAuthenticated} from '../api.js';
 
 let currentCommunityId = null;
 
@@ -331,7 +343,9 @@ export async function communityPage() {
     const renderSelector = () => {
         let opts = `<option value="">${t('community_opt_global')}</option>`;
         for (const c of myCommunities) {
-            opts += `<option value="${c.id}" ${currentCommunityId == c.id ? 'selected' : ''}>${t('community_opt_private', { name: c.name, count: c.member_count })}</option>`;
+            opts += `<option value="${c.id}" ${currentCommunityId == c.id ? 'selected' : ''}>${t('community_opt_private', {
+                name: c.name, count: c.member_count
+            })}</option>`;
         }
 
         return `
@@ -392,8 +406,7 @@ export async function communityPage() {
     let currentData = null;
 
     return {
-        html,
-        init: () => {
+        html, init: () => {
             const selectEl = document.getElementById('community-select');
             const createBtn = document.getElementById('btn-create-community');
             const newNameInput = document.getElementById('new-community-name');
@@ -405,12 +418,8 @@ export async function communityPage() {
                 contentArea.innerHTML = '<div class="spinner"></div>';
                 try {
                     let suffix = currentCommunityId ? `?community_id=${currentCommunityId}` : '';
-                    const [matches, communityPoints, leaderboard] = await Promise.all([
-                        fetchAPI('/community/matches' + suffix),
-                        fetchAPI('/community/points' + suffix),
-                        fetchAPI('/leaderboard' + suffix)
-                    ]);
-                    currentData = { matches, communityPoints, leaderboard, suffix };
+                    const [matches, communityPoints, leaderboard] = await Promise.all([fetchAPI('/community/matches' + suffix), fetchAPI('/community/points' + suffix), fetchAPI('/leaderboard' + suffix)]);
+                    currentData = {matches, communityPoints, leaderboard, suffix};
                     currentLeaderboardPage = 1;
                     render();
                 } catch (e) {
@@ -420,7 +429,7 @@ export async function communityPage() {
 
             const render = () => {
                 if (!currentData) return;
-                const { matches, communityPoints, leaderboard, suffix } = currentData;
+                const {matches, communityPoints, leaderboard, suffix} = currentData;
                 contentArea.innerHTML = renderCommunityContent(matches, communityPoints, leaderboard, currentUser, suffix);
                 initCommunityContent(matches, communityPoints, suffix);
 
@@ -431,14 +440,14 @@ export async function communityPage() {
                     prevBtn.addEventListener('click', () => {
                         currentLeaderboardPage--;
                         render();
-                        document.querySelector('h2').scrollIntoView({ behavior: 'smooth' });
+                        document.querySelector('h2').scrollIntoView({behavior: 'smooth'});
                     });
                 }
                 if (nextBtn) {
                     nextBtn.addEventListener('click', () => {
                         currentLeaderboardPage++;
                         render();
-                        document.querySelector('h2').scrollIntoView({ behavior: 'smooth' });
+                        document.querySelector('h2').scrollIntoView({behavior: 'smooth'});
                     });
                 }
             };
@@ -462,15 +471,14 @@ export async function communityPage() {
                     if (!name) return;
                     try {
                         const newComm = await fetchAPI('/community/private', {
-                            method: 'POST',
-                            body: JSON.stringify({ name })
+                            method: 'POST', body: JSON.stringify({name})
                         });
                         myCommunities.push(newComm);
                         currentCommunityId = newComm.id;
 
 
                         // Reliably reload the page to render the new state cleanly
-                        const { handleRoute } = await import('../router.js');
+                        const {handleRoute} = await import('../router.js');
                         handleRoute();
 
                     } catch (e) {
@@ -494,10 +502,10 @@ export async function communityPage() {
                 leaveBtn.addEventListener('click', async () => {
                     if (confirm(t('community_leave_confirm'))) {
                         try {
-                            await fetchAPI(`/community/private/${currentCommunityId}/leave`, { method: 'DELETE' });
+                            await fetchAPI(`/community/private/${currentCommunityId}/leave`, {method: 'DELETE'});
                             myCommunities = myCommunities.filter(c => c.id !== currentCommunityId);
                             currentCommunityId = null;
-                            const { handleRoute } = await import('../router.js');
+                            const {handleRoute} = await import('../router.js');
                             handleRoute();
                         } catch (e) {
                             alert(t(e.message));
@@ -602,16 +610,15 @@ function renderLeaderboardTable(leaderboard, currentUser, page = 1) {
 }
 
 function renderCommunityContent(matches, communityPoints, leaderboard, currentUser, suffix) {
-    const tabs = getFilters().map((f, i) =>
-        `<button class="group-tab ${i === 0 ? 'active' : ''}" data-type="${f.type}" data-val="${f.val}">${f.label}</button>`
-    ).join('');
+    const tabs = getFilters().map((f, i) => `<button class="group-tab ${i === 0 ? 'active' : ''}" data-type="${f.type}" data-val="${f.val}">${f.label}</button>`).join('');
 
-    const statusTabs = [
-        { label: t('matches_pred_filter_all') || 'All', val: 'all' },
-        { label: t('matches_pred_filter_finished') || 'Finished', val: 'finished' }
-    ].map((f, i) =>
-        `<button class="group-tab status-tab ${i === 0 ? 'active' : ''}" data-val="${f.val}">${f.label}</button>`
-    ).join('');
+    const statusTabs = [{
+        label: t('matches_pred_filter_all') || 'All',
+        val: 'all'
+    }, {
+        label: t('matches_pred_filter_finished') || 'Finished',
+        val: 'finished'
+    }].map((f, i) => `<button class="group-tab status-tab ${i === 0 ? 'active' : ''}" data-val="${f.val}">${f.label}</button>`).join('');
 
     return `
         <h2 style="margin-bottom: var(--space-md);">${t('community_leaderboard')}</h2>
@@ -693,7 +700,7 @@ function initCommunityContent(matches, communityPoints, suffix) {
                 const stds = await fetchAPI(url);
                 grid.innerHTML = '';
                 if (stds.length === 0) {
-                     grid.innerHTML = `
+                    grid.innerHTML = `
                         <div class="empty-state" style="grid-column:1/-1">
                             <div class="empty-state-icon">📭</div>
                             <div class="empty-state-text">${t('matches_no_matches')}</div>
@@ -710,14 +717,14 @@ function initCommunityContent(matches, communityPoints, suffix) {
 
                     return `
                         <tr style="border-bottom:1px solid var(--border-light); ${rowStyle} ${qualStyle}">
-                            <td style="padding:12px 4px;text-align:center;font-weight:700;color:var(--text-muted)">${idx+1}</td>
+                            <td style="padding:12px 4px;text-align:center;font-weight:700;color:var(--text-muted)">${idx + 1}</td>
                             <td style="padding:12px 4px;"><img src="${getFlagURL(s.team_code)}" class="match-team-flag-svg" style="width:24px; height:16px; margin-right:8px">${t(s.team_name)}${isPredicted ? ' *' : ''}</td>
                             <td style="padding:12px 4px;text-align:center;font-weight:600;color:var(--accent-gold)">${s.group_letter}</td>
                             <td style="padding:12px 4px;text-align:center">${s.played}</td>
                             <td style="padding:12px 4px;text-align:center">${s.won}</td>
                             <td style="padding:12px 4px;text-align:center">${s.drawn}</td>
                             <td style="padding:12px 4px;text-align:center">${s.lost}</td>
-                            <td style="padding:12px 4px;text-align:center">${s.goal_diff > 0 ? '+'+s.goal_diff : s.goal_diff}</td>
+                            <td style="padding:12px 4px;text-align:center">${s.goal_diff > 0 ? '+' + s.goal_diff : s.goal_diff}</td>
                             <td style="padding:12px 4px;text-align:center;font-weight:800; ${pointsStyle}">${s.points}</td>
                         </tr>
                     `;
@@ -731,7 +738,7 @@ function initCommunityContent(matches, communityPoints, suffix) {
                                 <tr style="border-bottom:2px solid var(--border-medium);color:var(--text-muted)">
                                     <th style="padding:8px 4px;text-align:center">#</th>
                                     <th style="padding:8px 4px;text-align:left">${t('matches_standings_team')}</th>
-                                    <th style="padding:8px 4px;text-align:center">${t('matches_filter_grp', { group: '' }).replace(':','').trim()}</th>
+                                    <th style="padding:8px 4px;text-align:center">${t('matches_filter_grp', {group: ''}).replace(':', '').trim()}</th>
                                     <th style="padding:8px 4px;text-align:center">${t('matches_standings_mp')}</th>
                                     <th style="padding:8px 4px;text-align:center">${t('matches_standings_w')}</th>
                                     <th style="padding:8px 4px;text-align:center">${t('matches_standings_d')}</th>
@@ -751,7 +758,7 @@ function initCommunityContent(matches, communityPoints, suffix) {
                 grid.innerHTML = `
                     <div class="empty-state" style="grid-column:1/-1">
                         <div class="empty-state-icon">⚠️</div>
-                        <div class="empty-state-text">${t('matches_error_thirds', { msg: err.message })}</div>
+                        <div class="empty-state-text">${t('matches_error_thirds', {msg: err.message})}</div>
                     </div>
                 `;
             }
@@ -772,17 +779,17 @@ function initCommunityContent(matches, communityPoints, suffix) {
         filtered.sort((a, b) => {
             const aDate = new Date(a.match_date).getTime();
             const bDate = new Date(b.match_date).getTime();
-            
+
             const aIsFuture = aDate > nowTime && !a.is_finished;
             const bIsFuture = bDate > nowTime && !b.is_finished;
-            
+
             if (aIsFuture && !bIsFuture) return -1;
             if (!aIsFuture && bIsFuture) return 1;
-            
+
             if (aIsFuture && bIsFuture) {
                 return aDate - bDate; // Chronological ascending (closest first)
             }
-            
+
             return bDate - aDate; // Chronological descending (most recent past first)
         });
 
@@ -823,14 +830,7 @@ async function loadCommunityBracket(container, suffix) {
         if (suffix) url += suffix;
         const bracket = await fetchAPI(url);
         if (!bracket.available) return;
-        const allKoMatches = [
-            ...(bracket.round_of_32 || []),
-            ...(bracket.round_of_16 || []),
-            ...(bracket.quarter_finals || []),
-            ...(bracket.semi_finals || []),
-            ...(bracket.third_place ? [bracket.third_place] : []),
-            ...(bracket.final ? [bracket.final] : []),
-        ];
+        const allKoMatches = [...(bracket.round_of_32 || []), ...(bracket.round_of_16 || []), ...(bracket.quarter_finals || []), ...(bracket.semi_finals || []), ...(bracket.third_place ? [bracket.third_place] : []), ...(bracket.final ? [bracket.final] : []),];
         const predictedCount = allKoMatches.filter(m => m.prediction_count > 0).length;
         container.innerHTML = `
             <div class="community-bracket-section card" style="margin-bottom:var(--space-xl);padding:var(--space-xl);">
@@ -868,10 +868,9 @@ export async function joinCommunityPage(params) {
                 <p>${t('community_join_desc')}</p>
                 <button id="btn-confirm-join" class="btn btn-primary" style="width: 100%; margin-top: 20px;">${t('community_join_btn')}</button>
             </div>
-        `,
-        init: () => {
+        `, init: () => {
             document.getElementById('btn-confirm-join').addEventListener('click', async () => {
-                const { isAuthenticated, fetchAPI } = await import('../api.js');
+                const {isAuthenticated, fetchAPI} = await import('../api.js');
                 if (!isAuthenticated()) {
                     alert(t('community_join_login_req'));
                     window.location.hash = '#/login';
@@ -879,10 +878,9 @@ export async function joinCommunityPage(params) {
                 }
                 try {
                     await fetchAPI('/community/private/join', {
-                        method: 'POST',
-                        body: JSON.stringify({ invite_code: code })
+                        method: 'POST', body: JSON.stringify({invite_code: code})
                     });
-                    const { navigate } = await import('../router.js');
+                    const {navigate} = await import('../router.js');
                     navigate('/community');
                 } catch (e) {
                     alert(t(e.message));
