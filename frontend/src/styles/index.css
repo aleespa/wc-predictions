@@ -708,6 +708,13 @@ a:hover {
     letter-spacing: 0.1em;
 }
 
+.match-detail-score {
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+}
+
 .match-vs-label {
     font-size: 0.9rem;
     font-weight: 700;
@@ -1950,6 +1957,11 @@ select.form-input option {
 
     .prediction-vs-label {
         font-size: 0.7rem;
+    }
+
+    .match-detail-score {
+        font-size: 1.75rem;
+        letter-spacing: 0.04em;
     }
 
     .score-input-field {

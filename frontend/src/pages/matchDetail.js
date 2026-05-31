@@ -105,7 +105,7 @@ export async function matchDetailPage(params) {
                     
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
                         ${match.is_finished 
-                            ? `<span style="font-size: 2.5rem; font-weight: 800; letter-spacing: 4px;">${match.home_score} – ${match.away_score}</span>`
+                            ? `<span class="match-detail-score">${match.home_score} – ${match.away_score}</span>`
                             : `<span style="font-size: 1.5rem; font-weight: 600; color: var(--text-muted);">${t('common_vs')}</span>`
                         }
                         <span class="match-status ${match.is_finished ? 'finished' : 'upcoming'}">
