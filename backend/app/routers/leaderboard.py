@@ -117,13 +117,12 @@ def _get_cached_leaderboard(community_id: Optional[int] = None):
         entries = []
         for u in results:
             total_pts = 0
-            count = 0
+            count = len(u.predictions)
             exact = 0
             correct = 0
             for p in u.predictions:
                 if p.points_awarded is not None:
                     total_pts += p.points_awarded
-                    count += 1
                     pts_exact, pts_gd, pts_outcome = get_stage_points(p.match.stage)
                     if p.points_awarded == pts_exact:
                         exact += 1
