@@ -66,7 +66,7 @@ def get_user_public_profile(username: str, db: Session = Depends(get_db)):
         m = p.match
         if p.points_awarded is not None:
             total_points += p.points_awarded
-            if p.points_awarded == 5:
+            if is_exact(m, p.points_awarded):
                 exact_scores += 1
             if p.points_awarded >= 1:
                 correct_outcomes += 1
@@ -138,3 +138,17 @@ def get_user_public_profile(username: str, db: Session = Depends(get_db)):
         accuracy=accuracy,
         predictions=result_predictions,
     )
+
+def is_exact(match, points):
+    POINTS_MAP = {
+        "Group Stage":    (3,  2,  1),
+        "Round of 32":    (6,  4,  2),
+        "Round of 16":    (10, 7,  4),
+        "Quarter-finals": (12, 8,  4),
+        "Semi-finals":    (16, 12, 5),
+        "Third-place":    (16, 12, 5),
+        "Final":          (25, 20, 15),
+    }
+    if points == POINTS_MAP[match.stage][0]:
+        return True
+    return False
