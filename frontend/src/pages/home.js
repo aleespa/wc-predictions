@@ -5,14 +5,29 @@ import { t } from '../i18n.js';
 export async function homePage() {
     const authed = isAuthenticated();
 
+    let allMatches = [];
     let upcomingMatches = [];
     let leaderboard = [];
     try {
-        const allMatches = await fetchAPI('/matches?finished=false');
+        allMatches = await fetchAPI('/matches?finished=false');
         upcomingMatches = allMatches.slice(0, 6);
         leaderboard = await fetchAPI('/leaderboard');
     } catch (e) {
         console.error(e);
+    }
+
+    let nextMatchToPredict = null;
+    if (authed) {
+        for (const m of allMatches) {
+            const mDate = new Date(m.match_date);
+            const isMLocked = mDate <= new Date() || m.is_finished;
+            const mTeamsKnown = m.home_team && m.away_team;
+
+            if (!m.user_prediction && !isMLocked && mTeamsKnown) {
+                nextMatchToPredict = m;
+                break;
+            }
+        }
     }
 
     const matchCards = upcomingMatches.map(m => renderMatchCard(m)).join('');
@@ -25,7 +40,7 @@ export async function homePage() {
             <p>${t('home_hero_desc')}</p>
             <div class="hero-actions">
                 ${authed
-                    ? `<a href="#/matches" class="btn btn-primary btn-lg">${t('home_btn_browse')}</a><a href="#/bracket" class="btn btn-secondary btn-lg">${t('home_btn_bracket')}</a><a href="#/community" class="btn btn-secondary btn-lg">${t('home_btn_leaderboard')}</a>`
+                    ? `<a href="${nextMatchToPredict ? '#/predict/' + nextMatchToPredict.id : '#/matches'}" class="btn btn-primary btn-lg">${t('home_btn_start_predicting')}</a><a href="#/matches" class="btn btn-secondary btn-lg">${t('home_btn_browse')}</a><a href="#/community" class="btn btn-secondary btn-lg">${t('home_btn_leaderboard')}</a>`
                     : `<a href="#/register" class="btn btn-primary btn-lg">${t('home_btn_get_started')}</a>`
                 }
             </div>
