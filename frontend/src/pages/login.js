@@ -7,12 +7,20 @@ export function loginPage() {
         return { html: '<div class="spinner"></div>' };
     }
 
-    const html = `
-        <div class="auth-container fade-in" style="display:flex;justify-content:center;align-items:center;padding:var(--space-xl) 0;">
-            <div class="card">
-                <div class="login-logo" style="text-align:center; font-size:3rem; margin-bottom:var(--space-md);">⚽</div>
-                <h1 class="auth-title">${t('login_title')}</h1>
-                <p class="auth-subtitle">${t('login_subtitle')}</p>
+    // Local development mode: offer two fixed users instead of Google OAuth.
+    // Gated by VITE_LOCAL_AUTH so the production Cloudflare build never includes it.
+    const localAuth = import.meta.env.VITE_LOCAL_AUTH === '1';
+
+    const authControls = localAuth
+        ? `
+                <a href="/api/auth/login?user=admin" class="btn-google-signin" style="text-decoration:none;justify-content:center;">
+                    🔑 Login as Admin
+                </a>
+                <a href="/api/auth/login?user=test" class="btn-google-signin" style="text-decoration:none;justify-content:center;margin-top:var(--space-sm);">
+                    👤 Login as Test user
+                </a>
+        `
+        : `
                 <button id="google-signin-btn" class="btn-google-signin">
                     <svg class="btn-google-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20">
                         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -23,6 +31,15 @@ export function loginPage() {
                     </svg>
                     ${t('login_google_btn')}
                 </button>
+        `;
+
+    const html = `
+        <div class="auth-container fade-in" style="display:flex;justify-content:center;align-items:center;padding:var(--space-xl) 0;">
+            <div class="card">
+                <div class="login-logo" style="text-align:center; font-size:3rem; margin-bottom:var(--space-md);">⚽</div>
+                <h1 class="auth-title">${t('login_title')}</h1>
+                <p class="auth-subtitle">${t('login_subtitle')}</p>
+                ${authControls}
             </div>
         </div>
     `;

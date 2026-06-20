@@ -38,6 +38,11 @@ origins = [
     "http://localhost:3000",
 ]
 
+# Local-only: the dev stack serves the app from http://localhost (nginx, port 80).
+# Gated so the production CORS origin list is unchanged.
+if os.environ.get("LOCAL_AUTH") == "1":
+    origins.append("http://localhost")
+
 frontend_url = os.getenv("FRONTEND_URL")
 if frontend_url:
     origins.append(frontend_url)
@@ -61,6 +66,14 @@ app.include_router(admin.router)
 app.include_router(knockout.router)
 app.include_router(community.router)
 app.include_router(public_profile.router)
+
+# Local-only development auth (two fixed users, no Google). Inert in production:
+# docker-compose.prod.yml never sets LOCAL_AUTH, so this block is skipped there.
+if os.environ.get("LOCAL_AUTH") == "1":
+    from . import local_auth
+    app.add_middleware(local_auth.DevAuthMiddleware)
+    app.include_router(local_auth.router)
+    logger.info("LOCAL_AUTH enabled: dev auth (admin/test) active. Do not use in production.")
 
 
 @app.on_event("startup")

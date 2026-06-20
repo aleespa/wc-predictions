@@ -115,9 +115,15 @@ DATABASE_URL=postgresql://admin:admin@db:5432/wc_db
 # Admin access (comma-separated, applied at user registration)
 ADMIN_EMAILS=you@example.com
 ADMIN_GOOGLE_SUBS=          # optional: Google sub IDs
+
+# Local simple auth — two fixed users (admin + test), no Google. Local only.
+LOCAL_AUTH=1               # backend: dev auth middleware + /api/auth/* router
+VITE_LOCAL_AUTH=1          # frontend build: render admin/test login buttons
 ```
 
-> **Note:** Full Google OAuth login only works when deployed to Cloudflare Pages (Functions + KV). Local Docker gives you the API and database for development; use the simulation scripts below to populate test data without signing in.
+A ready-to-copy [`.env.example`](.env.example) is included.
+
+> **Note:** Full Google OAuth login only works when deployed to Cloudflare Pages (Functions + KV). For local development, `LOCAL_AUTH`/`VITE_LOCAL_AUTH` (enabled by default in `docker-compose.yml`) replace Google with a simple two-user login — see [Local login](#-running-locally) below. These flags are never set in production, so the deployed Cloudflare/Oracle/Neon stack is unaffected.
 
 ### Production — Backend (Oracle Cloud)
 
@@ -161,6 +167,19 @@ To stop:
 ```bash
 docker compose down
 ```
+
+### Local login (no Google)
+
+With `LOCAL_AUTH`/`VITE_LOCAL_AUTH` enabled (the default locally), the login page
+shows two buttons instead of Google:
+
+- **Login as Admin** — user `admin`, granted admin rights (gear icon / admin dashboard).
+- **Login as Test user** — user `test`, a regular player.
+
+Both accounts are created automatically on first login (no onboarding step). This is
+implemented entirely in `backend/app/local_auth.py` (a dev-only middleware that injects
+the same `X-User-Sub` header Cloudflare sets in production) and a `VITE_LOCAL_AUTH`-gated
+branch in `frontend/src/pages/login.js`. None of it runs in production.
 
 ### Populating test data
 
