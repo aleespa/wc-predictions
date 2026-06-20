@@ -1,12 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session, joinedload
 from ..database import get_db
 from ..auth import get_current_admin
 from ..cache import user_cache
 from .. import models, schemas
+from ..confirmed_standings import (
+    load_confirmed_standings,
+    save_confirmed_standings,
+    is_bracket_unlocked,
+    validate_confirmation_payload,
+    GROUP_LETTERS,
+)
+from ..utils import compute_standings
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -156,17 +164,11 @@ def set_match_result(
     # Invalidate all match list caches so everyone sees the update immediately
     user_cache.clear_all()
 
-    # If this was a group stage match, check if all group matches are finished
-    if match.stage == "Group Stage":
-        group_total = db.query(models.Match).filter(models.Match.stage == "Group Stage").count()
-        group_finished = db.query(models.Match).filter(
-            models.Match.stage == "Group Stage",
-            models.Match.is_finished == True
-        ).count()
-        
-        if group_total == group_finished:
-            # TRIGGER FINAL INVALIDATION PASS
-            invalidate_user_brackets(db)
+    # NOTE: Finishing the final group match no longer auto-persists Round of 32
+    # teams or invalidates knockout predictions. That now happens only when the
+    # admin explicitly confirms the official standings (POST /api/admin/confirm-standings),
+    # which avoids committing bracket state before tiebreakers / drawing of lots
+    # are resolved.
 
     return schemas.MatchOut.model_validate(match)
 
@@ -303,3 +305,98 @@ def update_match(
 
     db.commit()
     return {"status": "ok", "match_id": match_id}
+
+
+# ── Confirmed group standings (official R32 unlock) ───────────────────────────
+
+def _compute_official_group_standings(db: Session) -> dict:
+    """Compute current standings per group using ONLY real finished results."""
+    teams = db.query(models.Team).all()
+    group_matches = db.query(models.Match).filter(models.Match.stage == "Group Stage").all()
+
+    teams_by_group: dict = {}
+    for t in teams:
+        teams_by_group.setdefault(t.group_letter, []).append(t)
+    matches_by_group: dict = {}
+    for m in group_matches:
+        matches_by_group.setdefault(m.group_letter, []).append(m)
+
+    def get_scores(m):
+        if m.is_finished and m.home_score is not None:
+            return (m.home_score, m.away_score, False)
+        return None
+
+    result = {}
+    for gl in GROUP_LETTERS:
+        result[gl] = compute_standings(
+            teams_by_group.get(gl, []), matches_by_group.get(gl, []), get_scores
+        )
+    return result
+
+
+@router.get("/confirmed-standings")
+def get_confirmed_standings(
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(get_current_admin),
+):
+    """Return computed standings + current confirmation state for the admin panel."""
+    computed = _compute_official_group_standings(db)
+
+    # Computed third-place ranking (top 8 by performance), for default display.
+    thirds = []
+    for gl, standings in computed.items():
+        if len(standings) >= 3:
+            third = dict(standings[2])
+            third["group_letter"] = gl
+            thirds.append(third)
+    thirds.sort(key=lambda x: (x["points"], x["goal_diff"], x["goals_for"]), reverse=True)
+
+    return {
+        "computed_standings": computed,
+        "computed_thirds": thirds,
+        "confirmed": load_confirmed_standings(),
+        "is_unlocked": is_bracket_unlocked(),
+    }
+
+
+class ConfirmStandingsRequest(BaseModel):
+    group_standings: dict[str, list[int]]
+    qualifying_thirds: list[str]
+
+
+@router.post("/confirm-standings")
+def confirm_standings(
+    data: ConfirmStandingsRequest,
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(get_current_admin),
+):
+    """
+    Validate and atomically persist the official group standings + qualifying
+    thirds. This unlocks Round of 32 predictions and persists official R32 teams.
+    It never mutates match/prediction/team/score rows directly.
+    """
+    # Build the authoritative team -> group map from the database for validation.
+    team_group_map = {t.id: t.group_letter for t in db.query(models.Team).all()}
+
+    error = validate_confirmation_payload(
+        data.group_standings, data.qualifying_thirds, team_group_map
+    )
+    if error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+
+    payload = {
+        "is_confirmed": True,
+        "confirmed_at": datetime.now(timezone.utc).isoformat(),
+        "confirmed_by_user_id": admin.id,
+        "group_standings": data.group_standings,
+        "qualifying_thirds": data.qualifying_thirds,
+    }
+
+    save_confirmed_standings(payload)
+
+    # Best-effort cache refresh + persist official R32 teams and invalidate
+    # knockout predictions that are now officially impossible.
+    user_cache.clear_all()
+    invalidate_user_brackets(db)
+
+    return payload

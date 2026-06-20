@@ -3,6 +3,9 @@ __pycache__/
 *$py.class
 .env
 worldcup.db
+
+# Runtime-written official standings confirmation overlay (not source)
+app/data/confirmed_group_standings.json
 .venv/
 venv/
 venv_clerk/

@@ -124,6 +124,20 @@ def resolve_bracket_teams(
             
         all_standings[gl] = compute_standings(group_teams, group_matches_list, get_scores)
 
+    # 2b. Once the admin has officially confirmed standings, the official group
+    # order overrides the auto-computed sort (resolves tiebreakers / drawing of
+    # lots). This applies to every bracket once locked, because the group stage
+    # is over and the seeding is official for all users.
+    from ..confirmed_standings import (
+        is_bracket_unlocked,
+        apply_confirmed_group_order,
+        get_confirmed_qualifying_thirds,
+    )
+    bracket_confirmed = is_bracket_unlocked()
+    if bracket_confirmed:
+        for gl in all_standings:
+            all_standings[gl] = apply_confirmed_group_order(gl, all_standings[gl])
+
     # 3. Resolve slots
     resolved = {}
     for gl, standings in all_standings.items():
@@ -151,16 +165,21 @@ def resolve_bracket_teams(
                 "is_predicted": v["is_predicted"]
             })
     
-    # Sort ALL 3rd place teams by performance (Points, GD, GF)
-    third_place_teams.sort(key=lambda x: (
-        x["standing"]["points"], 
-        x["standing"]["goal_diff"], 
-        x["standing"]["goals_for"]
-    ), reverse=True)
-    
-    # Top 8 qualify
-    qualifying_thirds = third_place_teams[:8]
-    qualifying_groups_set = {qt["group"] for qt in qualifying_thirds}
+    if bracket_confirmed:
+        # Official qualifying thirds are chosen by the admin, not by auto-ranking.
+        confirmed_thirds = set(get_confirmed_qualifying_thirds())
+        qualifying_thirds = [qt for qt in third_place_teams if qt["group"] in confirmed_thirds]
+        qualifying_groups_set = {qt["group"] for qt in qualifying_thirds}
+    else:
+        # Sort ALL 3rd place teams by performance (Points, GD, GF); top 8 qualify
+        third_place_teams.sort(key=lambda x: (
+            x["standing"]["points"],
+            x["standing"]["goal_diff"],
+            x["standing"]["goals_for"]
+        ), reverse=True)
+        qualifying_thirds = third_place_teams[:8]
+        qualifying_groups_set = {qt["group"] for qt in qualifying_thirds}
+
     qualifying_key = "".join(sorted(list(qualifying_groups_set)))
 
     # Use Annex C Map if possible
@@ -471,15 +490,15 @@ def get_bracket(
     Get the full knockout bracket with teams resolved from the user's
     predicted standings (or real results where available).
     """
-    # Determine if bracket is unlocked: only when all group stage matches are finished
-    group_matches = db.query(models.Match).filter(models.Match.stage == "Group Stage").all()
-    all_finished = all(m.is_finished for m in group_matches)
-    
-    is_unlocked = all_finished
-    if all_finished:
+    # The bracket unlocks for prediction only when the admin has officially
+    # confirmed the group standings (not merely when all group matches finish).
+    from ..confirmed_standings import is_bracket_unlocked
+    is_unlocked = is_bracket_unlocked()
+    all_finished = is_unlocked  # gates per-match confirmation below
+    if is_unlocked:
         unlock_reason = "bracket_unlocked_official"
     else:
-        unlock_reason = "bracket_unlocked_user"
+        unlock_reason = "bracket_locked_pending_confirmation"
 
     target_user_id = None
     if username:
@@ -573,7 +592,7 @@ def get_bracket(
         semi_finals=sf,
         third_place=third,
         final=final,
-        is_unlocked=True,
+        is_unlocked=is_unlocked,
         unlock_reason=unlock_reason
     )
 

@@ -69,24 +69,23 @@ def list_matches(
         match_num_map = {m.match_number: m for m in ko_matches}
         match_id_to_num = {m.id: m.match_number for m in ko_matches}
 
-    all_groups_finished = not db.query(models.Match).filter(
-        models.Match.stage == "Group Stage",
-        models.Match.is_finished == False
-    ).first()
+    from ..confirmed_standings import is_bracket_unlocked
+    bracket_unlocked = is_bracket_unlocked()
     finished_map = {m_id: is_fin for m_id, is_fin in db.query(models.Match.id, models.Match.is_finished).all()}
 
     result = []
     for match in matches:
         match_data = schemas.MatchOut.model_validate(match)
-        
+
         # Attach prediction
         if match.id in user_predictions:
             match_data.user_prediction = schemas.PredictionOut.model_validate(user_predictions[match.id])
-            
-        # Compute is_confirmed
+
+        # Compute is_confirmed: knockout matches are predictable only once the
+        # admin has confirmed standings (R32) and source matches are finished (R16+).
         is_confirmed = True
         if match.stage != "Group Stage":
-            if not all_groups_finished:
+            if not bracket_unlocked:
                 is_confirmed = False
             else:
                 src_ids = [match.home_source_match_id, match.away_source_match_id]
@@ -172,7 +171,7 @@ def get_standings(
         user_predictions = {p.match_id: p for p in preds}
 
     from ..utils import compute_standings
-    
+
     def get_scores(m):
         if m.is_finished:
             return (m.home_score, m.away_score, False)
@@ -181,7 +180,15 @@ def get_standings(
             return (pred.predicted_home_score, pred.predicted_away_score, True)
         return None
 
-    return compute_standings(teams, matches, get_scores)
+    standings = compute_standings(teams, matches, get_scores)
+
+    # Once standings are officially confirmed, present the official admin order
+    # so the public standings agree with the bracket.
+    from ..confirmed_standings import is_bracket_unlocked, apply_confirmed_group_order
+    if is_bracket_unlocked():
+        standings = apply_confirmed_group_order(group_letter, standings)
+
+    return standings
 
 
 @router.get("/thirds", response_model=list[schemas.StandingOut])
@@ -227,11 +234,20 @@ def get_thirds_standings(
             return (pred.predicted_home_score, pred.predicted_away_score, True)
         return None
 
+    from ..confirmed_standings import (
+        is_bracket_unlocked,
+        apply_confirmed_group_order,
+        get_confirmed_qualifying_thirds,
+    )
+    confirmed = is_bracket_unlocked()
+
     all_thirds = []
     for gl in "ABCDEFGHIJKL":
         group_teams = teams_by_group.get(gl, [])
         group_matches_list = matches_by_group.get(gl, [])
         standings = compute_standings(group_teams, group_matches_list, get_scores)
+        if confirmed:
+            standings = apply_confirmed_group_order(gl, standings)
         if len(standings) >= 3:
             all_finished = all((m.is_finished and m.home_score is not None) for m in group_matches_list if m.home_team_id and m.away_team_id)
             third = standings[2]
@@ -239,7 +255,22 @@ def get_thirds_standings(
             third["group_letter"] = gl
             all_thirds.append(third)
 
-    # 3. Sort ALL 3rd place teams by performance
+    # When confirmed, present the 8 qualifying thirds first in the admin's official
+    # 1–8 order, then the remaining groups by performance. Otherwise rank by performance.
+    if confirmed:
+        ranked = get_confirmed_qualifying_thirds()  # ordered list of 8 group letters
+        rank = {gl: i for i, gl in enumerate(ranked)}
+        qualifiers = sorted(
+            (x for x in all_thirds if x["group_letter"] in rank),
+            key=lambda x: rank[x["group_letter"]],
+        )
+        others = sorted(
+            (x for x in all_thirds if x["group_letter"] not in rank),
+            key=lambda x: (x["points"], x["goal_diff"], x["goals_for"]),
+            reverse=True,
+        )
+        return qualifiers + others
+
     all_thirds.sort(key=lambda x: (x["points"], x["goal_diff"], x["goals_for"]), reverse=True)
     return all_thirds
 
@@ -324,13 +355,10 @@ def get_match(
                 match_data.user_prediction.is_invalid = True
                 match_data.is_invalid_prediction = True
 
-    all_groups_finished = not db.query(models.Match).filter(
-        models.Match.stage == "Group Stage",
-        models.Match.is_finished == False
-    ).first()
+    from ..confirmed_standings import is_bracket_unlocked
     is_confirmed = True
     if match.stage != "Group Stage":
-        if not all_groups_finished:
+        if not is_bracket_unlocked():
             is_confirmed = False
         else:
             src_ids = [match.home_source_match_id, match.away_source_match_id]

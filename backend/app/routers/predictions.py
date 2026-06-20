@@ -51,11 +51,12 @@ def submit_prediction(
     if match_dt.tzinfo is None:
         match_dt = match_dt.replace(tzinfo=timezone.utc)
     
-    # Disallow prediction for knockout matches until all group stage matches are finished
+    # Disallow prediction for knockout matches until the admin has officially
+    # confirmed the group standings (the read-only overlay unlock state).
     if match.stage != "Group Stage":
-        # Ensure all group stage matches are finished
-        if not get_group_count_cached():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Match is not yet confirmed for prediction")
+        from ..confirmed_standings import is_bracket_unlocked
+        if not is_bracket_unlocked():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Matches are locked until admin confirms group standings.")
         # Ensure source matches (if any) are finished
         src_ids = [match.home_source_match_id, match.away_source_match_id]
         if any(src_ids):

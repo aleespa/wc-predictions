@@ -41,6 +41,19 @@ export async function adminPage() {
     const groupMatchesCount = matches.filter(m => m.stage === 'Group Stage').length;
     const groupFinishedCount = matches.filter(m => m.stage === 'Group Stage' && m.is_finished).length;
 
+    // Once all group matches are finished, the admin can confirm & lock the
+    // official standings (which unlocks Round of 32 predictions).
+    const groupsDone = groupMatchesCount > 0 && groupFinishedCount === groupMatchesCount;
+    let confirmData = null;
+    let confirmError = null;
+    if (groupsDone) {
+        try {
+            confirmData = await fetchAPI(`/admin/confirmed-standings?t=${Date.now()}`);
+        } catch (e) {
+            confirmError = e && e.message ? e.message : 'error';
+        }
+    }
+
     const teamOptions = teams.map(tm => `<option value="${tm.id}">${tm.code} ${t(tm.name)}</option>`).join('');
 
     const matchRow = (m) => {
@@ -119,6 +132,8 @@ export async function adminPage() {
                 </div>
             </div>
 
+            ${groupsDone ? `<div id="confirm-standings-panel" class="fade-in"></div>` : ''}
+
             <div class="card" style="margin: var(--space-xl) 0;">
                 <h3 style="margin-top:0;margin-bottom:var(--space-md);color:var(--accent-gold)">${t('admin_edit_title')}</h3>
                 <form id="admin-edit-match-form">
@@ -179,6 +194,157 @@ export async function adminPage() {
     return {
         html,
         init: () => {
+            // ── Confirm & Lock Group Standings panel ──────────────────────────
+            const panelEl = document.getElementById('confirm-standings-panel');
+            if (panelEl && !confirmData) {
+                panelEl.innerHTML = `
+                    <div class="card" style="margin: var(--space-xl) 0; border:1px solid var(--accent-gold)">
+                        <h3 style="margin-top:0;color:var(--accent-gold)">🔒 ${t('confirm_panel_title')}</h3>
+                        <p style="color:var(--danger, #e66)">⚠️ ${confirmError ? (t(confirmError) || confirmError) : 'Could not load standings data.'}</p>
+                        <p style="color:var(--text-muted);font-size:0.85rem">If this persists, the backend may need rebuilding (<code>docker compose up -d --build backend</code>).</p>
+                    </div>`;
+            }
+            if (panelEl && confirmData) {
+                const GL = "ABCDEFGHIJKL".split("");
+                const teamsById = {};
+                teams.forEach(tm => { teamsById[tm.id] = tm; });
+                const conf = confirmData.confirmed || {};
+                const isConfirmed = conf.is_confirmed === true;
+
+                // Initial order: confirmed file if present, else computed standings.
+                const order = {};
+                for (const gl of GL) {
+                    if (isConfirmed && conf.group_standings && conf.group_standings[gl]) {
+                        order[gl] = conf.group_standings[gl].slice();
+                    } else {
+                        order[gl] = (confirmData.computed_standings[gl] || []).map(s => s.team_id);
+                    }
+                }
+                // Ranking of ALL 12 groups' third-place teams; the top 8 qualify.
+                const perfOrder = (confirmData.computed_thirds || []).map(x => x.group_letter);
+                let thirdsRank;
+                if (isConfirmed && Array.isArray(conf.qualifying_thirds)) {
+                    const q = conf.qualifying_thirds.slice();
+                    thirdsRank = q.concat(perfOrder.filter(gl => !q.includes(gl)));
+                } else {
+                    thirdsRank = perfOrder.slice();
+                }
+                for (const gl of GL) if (!thirdsRank.includes(gl)) thirdsRank.push(gl);
+
+                const posKeys = ['confirm_pos_1', 'confirm_pos_2', 'confirm_pos_3', 'confirm_pos_4'];
+
+                const teamRow = (gl, idx) => {
+                    const tm = teamsById[order[gl][idx]];
+                    const name = tm ? t(tm.name) : '?';
+                    const flag = tm ? `<img src="${getFlagURL(tm.code)}" style="width:18px;vertical-align:middle;margin-right:6px">` : '';
+                    return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0">
+                        <span style="width:32px;color:var(--text-muted);font-size:0.82rem">${t(posKeys[idx])}</span>
+                        ${flag}<span style="flex:1">${name}</span>
+                        <button type="button" class="btn btn-sm btn-secondary" ${idx === 0 ? 'disabled' : ''} onclick="window.__cMove('${gl}',${idx},-1)" title="${t('confirm_move_up')}">▲</button>
+                        <button type="button" class="btn btn-sm btn-secondary" ${idx === 3 ? 'disabled' : ''} onclick="window.__cMove('${gl}',${idx},1)" title="${t('confirm_move_down')}">▼</button>
+                    </div>`;
+                };
+                const cardInner = (gl) => {
+                    return `<h4 style="margin:0 0 var(--space-sm)">${t('matches_filter_grp', { group: gl })}</h4>
+                        ${[0, 1, 2, 3].map(i => teamRow(gl, i)).join('')}`;
+                };
+
+                const thirdName = (gl) => {
+                    const tm = teamsById[order[gl][2]];
+                    return tm ? t(tm.name) : '?';
+                };
+                const rankRow = (gl, i) => {
+                    const qualifies = i < 8;
+                    const cutoff = i === 7
+                        ? `<div style="border-top:1px dashed var(--accent-gold);margin:6px 0 2px;font-size:0.72rem;color:var(--text-muted);text-align:center">${t('confirm_cutoff')}</div>`
+                        : '';
+                    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:6px;${qualifies ? 'background:rgba(212,175,55,0.12)' : 'opacity:0.5'}">
+                        <span style="width:24px;font-weight:700;color:${qualifies ? 'var(--accent-gold)' : 'var(--text-muted)'}">${i + 1}</span>
+                        <span style="flex:1">${t('matches_filter_grp', { group: gl })} — ${thirdName(gl)}</span>
+                        ${qualifies ? `<span class="status-badge status-unlocked" style="font-size:0.68rem;padding:1px 6px">${t('confirm_qualifies')}</span>` : ''}
+                        <button type="button" class="btn btn-sm btn-secondary" ${i === 0 ? 'disabled' : ''} onclick="window.__cThirdMove(${i},-1)" title="${t('confirm_move_up')}">▲</button>
+                        <button type="button" class="btn btn-sm btn-secondary" ${i === thirdsRank.length - 1 ? 'disabled' : ''} onclick="window.__cThirdMove(${i},1)" title="${t('confirm_move_down')}">▼</button>
+                    </div>${cutoff}`;
+                };
+                const rankInner = () => thirdsRank.map((gl, i) => rankRow(gl, i)).join('');
+                const renderRank = () => {
+                    const el = document.getElementById('confirm-thirds-rank');
+                    if (el) el.innerHTML = rankInner();
+                };
+
+                window.__cMove = (gl, idx, dir) => {
+                    const j = idx + dir;
+                    if (j < 0 || j > 3) return;
+                    const arr = order[gl];
+                    [arr[idx], arr[j]] = [arr[j], arr[idx]];
+                    const card = document.getElementById(`ccard-${gl}`);
+                    if (card) card.innerHTML = cardInner(gl);
+                    // The group's 3rd-place team may have changed; refresh the ranking labels.
+                    renderRank();
+                };
+                window.__cThirdMove = (idx, dir) => {
+                    const j = idx + dir;
+                    if (j < 0 || j >= thirdsRank.length) return;
+                    [thirdsRank[idx], thirdsRank[j]] = [thirdsRank[j], thirdsRank[idx]];
+                    renderRank();
+                };
+                window.__cToggle = () => {
+                    const body = document.getElementById('confirm-body');
+                    const chev = document.getElementById('confirm-chevron');
+                    if (!body) return;
+                    const hidden = body.style.display === 'none';
+                    body.style.display = hidden ? '' : 'none';
+                    if (chev) chev.textContent = hidden ? '▾' : '▸';
+                };
+                window.__cSubmit = async () => {
+                    if (!window.confirm(t('confirm_modal_warn'))) return;
+                    const btn = document.getElementById('confirm-submit-btn');
+                    btn.disabled = true;
+                    btn.textContent = t('confirm_btn_saving');
+                    const group_standings = {};
+                    for (const gl of GL) group_standings[gl] = order[gl];
+                    try {
+                        await fetchAPI(`/admin/confirm-standings?t=${Date.now()}`, {
+                            method: 'POST',
+                            body: JSON.stringify({ group_standings, qualifying_thirds: thirdsRank.slice(0, 8) }),
+                        });
+                        showToast(t('toast_standings_confirmed'));
+                        setTimeout(() => window.dispatchEvent(new HashChangeEvent("hashchange")), 800);
+                    } catch (err) {
+                        showToast(t(err.message), 'error');
+                        btn.disabled = false;
+                        btn.textContent = t('confirm_btn');
+                    }
+                };
+
+                panelEl.innerHTML = `
+                    <div class="card" style="margin: var(--space-xl) 0; border:1px solid var(--accent-gold)">
+                        <div onclick="window.__cToggle()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+                            <h3 style="margin:0;color:var(--accent-gold)">🔒 ${t('confirm_panel_title')}</h3>
+                            <span id="confirm-chevron" style="color:var(--accent-gold);font-size:1.3rem;line-height:1">▾</span>
+                        </div>
+                        <div id="confirm-body" style="margin-top:var(--space-md)">
+                            ${isConfirmed ? `<div class="status-badge status-unlocked" style="margin-bottom:var(--space-sm)">✅ ${t('confirm_locked_badge')}</div>` : ''}
+                            <p class="page-subtitle" style="text-align:left;margin-top:0">${t('confirm_panel_desc')}</p>
+                            ${isConfirmed ? `<p style="color:var(--text-muted);font-size:0.85rem">${t('confirm_reconfirm_note')}</p>` : ''}
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:var(--space-md);margin:var(--space-md) 0">
+                                ${GL.map(gl => `<div class="card" id="ccard-${gl}" style="padding:var(--space-md)">${cardInner(gl)}</div>`).join('')}
+                            </div>
+                            <div class="card" style="padding:var(--space-md);margin-top:var(--space-md)">
+                                <div style="margin-bottom:var(--space-sm)">
+                                    <strong>${t('confirm_thirds_rank_title')}</strong>
+                                    <span style="color:var(--text-muted);font-size:0.85rem"> — ${t('confirm_thirds_hint')}</span>
+                                </div>
+                                <div id="confirm-thirds-rank">${rankInner()}</div>
+                            </div>
+                            <div style="display:flex;justify-content:flex-end;margin-top:var(--space-md)">
+                                <button type="button" class="btn btn-primary" id="confirm-submit-btn" onclick="window.__cSubmit()">${t('confirm_btn')}</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
             window.__toggleAdminPen = (matchId) => {
                 const h = document.getElementById(`admin-home-${matchId}`).value;
                 const a = document.getElementById(`admin-away-${matchId}`).value;
@@ -296,6 +462,10 @@ export async function adminPage() {
             return () => {
                 delete window.__setResult;
                 delete window.__toggleAdminPen;
+                delete window.__cMove;
+                delete window.__cThirdMove;
+                delete window.__cToggle;
+                delete window.__cSubmit;
             };
         },
     };
