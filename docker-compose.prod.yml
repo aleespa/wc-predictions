@@ -7,6 +7,9 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - ADMIN_EMAILS=${ADMIN_EMAILS}
       - FRONTEND_URL=${FRONTEND_URL}
+      # Persist the confirmed-standings overlay outside the container's writable
+      # layer so it survives `./update.sh` rebuilds and VM reboots.
+      - CONFIRMED_STANDINGS_PATH=/app/persistent/confirmed_group_standings.json
     networks:
       - internal
     volumes:
@@ -14,6 +17,7 @@ services:
       - ./backend/simulate_data.py:/app/simulate_data.py
       - ./backend/simulate_tournament.py:/app/simulate_tournament.py
       - ./backend/simulate_active_predictions.py:/app/simulate_active_predictions.py
+      - confirmed_standings:/app/persistent
 
   nginx:
     build:
@@ -34,3 +38,6 @@ services:
 networks:
   internal:
     driver: bridge
+
+volumes:
+  confirmed_standings:

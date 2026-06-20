@@ -19,6 +19,11 @@ RUN useradd -m appuser
 # Copy files and set ownership in one layer
 COPY --chown=appuser:appuser . /app
 
+# Persistent dir for the confirmed-standings overlay (mounted as a volume in prod
+# so the confirmation survives container rebuilds). Owned by appuser so the
+# non-root process can write to a fresh named volume initialised from this path.
+RUN mkdir -p /app/persistent && chown appuser:appuser /app/persistent
+
 USER appuser
 
 CMD ["sh", "-c", "alembic upgrade heads && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 --loop asyncio --no-access-log --timeout-keep-alive 30"]
