@@ -56,7 +56,12 @@ def calculate_points_detail(
             return 0, False, False
 
     # Correct Outcome
-    if outcome(predicted_home, predicted_away) == outcome(actual_home, actual_away):
+    # For knockout matches the advancer gate above already confirmed the user
+    # picked the correct team to advance. That counts as a correct outcome, so
+    # we enter the precision tiers even when the predicted scoreline direction
+    # differs from the actual (e.g. predicted a 1-1 draw, actual 3-1) — such a
+    # prediction still earns at least the "Correct Outcome" points.
+    if outcome(predicted_home, predicted_away) == outcome(actual_home, actual_away) or is_knockout:
         # Exact Score
         if predicted_home == actual_home and predicted_away == actual_away:
             # For knockout, if it went to penalties, we check if they predicted the penalty winner too
