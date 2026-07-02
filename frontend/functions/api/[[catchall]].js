@@ -12,7 +12,7 @@
  *  3. If no valid session exists and the route requires auth, return 401.
  */
 
-const BACKEND_URL = 'https://wc-predictions-backend.fly.dev';
+const BACKEND_URL = 'https://wc-predictions.duckdns.org';
 
 // Routes the backend accepts without authentication
 const PUBLIC_PATH_PREFIXES = [
