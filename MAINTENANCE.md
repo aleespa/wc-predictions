@@ -1,5 +1,20 @@
 # 🛠️ Maintenance Guide — WC Predictions Server
 
+> ## ⚠️ RETIRED — Oracle Cloud runbook (kept for reference only)
+>
+> The backend was **migrated off Oracle Cloud to Fly.io in July 2026**. The
+> instructions in this file — SSH access, `docker-compose.prod.yml`, nginx,
+> Let's Encrypt / certbot renewal, DuckDNS, iptables/Oracle Security Lists,
+> systemd — **no longer apply** to production.
+>
+> **For the current setup and operations, see [`INFRASTRUCTURE.md`](INFRASTRUCTURE.md).**
+>
+> This document is retained for historical context and in case the Oracle stack
+> is ever revived (e.g. once pay-as-you-go activates). Do not follow it for the
+> live Fly.io deployment.
+
+---
+
 This guide covers day-to-day maintenance of the production server running on Oracle Cloud Free Tier.
 
 ---
