@@ -9,7 +9,7 @@
  * using the new session cookie authentication.
  */
 
-const BACKEND_URL = 'https://wc-predictions.duckdns.org';
+const BACKEND_URL = 'https://wc-predictions-backend.fly.dev';
 
 export async function onRequest(context) {
   const { request, env } = context;
