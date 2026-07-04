@@ -143,7 +143,7 @@ export function renderMatchCard(match, options = {}) {
         const POINTS_TABLE = {
             "Group Stage": { exact: 3, gd: 2, outcome: 1 },
             "Round of 32": { exact: 6, gd: 4, outcome: 2 },
-            "Round of 16": { exact: 10, gd: 7, outcome: 4 },
+            "Round of 16": { exact: 8, gd: 6, outcome: 3 },
             "Quarter-finals": { exact: 12, gd: 8, outcome: 4 },
             "Semi-finals": { exact: 16, gd: 12, outcome: 5 },
             "Final": { exact: 25, gd: 20, outcome: 15 },
