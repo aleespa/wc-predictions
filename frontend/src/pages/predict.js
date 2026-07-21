@@ -94,6 +94,20 @@ export async function predictPage(params) {
         `;
     }
 
+    // Points table per stage (must be defined before resultSection uses stagePts)
+    const stage = match.stage || "Group Stage";
+    const POINTS_TABLE = {
+        "Group Stage":    { exact: 3,  gd: 2,  outcome: 1  },
+        "Round of 32":    { exact: 6,  gd: 4,  outcome: 2  },
+        "Round of 16":    { exact: 8,  gd: 6,  outcome: 3  },
+        "Quarter-finals": { exact: 12, gd: 8,  outcome: 4  },
+        "Semi-finals":    { exact: 16, gd: 12, outcome: 5  },
+        "Third-place":    { exact: 16, gd: 12, outcome: 5  },
+        "Final":          { exact: 25, gd: 20, outcome: 15 },
+    };
+
+    const stagePts = POINTS_TABLE[stage] || POINTS_TABLE["Group Stage"];
+
     let resultSection = '';
     if (match.is_finished) {
         let pointsBadge = '';
@@ -123,19 +137,6 @@ export async function predictPage(params) {
     }
 
     // Build the prediction form section
-    const stage = match.stage || "Group Stage";
-    const POINTS_TABLE = {
-        "Group Stage":    { exact: 3,  gd: 2,  outcome: 1  },
-        "Round of 32":    { exact: 6,  gd: 4,  outcome: 2  },
-        "Round of 16":    { exact: 10, gd: 7,  outcome: 4  },
-        "Quarter-finals": { exact: 12, gd: 8,  outcome: 4  },
-        "Semi-finals":    { exact: 16, gd: 12, outcome: 5  },
-        "Third-place":    { exact: 16, gd: 12, outcome: 5  },
-        "Final":          { exact: 25, gd: 20, outcome: 15 },
-    };
-
-    const stagePts = POINTS_TABLE[stage] || POINTS_TABLE["Group Stage"];
-
     let formSection = '';
     if (match.is_finished) {
         formSection = resultSection;

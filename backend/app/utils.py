@@ -5,7 +5,7 @@ def get_stage_points(stage: str) -> tuple[int, int, int]:
     POINTS_MAP = {
         "Group Stage":    (3,  2,  1),
         "Round of 32":    (6,  4,  2),
-        "Round of 16":    (10, 7,  4),
+        "Round of 16":    (8,  6,  3),
         "Quarter-finals": (12, 8,  4),
         "Semi-finals":    (16, 12, 5),
         "Third-place":    (16, 12, 5),
