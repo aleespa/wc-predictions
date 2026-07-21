@@ -1,9 +1,26 @@
 import { fetchAPI, isAuthenticated } from '../api.js';
 import { renderMatchCard } from '../components/matchCard.js';
+import { getCurrentUser } from '../components/navbar.js';
+import { renderStatsDashboard } from './stats.js';
 import { t } from '../i18n.js';
 
 export async function homePage() {
     const authed = isAuthenticated();
+
+    // Logged-in users get their personal "season wrapped" stats dashboard.
+    if (authed) {
+        try {
+            const [matches, leaderboard, me] = await Promise.all([
+                fetchAPI('/matches'),
+                fetchAPI('/leaderboard'),
+                getCurrentUser(),
+            ]);
+            return renderStatsDashboard(matches, leaderboard, me);
+        } catch (e) {
+            console.error('Failed to build stats dashboard', e);
+            return `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${t('router_error', { msg: e.message })}</div></div>`;
+        }
+    }
 
     let allMatches = [];
     let upcomingMatches = [];

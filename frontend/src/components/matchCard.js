@@ -1,5 +1,6 @@
 import { getFlagURL } from './flags.js';
 import { t, getLanguage } from '../i18n.js';
+import { POINTS_TABLE, normalizeStageKey } from '../scoring.js';
 
 function getRemainingTimeStr(matchDate) {
     const now = new Date();
@@ -138,23 +139,8 @@ export function renderMatchCard(match, options = {}) {
         const pred = match.user_prediction;
     const pts = pred.points_awarded;
         const stage = match.stage || "Group Stage";
-        
-        // Define points per stage
-        const POINTS_TABLE = {
-            "Group Stage": { exact: 3, gd: 2, outcome: 1 },
-            "Round of 32": { exact: 6, gd: 4, outcome: 2 },
-            "Round of 16": { exact: 10, gd: 7, outcome: 4 },
-            "Quarter-finals": { exact: 12, gd: 8, outcome: 4 },
-            "Semi-finals": { exact: 16, gd: 12, outcome: 5 },
-            "Final": { exact: 25, gd: 20, outcome: 15 },
-            "Third-place": { exact: 16, gd: 12, outcome: 5 },
-        };
 
-        const stageKey = stage.includes("Quarter") ? "Quarter-finals" :
-                         stage.includes("Semi") ? "Semi-finals" :
-                         stage.includes("Final") ? "Final" :
-                         stage.includes("Third") ? "Third-place" : stage;
-
+        const stageKey = normalizeStageKey(stage);
         const stagePts = POINTS_TABLE[stageKey] || POINTS_TABLE["Group Stage"];
 
         let badgeClass = 'upcoming';
